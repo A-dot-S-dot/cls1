@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+if [[ $# -eq 0 ]]; then
+    echo "all tests"
+    echo "----------------------------------------------------------------------"
+    python -m unittest discover . "*_test.py"
+    exit
+fi
+
+for arg in "$@"; do
+    echo "${arg}_test.py"
+    echo "----------------------------------------------------------------------"
+    python -m unittest discover . "${arg}_test.py"
+    echo
+done

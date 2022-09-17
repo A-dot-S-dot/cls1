@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+
+"""This is the main script for PDE problems in one space dimension.
+
+For setting up parameters use the file `defauls.py` or options via command prompt.
+More information are available with "cls1 --help".
+
+"""
+
+from parser import ArgumentParserFEM1D
+
+import profiler
+from task import EOCTask, HelpTask, PlotTask, TestTask
+
+
+@profiler.profile
+def main():
+    parser = ArgumentParserFEM1D()
+    args = parser.parse_args()
+
+    if hasattr(args, "profile"):
+        profiler.PRINT_PROFILE = args.profile
+
+    if args.task == "test":
+        task = TestTask(args)
+    elif args.task == "help":
+        task = HelpTask(args)
+    elif args.task == "plot":
+        task = PlotTask(args)
+    elif args.task == "eoc":
+        task = EOCTask(args)
+    else:
+        raise NotImplementedError
+
+    task.execute()
+
+
+if __name__ == "__main__":
+    main()
