@@ -94,12 +94,18 @@ class TestApproximatedFluxGradient(TestCase):
         flux = lambda x: 1 / 2 * x**2
         flux_approximation = GroupFiniteElementApproximation(self.dof_vector, flux)
         burgers = ApproximatedFluxGradient(flux_approximation, self.discrete_gradient)
-        test_dofs = np.array([1, 0, 0, 0])
-        expected_approximated_burgers = np.array([0, -1 / 4, 0, 1 / 4])
+        test_dofs = [np.array([1, 0, 0, 0]), np.array([0, 1, 0, 0])]
+        expected_approximations = [
+            np.array([0, -1 / 4, 0, 1 / 4]),
+            np.array([1 / 4, 0, -1 / 4, 0]),
+        ]
 
-        self.dof_vector.dofs = test_dofs
+        for dofs, expected_approximation in zip(test_dofs, expected_approximations):
+            self.dof_vector.dofs = dofs
 
-        for i in range(len(test_dofs)):
-            self.assertAlmostEqual(
-                burgers[i], expected_approximated_burgers[i], msg=f"index={i}"
-            )
+            for i in range(len(test_dofs)):
+                self.assertAlmostEqual(
+                    burgers[i],
+                    expected_approximation[i],
+                    msg=f"index={i}, dofs={dofs}",
+                )
