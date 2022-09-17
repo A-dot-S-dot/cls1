@@ -8,16 +8,13 @@ from system.vector import DOFVector
 
 class PDESolver(ABC):
     discrete_solution_dofs: DOFVector
+    time: float
     tqdm_kwargs: Dict
+
     _ode_solver: ExplicitRungeKuttaMethod
 
-    @property
     @abstractmethod
-    def time(self) -> float:
-        ...
-
-    @abstractmethod
-    def solve(self, target_time: float, time_steps_number: int):
+    def solve(self, end_time: float, time_steps_number: int):
         ...
 
     @property

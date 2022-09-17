@@ -21,8 +21,8 @@ class ContinuousGalerkinSolver(PDESolver):
         self.time += delta_t
         self.ode_solver.execute_step(delta_t)
 
-    def solve(self, target_time: float, time_steps_number: int):
-        time_grid = np.linspace(self.time, target_time, time_steps_number + 1)
+    def solve(self, end_time: float, time_steps_number: int):
+        time_grid = np.linspace(self.time, end_time, time_steps_number + 1)
         progress_iterator = trange(len(time_grid) - 1, **self.tqdm_kwargs)
 
         for i in progress_iterator:

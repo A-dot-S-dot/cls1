@@ -5,6 +5,9 @@ from benchmark.advection import *
 
 
 class BenchmarkFactory(ABC):
+    benchmark_name: str
+    end_time = None
+
     @property
     @abstractmethod
     def benchmark(self) -> Benchmark:
@@ -12,28 +15,36 @@ class BenchmarkFactory(ABC):
 
 
 class AdvectionBenchmarkFactory(BenchmarkFactory):
-    benchmark_name: str
-
     @property
     def benchmark(self) -> Benchmark:
         if self.benchmark_name in ["rect", "plot_default"]:
-            return AdvectionPlotBenchmark1()
+            benchmark = AdvectionPlotBenchmark1()
         elif self.benchmark_name in ["cos", "eoc_default"]:
-            return AdvectionEOCBenchmark1()
+            benchmark = AdvectionEOCBenchmark1()
         elif self.benchmark_name in ["gauss"]:
-            return AdvectionEOCBenchmark2()
+            benchmark = AdvectionEOCBenchmark2()
         else:
             raise ValueError(
                 f"no advection benchmark for {self.benchmark_name} defined"
             )
 
+        if isinstance(self.end_time, float):
+            benchmark.end_time = self.end_time
+
+        return benchmark
+
 
 class BurgersBenchmarkFactory(BenchmarkFactory):
-    benchmark_name: str
-
     @property
     def benchmark(self) -> Benchmark:
-        if self.benchmark_name in ["sin", "plot_default"]:
-            return BurgersBenchmark()
+        if self.benchmark_name in ["plot_sin", "plot_default"]:
+            benchmark = BurgersPlotBenchmark()
+        elif self.benchmark_name in ["eoc_sin", "eoc_default"]:
+            benchmark = BurgersEOCBenchmark()
         else:
             raise ValueError(f"no burgers benchmark for {self.benchmark_name} defined")
+
+        if self.end_time is not None:
+            benchmark.end_time = self.end_time
+
+        return benchmark

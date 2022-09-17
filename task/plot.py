@@ -60,7 +60,7 @@ class PlotTask(Task):
     _args: Namespace
     _components: SolverComponents
     _plotter: FunctionPlotter
-    _target_time: float
+    _end_time: float
     _time_steps_number: int
 
     def __init__(self, args: Namespace):
@@ -70,7 +70,7 @@ class PlotTask(Task):
         benchmark = self._components.benchmark
 
         self._plotter = FunctionPlotter(mesh.domain)
-        self._target_time = benchmark.T
+        self._end_time = benchmark.end_time
         self._time_steps_number = len(mesh) * args.courant_factor
 
     def execute(self):
@@ -88,8 +88,8 @@ class PlotTask(Task):
 
         if benchmark.has_exact_solution():
             self._plotter.add_function(
-                benchmark.exact_solution_at_T,
-                f"$u(\cdot, {self._target_time:.2f})$",
+                benchmark.exact_solution_at_end_time,
+                f"$u(\cdot, {self._end_time:.1f})$",
             )
         elif len(self._components.solver_factories) == 0:
             raise ValueError("Nothing to plot.")
@@ -105,7 +105,7 @@ class PlotTask(Task):
 
     def _add_discrete_solution(self, solver_factory: PDESolverFactory):
         solver = solver_factory.solver
-        solver.solve(self._target_time, self._time_steps_number)
+        solver.solve(self._end_time, self._time_steps_number)
 
         label = solver_factory.plot_label
 

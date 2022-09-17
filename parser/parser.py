@@ -122,6 +122,12 @@ class ArgumentParserFEM1D:
             metavar="factor",
             default=COURANT_FACTOR,
         )
+        mesh_argument_group.add_argument(
+            "-T",
+            "--end-time",
+            type=parser_type.positive_float,
+            help="End time used by solvers. If not specified use benchmark's end time.",
+        )
 
     def _add_profile_argument(self, parser):
         parser.add_argument(

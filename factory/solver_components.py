@@ -30,6 +30,7 @@ class SolverComponents:
             raise NotImplementedError
 
         self._benchmark_factory.benchmark_name = self._args.benchmark
+        self._benchmark_factory.end_time = self._args.end_time
 
     def _build_solver_factories(self):
         self._solver_factories = []

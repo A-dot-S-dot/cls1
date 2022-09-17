@@ -5,8 +5,9 @@ from .abstract import Benchmark
 
 
 class AdvectionBenchmark(Benchmark):
+    end_time = 1
+
     _domain = Interval(0, 1)
-    _T = 1
 
     def exact_solution(self, x: float, t: float) -> float:
         argument = (x - t) % self.domain.length

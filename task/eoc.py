@@ -25,12 +25,12 @@ class EOCCalculator:
     courant_factor: int
 
     _norm: Tuple[Norm, ...]
-    _target_time: float
+    _end_time: float
     _time_steps_number: int
 
     def add_norm(self, *norm: Norm):
         self._norm = norm
-        self._target_time = self.benchmark.T
+        self._end_time = self.benchmark.end_time
         self._time_steps_number = len(self.mesh) * self.courant_factor
 
     def eoc(self, refine_number: int) -> np.ndarray:
@@ -61,7 +61,7 @@ class EOCCalculator:
     def _calculate_discrete_solution(self) -> FunctionRealToReal:
         solver = self.solver_factory.solver
         solver.solve(
-            self._target_time,
+            self._end_time,
             self._time_steps_number,
         )
 
@@ -70,7 +70,7 @@ class EOCCalculator:
     def _calculate_error(
         self, norm: Norm, discrete_solution: FunctionRealToReal
     ) -> float:
-        exact_solution = self.benchmark.exact_solution_at_T
+        exact_solution = self.benchmark.exact_solution_at_end_time
         function = lambda x: discrete_solution(x) - exact_solution(x)
         error = norm(function)
 
@@ -111,7 +111,7 @@ class EOCTask(Task):
         self._benchmark = self._components.benchmark
 
         self._solver_factories = self._components.solver_factories
-        self._target_time = self._benchmark.T
+        self._target_time = self._benchmark.end_time
         self._time_steps_number = len(mesh) * args.courant_factor
 
     def execute(self):

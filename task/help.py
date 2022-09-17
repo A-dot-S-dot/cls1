@@ -14,10 +14,8 @@ Linear Advection (ut+ux=0)
 
 Burgers
 -------
-    sin         Sinus:          u(x)=sin(2*pi*x), I=[0,1], periodic boundaries, T=0.1 (plot_default)
-
-Note, no 'eoc_default' is implemented.
-
+    sin_plot    Sinus:          u(x)=sin(2*pi*x), I=[0,1], periodic boundaries, T=0.5 (plot_default)
+    sin_eoc     Sinus:          u(x)=sin(x)+0.5, I=[0,1], periodic boundaries, T=0.5 (eoc_default)
 
 """
 
