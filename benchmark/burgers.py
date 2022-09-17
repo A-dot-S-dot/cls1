@@ -1,5 +1,6 @@
 from mesh import Interval
-from numpy import pi, sin
+from numpy import cos, pi, sin
+from scipy.optimize import newton
 
 from .abstract import Benchmark
 
@@ -10,3 +11,9 @@ class BurgersBenchmark(Benchmark):
 
     def initial_data(self, x: float) -> float:
         return sin(2 * pi * x)
+
+    def exact_solution(self, x: float, t: float) -> float:
+        func = lambda u: sin(2 * pi * (x - u * t)) - u
+        fprime = lambda u: -2 * pi * t * cos(2 * pi * (x - u * t)) - 1
+
+        return newton(func, 0.5 - sin(x), fprime=fprime)
