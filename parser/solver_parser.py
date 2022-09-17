@@ -26,6 +26,7 @@ class CGParser(ArgumentParser):
         self.add_argument(
             "++exact-flux", action="store_true", help="calculate flux matrices exactly"
         )
+        self.add_argument("++label", type=str, help="label for ploting")
 
 
 SOLVER_PARSER = {"cg": CGParser()}

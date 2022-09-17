@@ -4,8 +4,4 @@
 * TODO Target Flux
 * TODO Limited Target Flux
 * TODO MCL Limiter
-* TODO [#C] add stabilization tests
-* TODO [#C] test stabilizations
-* TODO add DOFVector [0/2]
-- [ ] contains element_space
-- [ ] methods like create FiniteElement or get some indices
+* TODO fix burgers solution...

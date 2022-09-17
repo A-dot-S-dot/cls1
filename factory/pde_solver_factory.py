@@ -133,7 +133,10 @@ class ContinuousGalerkinSolverFactory(PDESolverFactory):
 
     @property
     def plot_label(self) -> str:
-        return f"$u_h(\cdot, {self._solver.time:.1f})$ (cg, $p={self.attributes.polynomial_degree}$)"
+        if self.attributes.label is not None:
+            return self.attributes.label
+        else:
+            return f"$u_h(\cdot, {self._solver.time:.1f})$ (cg, $p={self.attributes.polynomial_degree}$)"
 
     @property
     def tqdm_kwargs(self) -> Dict:
