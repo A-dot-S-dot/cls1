@@ -13,28 +13,26 @@ from .task import Task
 
 class FunctionPlotter:
     _grid: np.ndarray
-    _title: str
     _suptitle: str
 
-    def __init__(self, interval: Interval):
-        self._grid = np.linspace(interval.a, interval.b)
+    def set_grid(self, interval: Interval, dof_number: int = 0):
+        grid_number = max(500, dof_number * 2)
+        self._grid = np.linspace(interval.a, interval.b, grid_number)
 
     @property
     def title(self) -> str:
-        return self._title
+        ...
 
     @title.setter
     def title(self, title: str):
-        self._title = title
         plt.title(title)
 
     @property
     def suptitle(self) -> str:
-        return self._suptitle
+        ...
 
     @suptitle.setter
     def suptitle(self, suptitle: str):
-        self._suptitle = suptitle
         plt.suptitle(suptitle, fontsize=14, fontweight="bold")
 
     def add_function(self, function: FunctionRealToReal, function_label: str):
@@ -69,9 +67,26 @@ class PlotTask(Task):
         mesh = self._components.mesh
         benchmark = self._components.benchmark
 
-        self._plotter = FunctionPlotter(mesh.domain)
+        self._build_plotter()
         self._end_time = benchmark.end_time
         self._time_steps_number = len(mesh) * args.courant_factor
+
+    def _build_plotter(self):
+        self._plotter = FunctionPlotter()
+
+        domain = self._components.benchmark.domain
+        dofs_number = self._get_maximal_polynomial_degree() * self._args.elements_number
+
+        self._plotter.set_grid(domain, dofs_number)
+
+    def _get_maximal_polynomial_degree(self) -> int:
+        maximal_polynomial_degree = 0
+        for solver_args in self._args.solver:
+            maximal_polynomial_degree = max(
+                solver_args.polynomial_degree, maximal_polynomial_degree
+            )
+
+        return maximal_polynomial_degree
 
     def execute(self):
         self._add_functions()
