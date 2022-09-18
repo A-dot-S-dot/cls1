@@ -18,7 +18,7 @@ class AdvectionBenchmarkFactory(BenchmarkFactory):
     @property
     def benchmark(self) -> Benchmark:
         if self.benchmark_name in ["rect", "plot_default"]:
-            benchmark = AdvectionPlotBenchmark1()
+            benchmark = AdvectionPlotBenchmark()
         elif self.benchmark_name in ["cos", "eoc_default"]:
             benchmark = AdvectionEOCBenchmark1()
         elif self.benchmark_name in ["gauss"]:
