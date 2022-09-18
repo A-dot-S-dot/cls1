@@ -17,11 +17,11 @@ class BenchmarkFactory(ABC):
 class AdvectionBenchmarkFactory(BenchmarkFactory):
     @property
     def benchmark(self) -> Benchmark:
-        if self.benchmark_name in ["rect", "plot_default"]:
+        if self.benchmark_name in ["1", "plot_default"]:
             benchmark = AdvectionPlotBenchmark()
-        elif self.benchmark_name in ["cos", "eoc_default"]:
+        elif self.benchmark_name in ["2", "eoc_default"]:
             benchmark = AdvectionEOCBenchmark1()
-        elif self.benchmark_name in ["gauss"]:
+        elif self.benchmark_name in ["3"]:
             benchmark = AdvectionEOCBenchmark2()
         else:
             raise ValueError(
@@ -37,9 +37,9 @@ class AdvectionBenchmarkFactory(BenchmarkFactory):
 class BurgersBenchmarkFactory(BenchmarkFactory):
     @property
     def benchmark(self) -> Benchmark:
-        if self.benchmark_name in ["plot_sin", "plot_default"]:
+        if self.benchmark_name in ["1", "plot_default"]:
             benchmark = BurgersPlotBenchmark()
-        elif self.benchmark_name in ["eoc_sin", "eoc_default"]:
+        elif self.benchmark_name in ["2", "eoc_default"]:
             benchmark = BurgersEOCBenchmark()
         else:
             raise ValueError(f"no burgers benchmark for {self.benchmark_name} defined")
