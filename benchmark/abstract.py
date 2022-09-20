@@ -5,6 +5,7 @@ import numpy as np
 
 
 class Benchmark(ABC):
+    start_time: float
     end_time: float
 
     _domain: Interval

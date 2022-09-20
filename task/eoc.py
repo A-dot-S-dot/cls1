@@ -20,9 +20,8 @@ from .task import Task
 
 class EOCCalculator:
     mesh: Mesh
-    solver_factory: PDESolverFactory
     benchmark: Benchmark
-    courant_factor: int
+    solver_factory: PDESolverFactory
 
     _norm: Tuple[Norm, ...]
     _end_time: float
@@ -30,8 +29,6 @@ class EOCCalculator:
 
     def add_norm(self, *norm: Norm):
         self._norm = norm
-        self._end_time = self.benchmark.end_time
-        self._time_steps_number = len(self.mesh) * self.courant_factor
 
     def eoc(self, refine_number: int) -> np.ndarray:
         data_frame = np.empty((refine_number + 1, 9))
@@ -60,10 +57,7 @@ class EOCCalculator:
 
     def _calculate_discrete_solution(self) -> FunctionRealToReal:
         solver = self.solver_factory.solver
-        solver.solve(
-            self._end_time,
-            self._time_steps_number,
-        )
+        solver.solve()
 
         return self.solver_factory.discrete_solution
 
@@ -72,7 +66,6 @@ class EOCCalculator:
     ) -> float:
         exact_solution = self.benchmark.exact_solution_at_end_time
         function = lambda x: discrete_solution(x) - exact_solution(x)
-        error = norm(function)
 
         return norm(function)
 
@@ -89,7 +82,6 @@ class EOCCalculator:
     def _refine_mesh(self):
         self.mesh = self.mesh.refine()
         self.solver_factory.mesh = self.mesh
-        self._time_steps_number = len(self.mesh) * self.courant_factor
 
         for norm in self._norm:
             norm.set_mesh(self.mesh)
@@ -99,20 +91,14 @@ class EOCTask(Task):
     _components: SolverComponents
     _args: Namespace
     _benchmark: Benchmark
-    _target_time: float
-    _time_steps_number: int
     _solver_factories: Sequence[PDESolverFactory]
 
     def __init__(self, args: Namespace):
         self._args = args
 
         self._components = SolverComponents(args)
-        mesh = self._components.mesh
         self._benchmark = self._components.benchmark
-
         self._solver_factories = self._components.solver_factories
-        self._target_time = self._benchmark.end_time
-        self._time_steps_number = len(mesh) * args.courant_factor
 
     def execute(self):
         if not self._benchmark.has_exact_solution():
@@ -160,7 +146,6 @@ class EOCTask(Task):
         raw_eoc.mesh = mesh
         raw_eoc.solver_factory = solver_factory
         raw_eoc.benchmark = self._components.benchmark
-        raw_eoc.courant_factor = self._args.courant_factor
 
         l2_norm = L2Norm(mesh, solver_factory.cell_quadrature_degree)
         l1_norm = L1Norm(mesh, solver_factory.cell_quadrature_degree)

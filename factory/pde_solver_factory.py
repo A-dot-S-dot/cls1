@@ -8,6 +8,7 @@ from math_type import FunctionRealToReal
 from mesh import Mesh
 from pde_solver.cg_solver import ContinuousGalerkinSolver
 from pde_solver.solver import PDESolver
+from pde_solver.time_stepping import SpatialMeshDependendetTimeStepping
 from system.matrix.discrete_gradient import DiscreteGradient
 from system.matrix.mass import MassMatrix
 from system.vector.dof_vector import DOFVector
@@ -20,6 +21,8 @@ class PDESolverFactory(ABC):
     problem_name: str
     mesh: Mesh
     initial_data: FunctionRealToReal
+    start_time: float
+    end_time: float
 
     _solver: PDESolver
     _element_space: FiniteElementSpace
@@ -36,6 +39,7 @@ class PDESolverFactory(ABC):
         self._create_element_space()
         self._create_dofs()
         self._create_system_objects()
+        self._create_time_stepping()
         self._create_ode_solver()
         self._create_tqdm_kwargs()
 
@@ -55,6 +59,10 @@ class PDESolverFactory(ABC):
 
     @abstractmethod
     def _create_system_objects(self):
+        ...
+
+    @abstractmethod
+    def _create_time_stepping(self):
         ...
 
     @abstractmethod
@@ -124,6 +132,11 @@ class ContinuousGalerkinSolverFactory(PDESolverFactory):
             self._dof_vector, discrete_gradient
         )
         self._solver.flux_gradient = flux_gradient
+
+    def _create_time_stepping(self):
+        self._solver.time_stepping = SpatialMeshDependendetTimeStepping(
+            self.start_time, self.end_time, self.mesh, self.attributes.cfl_number
+        )
 
     def _create_ode_solver(self):
         ode_solver = self.ode_solver_factory.get_optimal_ode_solver(

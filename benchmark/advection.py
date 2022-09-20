@@ -5,6 +5,7 @@ from .abstract import Benchmark
 
 
 class AdvectionBenchmark(Benchmark):
+    start_time = 0
     end_time = 1
 
     _domain = Interval(0, 1)

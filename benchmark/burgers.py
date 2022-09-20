@@ -1,5 +1,5 @@
 from mesh import Interval
-from numpy import cos, nan, pi, sin
+from numpy import cos, pi, sin
 from scipy.optimize import newton
 
 from .abstract import Benchmark
@@ -7,6 +7,7 @@ from warnings import warn
 
 
 class BurgersBenchmark(Benchmark):
+    start_time = 0
     end_time = 0.5
 
     _critical_time: float

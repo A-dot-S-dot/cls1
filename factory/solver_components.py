@@ -49,6 +49,8 @@ class SolverComponents:
         solver_factory.problem_name = self._args.problem
         solver_factory.mesh = self.mesh
         solver_factory.initial_data = self.benchmark.initial_data
+        solver_factory.start_time = self.benchmark.start_time
+        solver_factory.end_time = self.benchmark.end_time
 
         return solver_factory
 

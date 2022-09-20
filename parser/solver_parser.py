@@ -27,6 +27,14 @@ class CGParser(ArgumentParser):
             "++exact-flux", action="store_true", help="calculate flux matrices exactly"
         )
         self.add_argument("++label", type=str, help="label for ploting")
+        self.add_argument(
+            "++cfl",
+            help="specify the cfl number for time stepping",
+            type=parser_type.positive_float,
+            metavar="number",
+            dest="cfl_number",
+            default=CFL_NUMBER,
+        )
 
 
 SOLVER_PARSER = {"cg": CGParser()}

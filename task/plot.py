@@ -2,6 +2,7 @@ from argparse import Namespace
 
 import matplotlib.pyplot as plt
 import numpy as np
+from benchmark import Benchmark
 from factory.pde_solver_factory import PDESolverFactory
 from factory.solver_components import SolverComponents
 from math_type import FunctionRealToReal
@@ -16,6 +17,7 @@ class FunctionPlotter:
     _suptitle: str
 
     def set_grid(self, interval: Interval, dof_number: int = 0):
+
         grid_number = max(500, dof_number * 2)
         self._grid = np.linspace(interval.a, interval.b, grid_number)
 
@@ -57,24 +59,19 @@ class FunctionPlotter:
 class PlotTask(Task):
     _args: Namespace
     _components: SolverComponents
+    _benchmark: Benchmark
     _plotter: FunctionPlotter
-    _end_time: float
-    _time_steps_number: int
 
     def __init__(self, args: Namespace):
         self._args = args
         self._components = SolverComponents(args)
-        mesh = self._components.mesh
-        benchmark = self._components.benchmark
-
+        self._benchmark = self._components.benchmark
         self._build_plotter()
-        self._end_time = benchmark.end_time
-        self._time_steps_number = len(mesh) * args.courant_factor
 
     def _build_plotter(self):
         self._plotter = FunctionPlotter()
 
-        domain = self._components.benchmark.domain
+        domain = self._benchmark.domain
         dofs_number = self._get_maximal_polynomial_degree() * self._args.elements_number
 
         self._plotter.set_grid(domain, dofs_number)
@@ -104,7 +101,7 @@ class PlotTask(Task):
         if benchmark.has_exact_solution():
             self._plotter.add_function(
                 benchmark.exact_solution_at_end_time,
-                f"$u(\cdot, {self._end_time:.1f})$",
+                f"$u(\cdot, {self._benchmark.end_time:.1f})$",
             )
         elif len(self._components.solver_factories) == 0:
             raise ValueError("Nothing to plot.")
@@ -120,7 +117,7 @@ class PlotTask(Task):
 
     def _add_discrete_solution(self, solver_factory: PDESolverFactory):
         solver = solver_factory.solver
-        solver.solve(self._end_time, self._time_steps_number)
+        solver.solve()
 
         label = solver_factory.plot_label
 

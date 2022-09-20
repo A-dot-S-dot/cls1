@@ -97,7 +97,6 @@ class ArgumentParserFEM1D:
             nargs="*",
             action=SolverAction,
         )
-        self._add_mesh_arguments(plot_parser)
         self._add_profile_argument(plot_parser)
 
     def _add_problem_argument(self, parser, default_benchmark: str):
@@ -112,17 +111,7 @@ class ArgumentParserFEM1D:
             default=default_benchmark,
             help="benchmark for conservation law",
         )
-
-    def _add_mesh_arguments(self, parser):
-        mesh_argument_group = parser.add_argument_group("mesh arguments")
-        mesh_argument_group.add_argument(
-            "--courant-factor",
-            help="specify the factor for the number of time steps depending on the number of simplices in the used mesh",
-            type=parser_type.positive_int,
-            metavar="factor",
-            default=COURANT_FACTOR,
-        )
-        mesh_argument_group.add_argument(
+        parser.add_argument(
             "-T",
             "--end-time",
             type=parser_type.positive_float,
@@ -173,7 +162,6 @@ class ArgumentParserFEM1D:
             nargs="+",
             action=SolverAction,
         )
-        self._add_mesh_arguments(eoc_parser)
         self._add_profile_argument(eoc_parser)
 
     def parse_args(self) -> argparse.Namespace:
