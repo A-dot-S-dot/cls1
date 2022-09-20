@@ -119,4 +119,4 @@ class ApproximatedFluxGradient(SystemVector):
         flux_approximation.register_observer(self)
 
     def assemble(self):
-        self._values = self._discrete_gradient.dot(self._flux_approximation.dofs)
+        self._values = -self._discrete_gradient.dot(self._flux_approximation.dofs)

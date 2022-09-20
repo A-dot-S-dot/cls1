@@ -83,7 +83,7 @@ class TestApproximatedFluxGradient(TestCase):
         )
         for dofs in test_dofs:
             self.dof_vector.dofs = dofs
-            expected_advection = expected_gradient.dot(dofs)
+            expected_advection = -expected_gradient.dot(dofs)
 
             for i in range(len(dofs)):
                 self.assertAlmostEqual(
@@ -96,8 +96,8 @@ class TestApproximatedFluxGradient(TestCase):
         burgers = ApproximatedFluxGradient(flux_approximation, self.discrete_gradient)
         test_dofs = [np.array([1, 0, 0, 0]), np.array([0, 1, 0, 0])]
         expected_approximations = [
-            np.array([0, -1 / 4, 0, 1 / 4]),
-            np.array([1 / 4, 0, -1 / 4, 0]),
+            np.array([0, 1 / 4, 0, -1 / 4]),
+            np.array([-1 / 4, 0, 1 / 4, 0]),
         ]
 
         for dofs, expected_approximation in zip(test_dofs, expected_approximations):
