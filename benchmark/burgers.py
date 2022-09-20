@@ -3,7 +3,7 @@ from numpy import cos, pi, sin
 from scipy.optimize import newton
 
 from .abstract import Benchmark
-from warnings import warn
+from tqdm import tqdm
 
 
 class BurgersBenchmark(Benchmark):
@@ -23,8 +23,8 @@ class BurgersBenchmark(Benchmark):
 
     def has_exact_solution(self) -> bool:
         if self.end_time > self._critical_time + 1e-15:
-            warn(
-                f"End time {self.end_time} after shock formation. No exact solution can be calculated."
+            tqdm.write(
+                f"WARNING: End time {self.end_time} after shock formation. No exact solution can be calculated."
             )
             return False
         else:
