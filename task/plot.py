@@ -87,6 +87,7 @@ class PlotTask(Task):
 
     def execute(self):
         self._add_functions()
+        self._plotter.title = f"{len(self._components.mesh)} elements"
 
         if not self._args.no_plot:
             self._plotter.show()
