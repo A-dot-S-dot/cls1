@@ -77,6 +77,10 @@ class PDESolverFactory(ABC):
         return self.attributes.polynomial_degree + 1
 
     @property
+    def dofs(self) -> int:
+        return len(self._dof_vector.dofs)
+
+    @property
     @abstractmethod
     def plot_label(self) -> str:
         ...
@@ -89,6 +93,11 @@ class PDESolverFactory(ABC):
     @property
     @abstractmethod
     def tqdm_kwargs(self) -> Dict:
+        ...
+
+    @property
+    @abstractmethod
+    def info(self) -> str:
         ...
 
     @property
@@ -149,7 +158,7 @@ class ContinuousGalerkinSolverFactory(PDESolverFactory):
         if self.attributes.label is not None:
             return self.attributes.label
         else:
-            return f"$u_h(\cdot, {self._solver.time:.1f})$ (cg, $p={self.attributes.polynomial_degree}$)"
+            return "cg"
 
     @property
     def tqdm_kwargs(self) -> Dict:
@@ -158,7 +167,9 @@ class ContinuousGalerkinSolverFactory(PDESolverFactory):
             "leave": False,
             "postfix": {
                 "p": self.attributes.polynomial_degree,
-                "DOFs": len(self._dof_vector.dofs),
+                "exact_flux": int(self.attributes.exact_flux),
+                "cfl_number": self.attributes.cfl_number,
+                "DOFs": self.dofs,
             },
         }
 
@@ -166,5 +177,9 @@ class ContinuousGalerkinSolverFactory(PDESolverFactory):
 
     @property
     def eoc_title(self) -> str:
-        title = f"Continuous Galerkin (p={self.attributes.polynomial_degree})"
+        title = self.info
         return title + "\n" + "-" * len(title)
+
+    @property
+    def info(self) -> str:
+        return f"CG (p={self.attributes.polynomial_degree}, exact_flux={int(self.attributes.exact_flux)}, cfl={self.attributes.cfl_number})"

@@ -111,6 +111,7 @@ class PlotTask(Task):
             self._components.solver_factories,
             desc="Calculate solutions",
             unit="solver",
+            position=0,
             leave=False,
         ):
             self._add_discrete_solution(solver_factory)
@@ -120,5 +121,8 @@ class PlotTask(Task):
         solver.solve()
 
         label = solver_factory.plot_label
+        tqdm.write(
+            f"Solved {solver_factory.info} with {solver_factory.dofs} DOFs and {solver.time_steps} time steps."
+        )
 
         self._plotter.add_function(solver_factory.discrete_solution, label)

@@ -13,6 +13,7 @@ class PDESolver(ABC):
     tqdm_kwargs: Dict
 
     _time: float
+    _time_steps: int
     _time_stepping: TimeStepping
     _ode_solver: ExplicitRungeKuttaMethod
 
@@ -25,6 +26,10 @@ class PDESolver(ABC):
         return self._time
 
     @property
+    def time_steps(self) -> int:
+        return self._time_steps
+
+    @property
     def time_stepping(self) -> TimeStepping:
         return self._time_stepping
 
@@ -32,6 +37,7 @@ class PDESolver(ABC):
     def time_stepping(self, time_stepping):
         self._time_stepping = time_stepping
         self._time = time_stepping.start_time
+        self._time_steps = 0
 
     @property
     def ode_solver(self) -> ExplicitRungeKuttaMethod:
@@ -52,6 +58,7 @@ class PDESolver(ABC):
 
     def update(self, delta_t: float):
         self._time += delta_t
+        self._time_steps += 1
         self.ode_solver.execute_step(delta_t)
 
     def solve(self):
