@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 from benchmark import Benchmark
 from factory import PDESolverFactory
-from factory.solver_components import SolverComponents
 from math_type import FunctionRealToReal
 from mesh import Mesh
+from pde_solver.solver_components import SolverComponents
 from quadrature.norm import L1Norm, L2Norm, LInfinityNorm, Norm
 from tqdm import tqdm, trange
 

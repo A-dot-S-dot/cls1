@@ -14,7 +14,8 @@ class SolverComponents:
     _benchmark: Benchmark
     _mesh: UniformMesh
     _ode_solver_factory = ODESolverFactory()
-    _flux_gradient_factory = FluxGradientFactory()
+    _flux_factory = FluxFactory()
+    _artificial_diffusion_factory = ArtificialDiffusionFactory()
 
     def __init__(self, args: Namespace):
         self._args = args
@@ -38,12 +39,7 @@ class SolverComponents:
             self._solver_factories.append(self._build_solver_factory(solver_args))
 
     def _build_solver_factory(self, solver_args: Namespace) -> PDESolverFactory:
-        if solver_args.solver == "cg":
-            solver_factory = ContinuousGalerkinSolverFactory()
-            solver_factory.flux_gradient_factory = self._flux_gradient_factory
-            solver_factory.ode_solver_factory = self._ode_solver_factory
-        else:
-            raise NotImplementedError
+        solver_factory = self._get_solver_factory(solver_args.solver)
 
         solver_factory.attributes = solver_args
         solver_factory.problem_name = self._args.problem
@@ -51,6 +47,23 @@ class SolverComponents:
         solver_factory.initial_data = self.benchmark.initial_data
         solver_factory.start_time = self.benchmark.start_time
         solver_factory.end_time = self.benchmark.end_time
+
+        return solver_factory
+
+    def _get_solver_factory(self, solver_name: str) -> PDESolverFactory:
+        if solver_name == "cg":
+            solver_factory = ContinuousGalerkinSolverFactory()
+            solver_factory.flux_factory = self._flux_factory
+            solver_factory.ode_solver_factory = self._ode_solver_factory
+        elif solver_name == "cg_low":
+            solver_factory = LowOrderCGFactory()
+            solver_factory.flux_factory = self._flux_factory
+            solver_factory.ode_solver_factory = self._ode_solver_factory
+            solver_factory.artificial_diffusion_factory = (
+                self._artificial_diffusion_factory
+            )
+        else:
+            raise NotImplementedError
 
         return solver_factory
 

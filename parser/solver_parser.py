@@ -15,6 +15,12 @@ class CGParser(ArgumentParser):
             formatter_class=ArgumentDefaultsHelpFormatter,
             add_help=False,
         )
+        self._add_polynomial_degree()
+        self._add_exact_flux()
+        self._add_cfl_number()
+        self._add_label()
+
+    def _add_polynomial_degree(self):
         self.add_argument(
             "+p",
             "++polynomial-degree",
@@ -23,9 +29,13 @@ class CGParser(ArgumentParser):
             type=parser_type.positive_int,
             default=POLYNOMIAL_DEGREE,
         )
+
+    def _add_exact_flux(self):
         self.add_argument(
             "++exact-flux", action="store_true", help="calculate flux matrices exactly"
         )
+
+    def _add_cfl_number(self):
         self.add_argument(
             "++cfl",
             help="specify the cfl number for time stepping",
@@ -34,7 +44,24 @@ class CGParser(ArgumentParser):
             dest="cfl_number",
             default=CFL_NUMBER,
         )
+
+    def _add_label(self):
         self.add_argument("++label", type=str, help="label for ploting")
 
 
-SOLVER_PARSER = {"cg": CGParser()}
+class LowCGParser(CGParser):
+    def __init__(self):
+        ArgumentParser.__init__(
+            self,
+            prog="cg_low",
+            description="Low order Continuous Galerkin Solver",
+            prefix_chars="+",
+            formatter_class=ArgumentDefaultsHelpFormatter,
+            add_help=False,
+        )
+        self._add_polynomial_degree()
+        self._add_cfl_number()
+        self._add_label()
+
+
+SOLVER_PARSER = {"cg": CGParser(), "cg_low": LowCGParser()}

@@ -44,7 +44,7 @@ class SystemVector:
 
 
 class LocallyAssembledSystemVector(SystemVector):
-    """Uses an assembler which assembles with 'local to global' principles."""
+    """Assembles with 'local to global' principles."""
 
     _entry_calculator: SystemVectorEntryCalculator
 

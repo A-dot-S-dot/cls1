@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from benchmark import Benchmark
 from factory.pde_solver_factory import PDESolverFactory
-from factory.solver_components import SolverComponents
 from math_type import FunctionRealToReal
 from mesh import Interval
+from pde_solver.solver_components import SolverComponents
 from tqdm import tqdm
 
 from .task import Task

@@ -1,6 +1,4 @@
 """Provides Lagrange Finite Elements."""
-from typing import Set
-
 import numpy as np
 from math_type import FunctionRealToReal
 from mesh import Interval, Mesh
@@ -29,7 +27,6 @@ class LagrangeFiniteElementSpace(FiniteElementSpace):
         self._affine_transformation = AffineTransformation()
 
         self._build_basis_nodes()
-        self._build_neighbours()
 
     def _build_basis_nodes(self):
         self._basis_nodes = np.empty(self.dimension)
@@ -48,16 +45,6 @@ class LagrangeFiniteElementSpace(FiniteElementSpace):
             self._basis_nodes[0] = self.domain.a
         else:
             raise NotImplementedError
-
-    def _build_neighbours(self):
-        self._neighbours = [set() for _ in range(self.dimension)]
-
-        for simplex_index in range(len(self.mesh)):
-            for local_index_1 in range(self.indices_per_simplex):
-                global_index_1 = self.get_global_index(simplex_index, local_index_1)
-                for local_index_2 in range(self.indices_per_simplex):
-                    global_index_2 = self.get_global_index(simplex_index, local_index_2)
-                    self._neighbours[global_index_1] |= {global_index_2}
 
     @property
     def polynomial_degree(self) -> int:
@@ -89,12 +76,6 @@ class LagrangeFiniteElementSpace(FiniteElementSpace):
 
     def get_global_index(self, simplex_index: int, local_index: int) -> int:
         return self._dof_index_mapping(simplex_index, local_index)
-
-    def get_neighbours(self, dof_index: int) -> Set[int]:
-        return self._neighbours[dof_index]
-
-    def get_real_neighbours(self, dof_index: int) -> Set[int]:
-        return self._neighbours[dof_index] - {dof_index}
 
     def get_value(self, point: float, dof_vector: np.ndarray) -> float:
         simplex_index = self._mesh.find_simplex_indices(point)[0]

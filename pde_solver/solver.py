@@ -1,14 +1,15 @@
-from abc import ABC, abstractmethod
 from typing import Dict
-from tqdm import tqdm
 
 import numpy as np
 from ode_solver.explicit_runge_kutta import ExplicitRungeKuttaMethod
-from system.vector import DOFVector
+from system.vector import DOFVector, SystemVector
+from tqdm import tqdm
+
 from .time_stepping import TimeStepping
 
 
-class PDESolver(ABC):
+class PDESolver:
+    right_hand_side: SystemVector
     discrete_solution_dofs: DOFVector
     tqdm_kwargs: Dict
 
@@ -52,9 +53,11 @@ class PDESolver(ABC):
             lambda dofs: self._ode_right_hand_side_function(dofs)
         )
 
-    @abstractmethod
     def _ode_right_hand_side_function(self, dofs: np.ndarray) -> np.ndarray:
-        ...
+        # update all DOF dependent quantities using observer pattern
+        self.discrete_solution_dofs.dofs = dofs
+
+        return self.right_hand_side.values
 
     def update(self, delta_t: float):
         self._time += delta_t

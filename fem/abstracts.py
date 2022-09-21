@@ -125,14 +125,6 @@ class FiniteElementSpace(ABC):
         ...
 
     @abstractmethod
-    def get_neighbours(self, dof_index: int) -> Set[int]:
-        ...
-
-    @abstractmethod
-    def get_real_neighbours(self, dof_index: int) -> Set[int]:
-        ...
-
-    @abstractmethod
     def get_value(self, point: float, dof_vector: np.ndarray) -> float:
         """Returns
 

@@ -10,7 +10,7 @@ from system.vector.group_finite_element_approximation import (
 )
 
 
-class FluxGradientFactory:
+class FluxFactory:
     problem_name: str
     exact_flux = False
 
@@ -22,8 +22,8 @@ class FluxGradientFactory:
         if self.problem_name == "advection":
             return AdvectionFluxGradient(dof_vector, discrete_gradient)
 
-        elif self.problem_name == "burgers":
-            flux = lambda u: 1 / 2 * u**2
+        else:
+            flux = self.flux
 
             if self.exact_flux:
                 return FluxGradient(
@@ -33,7 +33,11 @@ class FluxGradientFactory:
                 flux_approximation = GroupFiniteElementApproximation(dof_vector, flux)
                 return ApproximatedFluxGradient(flux_approximation, discrete_gradient)
 
+    @property
+    def flux(self):
+        if self.problem_name == "advection":
+            return lambda u: u
+        elif self.problem_name == "burgers":
+            return lambda u: 1 / 2 * u**2
         else:
-            raise NotImplementedError(
-                f"No flux gradient for '{self.problem_name}' implemented."
-            )
+            raise NotImplementedError(f"No flux for '{self.problem_name}' implemented.")
