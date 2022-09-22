@@ -1,4 +1,3 @@
-import numpy as np
 from fem import FiniteElementSpace
 from system.matrix.mass import MassMatrix
 
@@ -19,4 +18,4 @@ class LumpedMassVector(SystemVector):
         self.assemble()
 
     def assemble(self):
-        self[:] = np.sum(self._mass.values.toarray(), axis=1)
+        self[:] = self._mass.values.sum(axis=1).reshape(self.dimension)

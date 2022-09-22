@@ -41,7 +41,7 @@ class TestLinearLowOrderCGRightHandSide(TestCase):
         self.right_hand_side.flux_approximation = self.flux_approximation
         self.right_hand_side.artificial_diffusion = self.artificial_diffusion
 
-    def test_advection_gradient(self):
+    def test_low_cg(self):
         for dofs, expected_result in zip(
             self.test_dofs, self.expected_right_hand_sides
         ):
