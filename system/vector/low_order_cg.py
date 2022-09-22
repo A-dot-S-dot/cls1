@@ -34,26 +34,6 @@ class LowOrderCGRightHandSide(SystemVector):
     def assemble(self):
         self[:] = self.artificial_diffusion.dot(
             self._dof_vector.values
-        ) - self.discrete_gradient.dot(self._dof_vector.values)
+        ) - self.discrete_gradient.dot(self.flux_approximation.values)
 
         self[:] /= self.lumped_mass.values
-
-    def _assemble_entries(self):
-        for element_index in range(len(self.element_space.mesh)):
-            for local_index_1 in range(self.element_space.indices_per_simplex):
-                i = self.element_space.get_global_index(element_index, local_index_1)
-
-                for local_index_2 in range(self.element_space.indices_per_simplex):
-                    j = self.element_space.get_global_index(
-                        element_index, local_index_2
-                    )
-
-                    self._assemble_entry(i, j)
-
-    def _assemble_entry(self, i: int, j: int):
-        self[i] += (
-            self.artificial_diffusion[i, j]
-            * (self._dof_vector[j] - self._dof_vector[i])
-            - (self.flux_approximation[j] - self.flux_approximation[i])
-            * self.discrete_gradient[i, j]
-        )

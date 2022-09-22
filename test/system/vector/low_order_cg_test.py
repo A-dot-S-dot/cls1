@@ -73,8 +73,8 @@ class TestLinearBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide
     flux_approximation = GroupFiniteElementApproximation(
         dof_vector, lambda u: 1 / 2 * u**2
     )
-    test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
-    expected_right_hand_sides = [np.array([-2, 3, 0, -1]), np.array([38, -6, -10, -22])]
+    test_dofs = [np.array([1, 2, 3, 4])]
+    expected_right_hand_sides = [np.array([40, -6, -10, -24])]
 
 
 class TestQuadraticBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
@@ -85,5 +85,5 @@ class TestQuadraticBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandS
     flux_approximation = GroupFiniteElementApproximation(
         dof_vector, lambda u: 1 / 2 * u**2
     )
-    test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
-    expected_right_hand_sides = [np.array([-4, 3, 0, -1]), np.array([76, -6, -20, -22])]
+    test_dofs = [np.array([1, 2, 3, 4])]
+    expected_right_hand_sides = [np.array([80, -6, -20, -24])]
