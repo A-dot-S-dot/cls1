@@ -18,7 +18,7 @@ class MCLRightHandSide(SystemVector):
 
         f*_ij = max(fmin_ij, min(fij, fmax_ij)),
         fmax_ij = min(2*dij*umax_i-wij, wji-2*dji*umin_j),
-        fmin_ij = min(2*dij*umin_i-wij, wji-2*dji*umax_j),
+        fmin_ij = max(2*dij*umin_i-wij, wji-2*dji*umax_j),
         wij = dij*(uj+ui)-(fj-fi)*cij,
         fij = mij*(DuL_i-DuL_j)+dij*(ui-uj) (target flux)
 
