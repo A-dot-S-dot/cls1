@@ -60,49 +60,32 @@ class MCLRightHandSide(SystemVector):
         self._flux_approximation = low_cg.flux_approximation
 
     def assemble(self):
-        corrected_flux = self._build_corrected_flux()
-        self[:] = self._low_cg_right_hand_side.values + corrected_flux
+        self[:] = 0
 
-    def _build_corrected_flux(self) -> spmatrix:
-        target_flux = self._build_target_flux()
-        wij = self._build_wij()
-        fmax = self._build_fmax(wij)
-        fmin = self._build_fmin(wij)
+        for i in range(self.dimension):
+            for j in self.element_space.get_neighbour_indices(i) - {i}:
+                dij = self._artificial_diffusion[i, j]
+                ui = self._dof_vector[i]
+                uj = self._dof_vector[j]
+                fi = self._flux_approximation[i]
+                fj = self._flux_approximation[j]
+                fij = self.mass[i, j] * (
+                    self._low_cg_right_hand_side[i] - self._low_cg_right_hand_side[j]
+                ) + dij * (ui - uj)
+                cij = self._discrete_gradient[i, j]
+                cji = self._discrete_gradient[j, i]
+                wij = dij * (uj + ui) - cij * (fj - fi)
+                wji = dij * (uj + ui) - cji * (fi - fj)
+                fmax_ij = min(
+                    2 * dij * self.local_maximum[i] - wij,
+                    wji - 2 * dij * self.local_minimum[j],
+                )
+                fmin_ij = max(
+                    2 * dij * self.local_minimum[i] - wij,
+                    wji - 2 * dij * self.local_maximum[j],
+                )
+                fstar_ij = max(fmin_ij, min(fmax_ij, fij))
 
-        fstar = fmin.maximum(target_flux.minimum(fmax))
-        fstar = fstar.tolil()
-        fstar.setdiag(0)
+                self[i] += dij * (uj - ui) - (fj - fi) * cij + fstar_ij
 
-        return fstar.tocsr().sum(axis=1).reshape(self.dimension)
-
-    def _build_target_flux(self) -> spmatrix:
-        return (
-            self.mass.multiply_column(self._low_cg_right_hand_side)
-            - self.mass.multiply_row(self._low_cg_right_hand_side)
-            + self._artificial_diffusion.multiply_column(self._dof_vector)
-            - self._artificial_diffusion.multiply_row(self._dof_vector)
-        )
-
-    def _build_wij(self) -> spmatrix:
-        return (
-            self._artificial_diffusion.multiply_column(self._dof_vector)
-            + self._artificial_diffusion.multiply_row(self._dof_vector)
-            - self._discrete_gradient.multiply_row(self._flux_approximation)
-            + self._discrete_gradient.multiply_column(self._flux_approximation)
-        )
-
-    def _build_fmax(self, wij: spmatrix) -> spmatrix:
-        value1 = (
-            2 * self._artificial_diffusion.multiply_column(self.local_maximum) - wij
-        )
-        value2 = wij - 2 * self._artificial_diffusion.multiply_row(self.local_minimum)
-
-        return value1.minimum(value2)
-
-    def _build_fmin(self, wij: spmatrix) -> spmatrix:
-        value1 = (
-            2 * self._artificial_diffusion.multiply_column(self.local_minimum) - wij
-        )
-        value2 = wij - 2 * self._artificial_diffusion.multiply_row(self.local_maximum)
-
-        return value1.maximum(value2)
+        self[:] = self.values / self._lumped_mass.values
