@@ -1,7 +1,10 @@
 from unittest import TestCase
 
 import numpy as np
-from system.matrix.artificial_diffusion import DiscreteUpwind
+from system.matrix.artificial_diffusion import (
+    BurgersArtificialDiffusion,
+    DiscreteUpwind,
+)
 from system.matrix.discrete_gradient import DiscreteGradient
 from system.vector.group_finite_element_approximation import (
     GroupFiniteElementApproximation,
@@ -60,3 +63,27 @@ class TestQuadraticLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
     flux_approximation = GroupFiniteElementApproximation(dof_vector, lambda u: u)
     test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
     expected_right_hand_sides = [np.array([-8, 4, 0, 0]), np.array([24, -4, -8, -4])]
+
+
+class TestLinearBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
+    dof_vector = LINEAR_DOF_VECTOR
+    lumped_mass = LumpedMassVector(LINEAR_LAGRANGE_SPACE)
+    discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
+    artificial_diffusion = BurgersArtificialDiffusion(dof_vector, discrete_gradient)
+    flux_approximation = GroupFiniteElementApproximation(
+        dof_vector, lambda u: 1 / 2 * u**2
+    )
+    test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
+    expected_right_hand_sides = [np.array([-2, 3, 0, -1]), np.array([38, -6, -10, -22])]
+
+
+class TestQuadraticBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
+    dof_vector = QUADRATIC_DOF_VECTOR
+    lumped_mass = LumpedMassVector(QUADRATIC_LAGRANGE_SPACE)
+    discrete_gradient = DiscreteGradient(QUADRATIC_LAGRANGE_SPACE)
+    artificial_diffusion = BurgersArtificialDiffusion(dof_vector, discrete_gradient)
+    flux_approximation = GroupFiniteElementApproximation(
+        dof_vector, lambda u: 1 / 2 * u**2
+    )
+    test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
+    expected_right_hand_sides = [np.array([-4, 3, 0, -1]), np.array([76, -6, -20, -22])]
