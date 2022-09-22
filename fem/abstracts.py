@@ -125,6 +125,10 @@ class FiniteElementSpace(ABC):
         ...
 
     @abstractmethod
+    def get_neighbour_indices(self, index: int) -> Sequence[int]:
+        ...
+
+    @abstractmethod
     def get_value(self, point: float, dof_vector: np.ndarray) -> float:
         """Returns
 
