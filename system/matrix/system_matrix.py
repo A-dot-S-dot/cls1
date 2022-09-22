@@ -65,7 +65,7 @@ class SystemMatrix:
     def __sub__(self, other):
         return self._csr_values - other._csr_values
 
-    def dot(self, vector: np.ndarray) -> np.ndarray:
+    def dot(self, vector: np.ndarray):
         return self._csr_values.dot(vector)
 
 

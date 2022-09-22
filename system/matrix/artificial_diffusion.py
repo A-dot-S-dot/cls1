@@ -37,6 +37,8 @@ class DiscreteUpwind(SystemMatrix):
                     if j > i:
                         self._set_entry(i, j)
 
+        self.update_values()
+
     def _set_entry(self, i: int, j: int):
         entry = self._get_entry(i, j)
 

@@ -1,7 +1,6 @@
 from system.matrix.system_matrix import SystemMatrix
 
 from .dof_vector import DOFVector
-from .group_finite_element_approximation import GroupFiniteElementApproximation
 from .system_vector import SystemVector
 
 
@@ -33,8 +32,9 @@ class LowOrderCGRightHandSide(SystemVector):
         self._dof_vector = dof_vector
 
     def assemble(self):
-        self[:] = 0
-        self._assemble_entries()
+        self[:] = self.artificial_diffusion.dot(
+            self._dof_vector.values
+        ) - self.discrete_gradient.dot(self._dof_vector.values)
 
         self[:] /= self.lumped_mass.values
 
