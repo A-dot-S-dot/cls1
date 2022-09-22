@@ -69,6 +69,20 @@ class SystemMatrix:
     def dot(self, vector: SystemVector):
         return self._csr_values.dot(vector.values)
 
+    def multiply_row(self, vector: SystemVector) -> spmatrix:
+        """Multiply each row of matrix with VECTOR elementwise. To be more
+        precise we get mij*vj.
+
+        """
+        return self.values.multiply(vector.values)
+
+    def multiply_column(self, vector: SystemVector) -> spmatrix:
+        """Multiply each row of matrix with VECTOR elementwise. To be more
+        precise we get mij*vi.
+
+        """
+        return self.values.multiply(vector.values.reshape((vector.dimension, 1)))
+
 
 class LocallyAssembledSystemMatrix(SystemMatrix):
     """The matrix is filled using from local to global principles.
