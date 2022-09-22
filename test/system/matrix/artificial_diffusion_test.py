@@ -44,9 +44,9 @@ class TestLinearBurgersArtificialDiffusion(TestCase):
     dof_vector = LINEAR_DOF_VECTOR
     discrete_gradient = DiscreteGradient(dof_vector.element_space)
     burgers_diffusion = BurgersArtificialDiffusion(dof_vector, discrete_gradient)
-    test_dofs = np.array([1, 1, 1, 1])
+    test_dofs = np.array([1, 2, 3, 4])
     expected_burgers_diffusion = (
-        1 / 2 * np.array([[-2, 1, 0, 1], [1, -2, 1, 0], [0, 1, -2, 1], [1, 0, 1, -2]])
+        1 / 2 * np.array([[-6, 2, 0, 4], [2, -5, 3, 0], [0, 3, -7, 4], [4, 0, 4, -8]])
     )
 
     def test_entries(self):
@@ -64,5 +64,5 @@ class TestQuadraticBurgersArtificialDiffusion(TestLinearBurgersArtificialDiffusi
     discrete_gradient = DiscreteGradient(dof_vector.element_space)
     burgers_diffusion = BurgersArtificialDiffusion(dof_vector, discrete_gradient)
     expected_burgers_diffusion = (
-        1 / 3 * np.array([[-4, 2, 0, 2], [2, -4, 2, 0], [0, 2, -4, 2], [2, 0, 2, -4]])
+        2 / 3 * np.array([[-6, 2, 0, 4], [2, -5, 3, 0], [0, 3, -7, 4], [4, 0, 4, -8]])
     )

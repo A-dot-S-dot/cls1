@@ -23,29 +23,12 @@ class DiscreteUpwind(SystemMatrix):
         self.assemble()
 
     def assemble(self):
-        # Since the matrix is symmetric it is sufficient to calculate the
-        # entries for j<=i. But the entry (i,i) depends on all entries (i,j)
-        # with j!=i. Therefore, we iterate over j<i.
-        for simplex_index in range(len(self.element_space.mesh)):
-            for local_index_1 in range(self.element_space.indices_per_simplex):
-                i = self.element_space.get_global_index(simplex_index, local_index_1)
-                for local_index_2 in range(self.element_space.indices_per_simplex):
-                    j = self.element_space.get_global_index(
-                        simplex_index, local_index_2
-                    )
+        values = abs(self._discrete_gradient.values)
+        diagonal = -values.sum(axis=1)
+        self._lil_values = values.tolil()
+        self._lil_values.setdiag(diagonal)
 
-                    if j > i:
-                        self._set_entry(i, j)
-
-    def _set_entry(self, i: int, j: int):
-        entry = self._get_entry(i, j)
-
-        self[i, j] = self[j, i] = entry
-        self[i, i] -= entry
-        self[j, j] -= entry
-
-    def _get_entry(self, i: int, j: int) -> float:
-        return max(self._discrete_gradient[i, j], self._discrete_gradient[j, i])
+        self.update_values()
 
 
 class BurgersArtificialDiffusion(DiscreteUpwind):
@@ -53,7 +36,7 @@ class BurgersArtificialDiffusion(DiscreteUpwind):
 
     Exact definition is
 
-        d_ij = max(uj*a_ij, ui*a_ji) if i!=j,
+        d_ij = max(abs(uj*a_ij), abs(ui*a_ji)) if i!=j,
         d_ii = - sum(d_ik, k!=i),
 
     where (ui) denotes the DOFs and a_ij the discrete gradient.
@@ -75,8 +58,15 @@ class BurgersArtificialDiffusion(DiscreteUpwind):
 
         dof_vector.register_observer(self)
 
-    def _get_entry(self, i: int, j: int) -> float:
-        return max(
-            self._dof_vector[i] * self._discrete_gradient[i, j],
-            self._dof_vector[j] * self._discrete_gradient[j, i],
-        )
+    def assemble(self):
+        values = self._discrete_gradient.values
+        values = values.multiply(
+            self._dof_vector.values
+        )  # mulitply dof vector on each row
+        values = abs(values)  # consider absolute values
+        values = values.maximum(values.transpose())  # symmetrize
+        diagonal = -values.sum(axis=1)  # calculate diagonal
+        self._lil_values = values.tolil()
+        self._lil_values.setdiag(diagonal)
+
+        self.update_values()

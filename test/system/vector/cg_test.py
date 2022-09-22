@@ -4,11 +4,7 @@ import numpy as np
 from system.matrix.discrete_gradient import DiscreteGradient
 from system.matrix.mass import MassMatrix
 from system.vector.cg import CGRightHandSide
-from system.vector.flux_gradient import (
-    AdvectionFluxGradient,
-    ApproximatedFluxGradient,
-    FluxGradient,
-)
+from system.vector.flux_gradient import AdvectionFluxGradient, ApproximatedFluxGradient
 from system.vector.group_finite_element_approximation import (
     GroupFiniteElementApproximation,
 )
