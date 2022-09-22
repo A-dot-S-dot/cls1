@@ -3,7 +3,7 @@ from system.matrix.artificial_diffusion import (
     BurgersArtificialDiffusion,
     DiscreteUpwind,
 )
-from system.vector import DOFVector
+from system.vector.dof_vector import DOFVector
 
 
 class ArtificialDiffusionFactory:

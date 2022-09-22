@@ -1,5 +1,4 @@
-import numpy as np
-from system.vector import DOFVector
+from system.vector.dof_vector import DOFVector
 
 from .system_matrix import SystemMatrix
 

@@ -11,8 +11,9 @@ from pde_solver.time_stepping import SpatialMeshDependendetTimeStepping
 from system.matrix import SystemMatrix
 from system.matrix.discrete_gradient import DiscreteGradient
 from system.matrix.mass import MassMatrix
-from system.vector import DOFVector, SystemVector
+from system.vector import SystemVector
 from system.vector.cg import CGRightHandSide
+from system.vector.dof_vector import DOFVector
 from system.vector.group_finite_element_approximation import (
     GroupFiniteElementApproximation,
 )

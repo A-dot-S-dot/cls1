@@ -5,6 +5,7 @@ from scipy.sparse import csr_matrix, lil_matrix, spmatrix
 from scipy.sparse.linalg import SuperLU, splu, spsolve
 
 from .entry_calculator import SystemMatrixEntryCalculator
+from system.vector import SystemVector
 
 
 class SystemMatrix:
@@ -65,8 +66,8 @@ class SystemMatrix:
     def __sub__(self, other):
         return self._csr_values - other._csr_values
 
-    def dot(self, vector: np.ndarray):
-        return self._csr_values.dot(vector)
+    def dot(self, vector: SystemVector):
+        return self._csr_values.dot(vector.values)
 
 
 class LocallyAssembledSystemMatrix(SystemMatrix):

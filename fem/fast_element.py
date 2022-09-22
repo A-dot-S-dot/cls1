@@ -6,7 +6,7 @@ from math_type import FunctionRealToReal
 from mesh import Mesh
 from mesh.transformation import AffineTransformation
 from quadrature.local import LocalElementQuadrature
-from system.vector import DOFVector
+from system.vector.dof_vector import DOFVector
 
 from .abstracts import FiniteElementSpace, LocalFiniteElement
 

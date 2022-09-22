@@ -93,7 +93,7 @@ class AdvectionFluxGradient(SystemVector):
         dof_vector.register_observer(self)
 
     def assemble(self):
-        self[:] = self._discrete_gradient.dot(self._dof_vector.values)
+        self[:] = self._discrete_gradient.dot(self._dof_vector)
 
 
 class ApproximatedFluxGradient(SystemVector):
@@ -119,4 +119,4 @@ class ApproximatedFluxGradient(SystemVector):
         flux_approximation.register_observer(self)
 
     def assemble(self):
-        self._values = -self._discrete_gradient.dot(self._flux_approximation.dofs)
+        self._values = -self._discrete_gradient.dot(self._flux_approximation)

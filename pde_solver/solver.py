@@ -2,7 +2,8 @@ from typing import Dict
 
 import numpy as np
 from ode_solver.explicit_runge_kutta import ExplicitRungeKuttaMethod
-from system.vector import DOFVector, SystemVector
+from system.vector import SystemVector
+from system.vector.dof_vector import DOFVector
 from tqdm import tqdm
 
 from .time_stepping import TimeStepping

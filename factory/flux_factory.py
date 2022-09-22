@@ -1,5 +1,6 @@
 from system.matrix import SystemMatrix
-from system.vector import DOFVector, SystemVector
+from system.vector import SystemVector
+from system.vector.dof_vector import DOFVector
 from system.vector.flux_gradient import (
     AdvectionFluxGradient,
     ApproximatedFluxGradient,

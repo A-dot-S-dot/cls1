@@ -33,7 +33,7 @@ class LowOrderCGRightHandSide(SystemVector):
 
     def assemble(self):
         self[:] = self.artificial_diffusion.dot(
-            self._dof_vector.values
-        ) - self.discrete_gradient.dot(self.flux_approximation.values)
+            self._dof_vector
+        ) - self.discrete_gradient.dot(self.flux_approximation)
 
         self[:] /= self.lumped_mass.values
