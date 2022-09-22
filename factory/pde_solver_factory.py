@@ -17,8 +17,10 @@ from system.vector.dof_vector import DOFVector
 from system.vector.group_finite_element_approximation import (
     GroupFiniteElementApproximation,
 )
+from system.vector.local_bounds import LocalMaximum, LocalMinimum
 from system.vector.low_order_cg import LowOrderCGRightHandSide
 from system.vector.lumped_mass import LumpedMassVector
+from system.vector.mcl import MCLRightHandSide
 
 from .artificial_diffusion_factory import ArtificialDiffusionFactory
 from .flux_factory import FluxFactory
@@ -278,3 +280,108 @@ class LowOrderCGFactory(PDESolverFactory):
     @property
     def info(self) -> str:
         return f"Low CG (p={self.attributes.polynomial_degree}, cfl={self.attributes.cfl_number})"
+
+
+class MCLSolverFactory(PDESolverFactory):
+    ode_solver_factory: ODESolverFactory
+    flux_factory: FluxFactory
+    artificial_diffusion_factory: ArtificialDiffusionFactory
+
+    _problem_name: str
+
+    @property
+    def problem_name(self) -> str:
+        return self._problem_name
+
+    @problem_name.setter
+    def problem_name(self, problem_name: str):
+        self._problem_name = problem_name
+        self.flux_factory.problem_name = problem_name
+        self.artificial_diffusion_factory.problem_name = problem_name
+
+    def _create_right_hand_side(self):
+        # must be created first such that this quantities updated first if DOF change
+        mass = self._create_mass()
+        local_maximum = self._create_local_maximum()
+        local_minimum = self._create_local_minimum()
+        lumped_mass = self._create_lumped_mass()
+        artificial_diffusion = self._create_diffusion()
+        discrete_gradient = self._create_discrete_gradient()
+        flux_approximation = self._create_flux_approximation()
+
+        low_cg = LowOrderCGRightHandSide(self._dof_vector)
+        low_cg.lumped_mass = lumped_mass
+        low_cg.artificial_diffusion = artificial_diffusion
+        low_cg.discrete_gradient = discrete_gradient
+        low_cg.flux_approximation = flux_approximation
+
+        right_hand_side = MCLRightHandSide(self._dof_vector)
+        right_hand_side.mass = mass
+        right_hand_side.local_maximum = local_maximum
+        right_hand_side.local_minimum = local_minimum
+        right_hand_side.low_cg_right_hand_side = low_cg
+
+        self._solver.right_hand_side = right_hand_side
+
+    def _create_mass(self) -> SystemMatrix:
+        return MassMatrix(self._element_space)
+
+    def _create_lumped_mass(self) -> SystemVector:
+        return LumpedMassVector(self._element_space)
+
+    def _create_diffusion(self) -> SystemMatrix:
+        discrete_gradient = DiscreteGradient(self._element_space)
+        return self.artificial_diffusion_factory.get_artificial_diffusion(
+            self._dof_vector, discrete_gradient
+        )
+
+    def _create_discrete_gradient(self) -> SystemMatrix:
+        return DiscreteGradient(self._element_space)
+
+    def _create_flux_approximation(self) -> SystemVector:
+        return GroupFiniteElementApproximation(self._dof_vector, self.flux_factory.flux)
+
+    def _create_local_maximum(self) -> SystemVector:
+        return LocalMaximum(self._dof_vector)
+
+    def _create_local_minimum(self) -> SystemVector:
+        return LocalMinimum(self._dof_vector)
+
+    def _create_time_stepping(self):
+        self._solver.time_stepping = SpatialMeshDependendetTimeStepping(
+            self.start_time, self.end_time, self.mesh, self.attributes.cfl_number
+        )
+
+    def _create_ode_solver(self):
+        ode_solver = self.ode_solver_factory.get_ode_solver("euler")
+        self._solver.ode_solver = ode_solver
+
+    @property
+    def plot_label(self) -> str:
+        if self.attributes.label is not None:
+            return self.attributes.label
+        else:
+            return "MCL"
+
+    @property
+    def tqdm_kwargs(self) -> Dict:
+        tqdm_kwargs = {
+            "desc": "MCL Limiter",
+            "leave": False,
+            "postfix": {
+                "p": self.attributes.polynomial_degree,
+                "cfl_number": self.attributes.cfl_number,
+                "DOFs": self.dofs,
+            },
+        }
+
+        return tqdm_kwargs
+
+    @property
+    def eoc_title(self) -> str:
+        title = self.info
+        return title + "\n" + "-" * len(title)
+
+    @property
+    def info(self) -> str:
+        return f"MCL (p={self.attributes.polynomial_degree}, cfl={self.attributes.cfl_number})"

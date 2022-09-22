@@ -62,6 +62,13 @@ class SolverComponents:
             solver_factory.artificial_diffusion_factory = (
                 self._artificial_diffusion_factory
             )
+        elif solver_name == "mcl":
+            solver_factory = MCLSolverFactory()
+            solver_factory.flux_factory = self._flux_factory
+            solver_factory.ode_solver_factory = self._ode_solver_factory
+            solver_factory.artificial_diffusion_factory = (
+                self._artificial_diffusion_factory
+            )
         else:
             raise NotImplementedError
 

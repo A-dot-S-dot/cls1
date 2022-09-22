@@ -64,4 +64,19 @@ class LowCGParser(CGParser):
         self._add_label()
 
 
-SOLVER_PARSER = {"cg": CGParser(), "cg_low": LowCGParser()}
+class MCLParser(CGParser):
+    def __init__(self):
+        ArgumentParser.__init__(
+            self,
+            prog="mcl",
+            description="MCL Limiter",
+            prefix_chars="+",
+            formatter_class=ArgumentDefaultsHelpFormatter,
+            add_help=False,
+        )
+        self._add_polynomial_degree()
+        self._add_cfl_number()
+        self._add_label()
+
+
+SOLVER_PARSER = {"cg": CGParser(), "cg_low": LowCGParser(), "mcl": MCLParser()}
