@@ -1,3 +1,4 @@
+import time
 from argparse import Namespace
 
 import matplotlib.pyplot as plt
@@ -119,11 +120,13 @@ class PlotTask(Task):
 
     def _add_discrete_solution(self, solver_factory: PDESolverFactory):
         solver = solver_factory.solver
+
+        start_time = time.time()
         solver.solve()
 
         label = solver_factory.plot_label
         tqdm.write(
-            f"Solved {solver_factory.info} with {solver_factory.dofs} DOFs and {solver.time_steps} time steps."
+            f"Solved {solver_factory.info} with {solver_factory.dofs} DOFs and {solver.time_steps} time steps in {time.time()-start_time:.2f}s."
         )
 
         self._plotter.add_function(solver_factory.discrete_solution, label)
