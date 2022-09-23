@@ -55,8 +55,8 @@ class PDESolver:
         )
 
     def _ode_right_hand_side_function(self, dofs: np.ndarray) -> np.ndarray:
-        # update all DOF dependent quantities using observer pattern
-        self.discrete_solution_dofs.dofs = dofs
+        if (dofs != self.ode_solver.solution).any():
+            self.discrete_solution_dofs.dofs = dofs
 
         return self.right_hand_side.values
 
@@ -70,3 +70,6 @@ class PDESolver:
 
         for delta_t in progress_iterator:
             self.update(delta_t)
+
+            # update all DOF dependent quantities using observer pattern
+            self.discrete_solution_dofs.dofs = self.ode_solver.solution

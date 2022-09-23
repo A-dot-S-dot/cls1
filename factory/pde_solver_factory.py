@@ -7,7 +7,6 @@ from fem.lagrange import LagrangeFiniteElementSpace
 from math_type import FunctionRealToReal
 from mesh import Mesh
 from pde_solver.solver import PDESolver
-from pde_solver.time_stepping import SpatialMeshDependendetTimeStepping
 from system.matrix import SystemMatrix
 from system.matrix.discrete_gradient import DiscreteGradient
 from system.matrix.mass import MassMatrix
@@ -25,6 +24,7 @@ from system.vector.mcl import MCLRightHandSide
 from .artificial_diffusion_factory import ArtificialDiffusionFactory
 from .flux_factory import FluxFactory
 from .ode_solver_factory import ODESolverFactory
+from .time_stepping_factory import TimeSteppingFactory
 
 
 class PDESolverFactory(ABC):
@@ -50,6 +50,8 @@ class PDESolverFactory(ABC):
         self._create_element_space()
         self._create_dofs()
         self._create_right_hand_side()
+        self._build_values()
+
         self._create_time_stepping()
         self._create_ode_solver()
         self._create_tqdm_kwargs()
@@ -65,7 +67,6 @@ class PDESolverFactory(ABC):
     def _create_dofs(self):
         self._dof_vector = DOFVector(self._element_space)
         self._solver.discrete_solution_dofs = self._dof_vector
-        self._dof_vector.dofs = self._element_space.interpolate(self.initial_data)
 
     @abstractmethod
     def _create_right_hand_side(self):
@@ -81,6 +82,9 @@ class PDESolverFactory(ABC):
 
     def _create_tqdm_kwargs(self):
         self._solver.tqdm_kwargs = self.tqdm_kwargs
+
+    def _build_values(self):
+        self._dof_vector.dofs = self._element_space.interpolate(self.initial_data)
 
     @property
     def cell_quadrature_degree(self) -> int:
@@ -118,6 +122,7 @@ class PDESolverFactory(ABC):
 class ContinuousGalerkinSolverFactory(PDESolverFactory):
     flux_factory: FluxFactory
     ode_solver_factory: ODESolverFactory
+    time_stepping_factory: TimeSteppingFactory
 
     _problem_name: str
 
@@ -153,9 +158,13 @@ class ContinuousGalerkinSolverFactory(PDESolverFactory):
         return self.flux_factory.get_flux_gradient(self._dof_vector, discrete_gradient)
 
     def _create_time_stepping(self):
-        self._solver.time_stepping = SpatialMeshDependendetTimeStepping(
-            self.start_time, self.end_time, self.mesh, self.attributes.cfl_number
-        )
+        time_stepping = self.time_stepping_factory.mesh_time_stepping
+        time_stepping.start_time = self.start_time
+        time_stepping.end_time = self.end_time
+        time_stepping.mesh = self.mesh
+        time_stepping.cfl_number = self.attributes.cfl_number
+
+        self._solver.time_stepping = time_stepping
 
     def _create_ode_solver(self):
         ode_solver = self.ode_solver_factory.get_optimal_ode_solver(
@@ -198,8 +207,11 @@ class ContinuousGalerkinSolverFactory(PDESolverFactory):
 class LowOrderCGFactory(PDESolverFactory):
     ode_solver_factory: ODESolverFactory
     flux_factory: FluxFactory
+    time_stepping_factory: TimeSteppingFactory
     artificial_diffusion_factory: ArtificialDiffusionFactory
 
+    _lumped_mass: SystemVector
+    _artificial_diffusion: SystemMatrix
     _problem_name: str
 
     @property
@@ -211,17 +223,18 @@ class LowOrderCGFactory(PDESolverFactory):
         self._problem_name = problem_name
         self.flux_factory.problem_name = problem_name
         self.artificial_diffusion_factory.problem_name = problem_name
+        self.time_stepping_factory.problem_name = problem_name
 
     def _create_right_hand_side(self):
         # must be created first such that this quantities updated first if DOF change
-        lumped_mass = self._create_lumped_mass()
-        artificial_diffusion = self._create_diffusion()
+        self._lumped_mass = self._create_lumped_mass()
+        self._artificial_diffusion = self._create_diffusion()
         discrete_gradient = self._create_discrete_gradient()
         flux_approximation = self._create_flux_approximation()
 
         right_hand_side = LowOrderCGRightHandSide(self._dof_vector)
-        right_hand_side.lumped_mass = lumped_mass
-        right_hand_side.artificial_diffusion = artificial_diffusion
+        right_hand_side.lumped_mass = self._lumped_mass
+        right_hand_side.artificial_diffusion = self._artificial_diffusion
         right_hand_side.discrete_gradient = discrete_gradient
         right_hand_side.flux_approximation = flux_approximation
 
@@ -243,9 +256,17 @@ class LowOrderCGFactory(PDESolverFactory):
         return GroupFiniteElementApproximation(self._dof_vector, self.flux_factory.flux)
 
     def _create_time_stepping(self):
-        self._solver.time_stepping = SpatialMeshDependendetTimeStepping(
-            self.start_time, self.end_time, self.mesh, self.attributes.cfl_number
-        )
+        self.time_stepping_factory.adaptive = not self.attributes.static
+
+        time_stepping = self.time_stepping_factory.mcl_time_stepping
+        time_stepping.start_time = self.start_time
+        time_stepping.end_time = self.end_time
+        time_stepping.cfl_number = self.attributes.cfl_number
+        time_stepping.lumped_mass = self._lumped_mass
+        time_stepping.artificial_diffusion = self._artificial_diffusion
+        time_stepping.set_delta_t()
+
+        self._solver.time_stepping = time_stepping
 
     def _create_ode_solver(self):
         ode_solver = self.ode_solver_factory.get_ode_solver("euler")
@@ -282,36 +303,20 @@ class LowOrderCGFactory(PDESolverFactory):
         return f"Low CG (p={self.attributes.polynomial_degree}, cfl={self.attributes.cfl_number})"
 
 
-class MCLSolverFactory(PDESolverFactory):
-    ode_solver_factory: ODESolverFactory
-    flux_factory: FluxFactory
-    artificial_diffusion_factory: ArtificialDiffusionFactory
-
-    _problem_name: str
-
-    @property
-    def problem_name(self) -> str:
-        return self._problem_name
-
-    @problem_name.setter
-    def problem_name(self, problem_name: str):
-        self._problem_name = problem_name
-        self.flux_factory.problem_name = problem_name
-        self.artificial_diffusion_factory.problem_name = problem_name
-
+class MCLSolverFactory(LowOrderCGFactory):
     def _create_right_hand_side(self):
         # must be created first such that this quantities updated first if DOF change
         mass = self._create_mass()
         local_maximum = self._create_local_maximum()
         local_minimum = self._create_local_minimum()
-        lumped_mass = self._create_lumped_mass()
-        artificial_diffusion = self._create_diffusion()
+        self._lumped_mass = self._create_lumped_mass()
+        self._artificial_diffusion = self._create_diffusion()
         discrete_gradient = self._create_discrete_gradient()
         flux_approximation = self._create_flux_approximation()
 
         low_cg = LowOrderCGRightHandSide(self._dof_vector)
-        low_cg.lumped_mass = lumped_mass
-        low_cg.artificial_diffusion = artificial_diffusion
+        low_cg.lumped_mass = self._lumped_mass
+        low_cg.artificial_diffusion = self._artificial_diffusion
         low_cg.discrete_gradient = discrete_gradient
         low_cg.flux_approximation = flux_approximation
 
@@ -326,35 +331,11 @@ class MCLSolverFactory(PDESolverFactory):
     def _create_mass(self) -> SystemMatrix:
         return MassMatrix(self._element_space)
 
-    def _create_lumped_mass(self) -> SystemVector:
-        return LumpedMassVector(self._element_space)
-
-    def _create_diffusion(self) -> SystemMatrix:
-        discrete_gradient = DiscreteGradient(self._element_space)
-        return self.artificial_diffusion_factory.get_artificial_diffusion(
-            self._dof_vector, discrete_gradient
-        )
-
-    def _create_discrete_gradient(self) -> SystemMatrix:
-        return DiscreteGradient(self._element_space)
-
-    def _create_flux_approximation(self) -> SystemVector:
-        return GroupFiniteElementApproximation(self._dof_vector, self.flux_factory.flux)
-
     def _create_local_maximum(self) -> SystemVector:
         return LocalMaximum(self._dof_vector)
 
     def _create_local_minimum(self) -> SystemVector:
         return LocalMinimum(self._dof_vector)
-
-    def _create_time_stepping(self):
-        self._solver.time_stepping = SpatialMeshDependendetTimeStepping(
-            self.start_time, self.end_time, self.mesh, self.attributes.cfl_number
-        )
-
-    def _create_ode_solver(self):
-        ode_solver = self.ode_solver_factory.get_ode_solver("euler")
-        self._solver.ode_solver = ode_solver
 
     @property
     def plot_label(self) -> str:

@@ -19,6 +19,7 @@ class CGParser(ArgumentParser):
         self._add_exact_flux()
         self._add_cfl_number()
         self._add_label()
+        self._add_adaptive_time_stepping()
 
     def _add_polynomial_degree(self):
         self.add_argument(
@@ -33,6 +34,11 @@ class CGParser(ArgumentParser):
     def _add_exact_flux(self):
         self.add_argument(
             "++exact-flux", action="store_true", help="calculate flux matrices exactly"
+        )
+
+    def _add_adaptive_time_stepping(self):
+        self.add_argument(
+            "++static", action="store_true", help="enable static time stepping"
         )
 
     def _add_cfl_number(self):
@@ -62,6 +68,17 @@ class LowCGParser(CGParser):
         self._add_polynomial_degree()
         self._add_cfl_number()
         self._add_label()
+        self._add_adaptive_time_stepping()
+
+    def _add_cfl_number(self):
+        self.add_argument(
+            "++cfl",
+            help="specify the cfl number for time stepping",
+            type=parser_type.positive_float,
+            metavar="number",
+            dest="cfl_number",
+            default=MCL_CFL_NUMBER,
+        )
 
 
 class MCLParser(CGParser):
@@ -77,6 +94,17 @@ class MCLParser(CGParser):
         self._add_polynomial_degree()
         self._add_cfl_number()
         self._add_label()
+        self._add_adaptive_time_stepping()
+
+    def _add_cfl_number(self):
+        self.add_argument(
+            "++cfl",
+            help="specify the cfl number for time stepping",
+            type=parser_type.positive_float,
+            metavar="number",
+            dest="cfl_number",
+            default=MCL_CFL_NUMBER,
+        )
 
 
 SOLVER_PARSER = {"cg": CGParser(), "cg_low": LowCGParser(), "mcl": MCLParser()}

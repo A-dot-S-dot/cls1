@@ -16,6 +16,7 @@ class SolverComponents:
     _ode_solver_factory = ODESolverFactory()
     _flux_factory = FluxFactory()
     _artificial_diffusion_factory = ArtificialDiffusionFactory()
+    _time_stepping_factory = TimeSteppingFactory()
 
     def __init__(self, args: Namespace):
         self._args = args
@@ -55,6 +56,7 @@ class SolverComponents:
             solver_factory = ContinuousGalerkinSolverFactory()
             solver_factory.flux_factory = self._flux_factory
             solver_factory.ode_solver_factory = self._ode_solver_factory
+            solver_factory.time_stepping_factory = self._time_stepping_factory
         elif solver_name == "cg_low":
             solver_factory = LowOrderCGFactory()
             solver_factory.flux_factory = self._flux_factory
@@ -62,6 +64,7 @@ class SolverComponents:
             solver_factory.artificial_diffusion_factory = (
                 self._artificial_diffusion_factory
             )
+            solver_factory.time_stepping_factory = self._time_stepping_factory
         elif solver_name == "mcl":
             solver_factory = MCLSolverFactory()
             solver_factory.flux_factory = self._flux_factory
@@ -69,6 +72,7 @@ class SolverComponents:
             solver_factory.artificial_diffusion_factory = (
                 self._artificial_diffusion_factory
             )
+            solver_factory.time_stepping_factory = self._time_stepping_factory
         else:
             raise NotImplementedError
 

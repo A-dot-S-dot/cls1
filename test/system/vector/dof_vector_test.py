@@ -1,11 +1,10 @@
 from unittest import TestCase
 
-from fem.lagrange.lagrange import LagrangeFiniteElementSpace
-from mesh import Interval
-from mesh.uniform import UniformMesh
-from system.vector import DOFVector, SystemVector
+import numpy as np
+from system.vector import SystemVector
+from system.vector.dof_vector import DOFVector
 
-from ...test_helper import LINEAR_DOF_VECTOR
+from ...test_helper import LINEAR_DOF_VECTOR, QUADRATIC_DOF_VECTOR
 
 
 class ObserverVector(SystemVector):
@@ -21,7 +20,12 @@ class ObserverVector(SystemVector):
 
 class TestLinearDOFVector(TestCase):
     dof_vector = LINEAR_DOF_VECTOR
-    dofs = [(1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)]
+    dofs = [
+        np.array((1, 0, 0, 0)),
+        np.array((0, 1, 0, 0)),
+        np.array((0, 0, 1, 0)),
+        np.array((0, 0, 0, 1)),
+    ]
 
     def test_set_dofs(self):
         for dofs in self.dofs:
@@ -36,9 +40,5 @@ class TestLinearDOFVector(TestCase):
             self.assertListEqual(list(self.dof_vector), list(observer))
 
 
-class TestQuadraticDOFVector(TestCase):
-    domain = Interval(0, 1)
-    mesh = UniformMesh(domain, 2)
-    element_space = LagrangeFiniteElementSpace(mesh, 2)
-    vector = DOFVector(element_space)
-    basis_coefficients = [(1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)]
+class TestQuadraticDOFVector(TestLinearDOFVector):
+    dof_vector = QUADRATIC_DOF_VECTOR

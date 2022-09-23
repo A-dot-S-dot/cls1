@@ -105,13 +105,11 @@ class TestSystemMatrix(TestCase):
     def test_multiply_column(self):
         matrix = SimpleSystemMatrix(self.element_space)
         matrix.set_values(np.arange(16).reshape((4, 4)))
-        print(matrix)
 
         dof_vector = DOFVector(self.element_space)
         dof_vector.dofs = np.array([1, 2, 3, 4])
 
         new_matrix = matrix.multiply_column(dof_vector).tolil()
-        print(new_matrix.toarray())
 
         for i in range(self.element_space.dimension):
             for j in range(self.element_space.dimension):
