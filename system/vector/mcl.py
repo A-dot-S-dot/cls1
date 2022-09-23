@@ -61,7 +61,10 @@ class MCLRightHandSide(SystemVector):
 
     def assemble(self):
         corrected_flux = self._build_corrected_flux()
-        self[:] = self._low_cg_right_hand_side.values + corrected_flux
+        self[:] = (
+            self._low_cg_right_hand_side.values
+            + corrected_flux / self._lumped_mass.values
+        )
 
     def _build_corrected_flux(self) -> spmatrix:
         target_flux = self._build_target_flux()
