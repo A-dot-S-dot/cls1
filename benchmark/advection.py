@@ -15,16 +15,34 @@ class AdvectionBenchmark(Benchmark):
         return self.initial_data(argument)
 
 
-class AdvectionPlotBenchmark(AdvectionBenchmark):
+class AdvectionPlot1Benchmark(AdvectionBenchmark):
     def initial_data(self, x: float) -> float:
         if x >= 0.025 and x < 0.275:
             return exp(-300 * (2 * x - 0.3) ** 2)
         elif x >= 0.35 and x <= 0.55:
-            return 1
+            return 1.0
         elif x > 0.7 and x < 0.9:
             return sqrt(1 - ((x - 0.8) / 0.1) ** 2)
         else:
-            return 0
+            return 0.0
+
+
+class AdvectionPlot2Benchmark(AdvectionBenchmark):
+    def initial_data(self, x: float) -> float:
+        if x > 0.5 and x < 0.9:
+            return exp(10) * exp(-1 / (x - 0.5)) * exp(1 / (x - 0.9))
+        elif x >= 0.2 and x <= 0.4:
+            return 1.0
+        else:
+            return 0.0
+
+
+class AdvectionPlot3Benchmark(AdvectionBenchmark):
+    def initial_data(self, x: float) -> float:
+        if x >= 0.1 and x <= 0.3:
+            return 1.0
+        else:
+            return 0.0
 
 
 class AdvectionEOCBenchmark1(AdvectionBenchmark):
