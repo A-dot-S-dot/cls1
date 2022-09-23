@@ -95,7 +95,9 @@ class MCLRightHandSide(SystemVector):
         value1 = (
             2 * self._artificial_diffusion.multiply_column(self.local_maximum) - wij
         )
-        value2 = wij - 2 * self._artificial_diffusion.multiply_row(self.local_minimum)
+        value2 = wij.transpose() - 2 * self._artificial_diffusion.multiply_row(
+            self.local_minimum
+        )
 
         return value1.minimum(value2)
 
@@ -103,6 +105,8 @@ class MCLRightHandSide(SystemVector):
         value1 = (
             2 * self._artificial_diffusion.multiply_column(self.local_minimum) - wij
         )
-        value2 = wij - 2 * self._artificial_diffusion.multiply_row(self.local_maximum)
+        value2 = wij.transpose() - 2 * self._artificial_diffusion.multiply_row(
+            self.local_maximum
+        )
 
         return value1.maximum(value2)
