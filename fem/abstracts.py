@@ -125,7 +125,7 @@ class FiniteElementSpace(ABC):
         ...
 
     @abstractmethod
-    def get_neighbour_indices(self, index: int) -> Sequence[int]:
+    def get_neighbour_indices(self, index: int) -> Set[int]:
         ...
 
     @abstractmethod
