@@ -1,4 +1,6 @@
-from scipy.sparse import spmatrix
+from itertools import combinations
+import numpy as np
+
 from system.matrix.system_matrix import SystemMatrix
 
 from .dof_vector import DOFVector
@@ -19,11 +21,11 @@ class MCLRightHandSide(SystemVector):
         f*_ij = max(fmin_ij, min(fij, fmax_ij)),
         fmax_ij = min(2*dij*umax_i-wij, wji-2*dji*umin_j),
         fmin_ij = max(2*dij*umin_i-wij, wji-2*dji*umax_j),
-        wij = dij*(uj+ui)-(fj-fi)*cij,
-        fij = mij*(DuL_i-DuL_j)+dij*(ui-uj) (target flux)
+        wij = dij*(uj+ui)+(fi-fj)*cij,
+        fij = mij*(dudt_i-dudt_j)+dij*(ui-uj) (target flux)
 
-    where mij denotes the mass matrix and DuL_i the right hand side of low order
-    cg.
+    where mij denotes the mass matrix and dudt_i the right hand side of low
+    order cg.
 
     """
 
@@ -60,32 +62,41 @@ class MCLRightHandSide(SystemVector):
         self._flux_approximation = low_cg.flux_approximation
 
     def assemble(self):
-        self[:] = 0
+        corrected_flux = np.zeros(self.dimension)
 
-        for i in range(self.dimension):
-            for j in self.element_space.get_neighbour_indices(i) - {i}:
+        for element_index in range(len(self.element_space.mesh)):
+            for (i_local, j_local) in combinations(
+                range(self.element_space.indices_per_simplex), 2
+            ):
+                i = self.element_space.get_global_index(element_index, i_local)
+                j = self.element_space.get_global_index(element_index, j_local)
+
+                mij = self.mass[i, j]
                 dij = self._artificial_diffusion[i, j]
+                cij = self._discrete_gradient[i, j]
+
                 ui = self._dof_vector[i]
                 uj = self._dof_vector[j]
                 fi = self._flux_approximation[i]
                 fj = self._flux_approximation[j]
-                fij = self.mass[i, j] * (
-                    self._low_cg_right_hand_side[i] - self._low_cg_right_hand_side[j]
-                ) + dij * (ui - uj)
-                cij = self._discrete_gradient[i, j]
-                cji = self._discrete_gradient[j, i]
-                wij = dij * (uj + ui) - cij * (fj - fi)
-                wji = dij * (uj + ui) - cji * (fi - fj)
-                fmax_ij = min(
-                    2 * dij * self.local_maximum[i] - wij,
-                    wji - 2 * dij * self.local_minimum[j],
-                )
-                fmin_ij = max(
-                    2 * dij * self.local_minimum[i] - wij,
-                    wji - 2 * dij * self.local_maximum[j],
-                )
+                dudt_i = self._low_cg_right_hand_side[i]
+                dudt_j = self._low_cg_right_hand_side[j]
+                umax_i = self.local_maximum[i]
+                umax_j = self.local_maximum[j]
+                umin_i = self.local_minimum[i]
+                umin_j = self.local_minimum[j]
+
+                fij = mij * (dudt_i - dudt_j) + dij * (ui - uj)
+                wij = dij * (uj + ui) + (fi - fj) * cij
+
+                fmin_ij = max(2 * dij * umin_i - wij, wij - 2 * dij * umax_j)
+                fmax_ij = min(2 * dij * umax_i - wij, wij - 2 * dij * umin_j)
                 fstar_ij = max(fmin_ij, min(fmax_ij, fij))
 
-                self[i] += dij * (uj - ui) - (fj - fi) * cij + fstar_ij
+                corrected_flux[i] += fstar_ij
+                corrected_flux[j] -= fstar_ij
 
-        self[:] = self.values / self._lumped_mass.values
+        self[:] = (
+            self._low_cg_right_hand_side.values
+            + corrected_flux / self._lumped_mass.values
+        )
