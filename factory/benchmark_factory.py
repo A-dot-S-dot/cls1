@@ -17,11 +17,15 @@ class BenchmarkFactory(ABC):
 class AdvectionBenchmarkFactory(BenchmarkFactory):
     @property
     def benchmark(self) -> Benchmark:
-        if self.benchmark_name in ["1", "plot_default"]:
-            benchmark = AdvectionPlotBenchmark()
-        elif self.benchmark_name in ["2", "eoc_default"]:
-            benchmark = AdvectionEOCBenchmark1()
+        if self.benchmark_name in ["1"]:
+            benchmark = AdvectionPlot1Benchmark()
+        elif self.benchmark_name in ["2", "plot_default"]:
+            benchmark = AdvectionPlot2Benchmark()
         elif self.benchmark_name in ["3"]:
+            benchmark = AdvectionPlot3Benchmark()
+        elif self.benchmark_name in ["4", "eoc_default"]:
+            benchmark = AdvectionEOCBenchmark1()
+        elif self.benchmark_name in ["5"]:
             benchmark = AdvectionEOCBenchmark2()
         else:
             raise ValueError(
