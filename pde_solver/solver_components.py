@@ -3,9 +3,15 @@ from argparse import Namespace
 from typing import Sequence
 
 from benchmark import Benchmark
+from factory import (
+    BENCHMARK_FACTORY,
+    PDESolverFactory,
+    ContinuousGalerkinSolverFactory,
+    MCLSolverFactory,
+    LowOrderCGFactory,
+)
 from mesh import Mesh
-
-from factory import *
+from mesh.uniform import UniformMesh
 
 
 class SolverComponents:
@@ -13,26 +19,16 @@ class SolverComponents:
     _solver_factories: Sequence[PDESolverFactory]
     _benchmark: Benchmark
     _mesh: UniformMesh
-    _ode_solver_factory = ODESolverFactory()
-    _flux_factory = FluxFactory()
-    _artificial_diffusion_factory = ArtificialDiffusionFactory()
-    _time_stepping_factory = TimeSteppingFactory()
 
     def __init__(self, args: Namespace):
         self._args = args
-        self._build_benchmark_factory()
+        self._setup_benchmark_factory()
         self._build_solver_factories()
 
-    def _build_benchmark_factory(self):
-        if self._args.problem == "advection":
-            self._benchmark_factory = AdvectionBenchmarkFactory()
-        elif self._args.problem == "burgers":
-            self._benchmark_factory = BurgersBenchmarkFactory()
-        else:
-            raise NotImplementedError
-
-        self._benchmark_factory.benchmark_name = self._args.benchmark
-        self._benchmark_factory.end_time = self._args.end_time
+    def _setup_benchmark_factory(self):
+        BENCHMARK_FACTORY.problem_name = self._args.problem
+        BENCHMARK_FACTORY.benchmark_name = self._args.benchmark
+        BENCHMARK_FACTORY.end_time = self._args.end_time
 
     def _build_solver_factories(self):
         self._solver_factories = []
@@ -54,25 +50,10 @@ class SolverComponents:
     def _get_solver_factory(self, solver_name: str) -> PDESolverFactory:
         if solver_name == "cg":
             solver_factory = ContinuousGalerkinSolverFactory()
-            solver_factory.flux_factory = self._flux_factory
-            solver_factory.ode_solver_factory = self._ode_solver_factory
-            solver_factory.time_stepping_factory = self._time_stepping_factory
         elif solver_name == "cg_low":
             solver_factory = LowOrderCGFactory()
-            solver_factory.flux_factory = self._flux_factory
-            solver_factory.ode_solver_factory = self._ode_solver_factory
-            solver_factory.artificial_diffusion_factory = (
-                self._artificial_diffusion_factory
-            )
-            solver_factory.time_stepping_factory = self._time_stepping_factory
         elif solver_name == "mcl":
             solver_factory = MCLSolverFactory()
-            solver_factory.flux_factory = self._flux_factory
-            solver_factory.ode_solver_factory = self._ode_solver_factory
-            solver_factory.artificial_diffusion_factory = (
-                self._artificial_diffusion_factory
-            )
-            solver_factory.time_stepping_factory = self._time_stepping_factory
         else:
             raise NotImplementedError
 
@@ -80,7 +61,7 @@ class SolverComponents:
 
     @property
     def benchmark(self) -> Benchmark:
-        return self._benchmark_factory.benchmark
+        return BENCHMARK_FACTORY.benchmark
 
     @property
     def mesh(self) -> Mesh:

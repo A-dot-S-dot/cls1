@@ -90,7 +90,7 @@ class MCLTimeStepping(TimeStepping):
         )
 
 
-class AdvectionMCLTimeStepping(MCLTimeStepping):
+class ConstantMCLTimeStepping(MCLTimeStepping):
     """This time stepping ensures that the time step for linear advection solvers is
 
         dt = CFL_NUMBER*min(mi/dii)
@@ -105,25 +105,8 @@ class AdvectionMCLTimeStepping(MCLTimeStepping):
         return self._delta_t
 
 
-class StaticMCLTimeStepping(MCLTimeStepping):
-    """This time stepping checks that the time step dt (which is initialized at the beginning), suffices
-
-        dt < CFL_NUMBER*min(mi/dii)
-
-    where mi denotes the lumped mass and dij a diffusion.
-    """
-
-    @property
-    def delta_t(self) -> float:
-        if self._delta_t < min(
-            self.lumped_mass.values / abs(self.artificial_diffusion.values.diagonal())
-        ):
-            tqdm.write("WARNING: CFL condition violated")
-        return self._delta_t
-
-
 class AdaptiveMCLTimeStepping(MCLTimeStepping):
-    """This time stepping ensures that the time step
+    """This time stepping ensures for each time step
 
         dt = CFL_NUMBER*min(mi/dii)
 

@@ -22,3 +22,6 @@ class ArtificialDiffusionFactory:
             raise NotImplementedError(
                 f"No Artificial diffusion for {self.problem_name} available."
             )
+
+
+DIFFUSION_FACTORY = ArtificialDiffusionFactory()
