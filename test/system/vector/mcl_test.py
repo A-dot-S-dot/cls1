@@ -33,7 +33,7 @@ class TestLinearLowOrderCGRightHandSide(TestCase):
     local_maximum = LocalMaximum(dof_vector)
     local_minimum = LocalMinimum(dof_vector)
     test_dofs = [np.array([1, 2, 3, 4])]
-    expected_right_hand_sides = [np.array([-4, 4, 0, 0])]
+    expected_right_hand_sides = [np.array([12, -6, -4, -2])]
     mcl: MCLRightHandSide
 
     def __init__(self, *args, **kwargs):
@@ -56,43 +56,52 @@ class TestLinearLowOrderCGRightHandSide(TestCase):
         ):
             self.dof_vector.dofs = dofs
 
-            # for i in range(len(dofs)):
-            #     self.assertAlmostEqual(
-            #         self.mcl[i],
-            #         expected_result[i],
-            #         msg=f"index={i}, dofs={dofs}",
-            #     )
+            for i in range(len(dofs)):
+                self.assertAlmostEqual(
+                    self.mcl[i],
+                    expected_result[i],
+                    msg=f"index={i}, dofs={dofs}",
+                )
 
 
-# class TestQuadraticLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
-#     dof_vector = QUADRATIC_DOF_VECTOR
-#     lumped_mass = LumpedMassVector(QUADRATIC_LAGRANGE_SPACE)
-#     discrete_gradient = DiscreteGradient(QUADRATIC_LAGRANGE_SPACE)
-#     artificial_diffusion = DiscreteUpwind(discrete_gradient)
-#     flux_approximation = GroupFiniteElementApproximation(dof_vector, lambda u: u)
-#     test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
-#     expected_right_hand_sides = [np.array([-8, 4, 0, 0]), np.array([24, -4, -8, -4])]
+class TestQuadraticLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
+    dof_vector = QUADRATIC_DOF_VECTOR
+    mass = MassMatrix(QUADRATIC_LAGRANGE_SPACE)
+    lumped_mass = LumpedMassVector(QUADRATIC_LAGRANGE_SPACE)
+    discrete_gradient = DiscreteGradient(QUADRATIC_LAGRANGE_SPACE)
+    artificial_diffusion = DiscreteUpwind(discrete_gradient)
+    flux_approximation = GroupFiniteElementApproximation(dof_vector, lambda u: u)
+    local_maximum = LocalMaximum(dof_vector)
+    local_minimum = LocalMinimum(dof_vector)
+    test_dofs = [np.array([1, 2, 3, 4])]
+    expected_right_hand_sides = [np.array([24, -5.6, -9.6, -1.6])]
 
 
-# class TestLinearBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
-#     dof_vector = LINEAR_DOF_VECTOR
-#     lumped_mass = LumpedMassVector(LINEAR_LAGRANGE_SPACE)
-#     discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
-#     artificial_diffusion = BurgersArtificialDiffusion(dof_vector, discrete_gradient)
-#     flux_approximation = GroupFiniteElementApproximation(
-#         dof_vector, lambda u: 1 / 2 * u**2
-#     )
-#     test_dofs = [np.array([1, 2, 3, 4])]
-#     expected_right_hand_sides = [np.array([40, -6, -10, -24])]
+class TestLinearBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
+    dof_vector = LINEAR_DOF_VECTOR
+    mass = MassMatrix(LINEAR_LAGRANGE_SPACE)
+    lumped_mass = LumpedMassVector(LINEAR_LAGRANGE_SPACE)
+    discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
+    artificial_diffusion = BurgersArtificialDiffusion(dof_vector, discrete_gradient)
+    flux_approximation = GroupFiniteElementApproximation(
+        dof_vector, lambda u: 1 / 2 * u**2
+    )
+    local_maximum = LocalMaximum(dof_vector)
+    local_minimum = LocalMinimum(dof_vector)
+    test_dofs = [np.array([1, 2, 3, 4])]
+    expected_right_hand_sides = [np.array([32, -37 / 3, -31 / 3, -28 / 3])]
 
 
-# class TestQuadraticBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
-#     dof_vector = QUADRATIC_DOF_VECTOR
-#     lumped_mass = LumpedMassVector(QUADRATIC_LAGRANGE_SPACE)
-#     discrete_gradient = DiscreteGradient(QUADRATIC_LAGRANGE_SPACE)
-#     artificial_diffusion = BurgersArtificialDiffusion(dof_vector, discrete_gradient)
-#     flux_approximation = GroupFiniteElementApproximation(
-#         dof_vector, lambda u: 1 / 2 * u**2
-#     )
-#     test_dofs = [np.array([1, 2, 3, 4])]
-#     expected_right_hand_sides = [np.array([80, -6, -20, -24])]
+class TestQuadraticBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
+    dof_vector = QUADRATIC_DOF_VECTOR
+    mass = MassMatrix(QUADRATIC_LAGRANGE_SPACE)
+    lumped_mass = LumpedMassVector(QUADRATIC_LAGRANGE_SPACE)
+    discrete_gradient = DiscreteGradient(QUADRATIC_LAGRANGE_SPACE)
+    artificial_diffusion = BurgersArtificialDiffusion(dof_vector, discrete_gradient)
+    flux_approximation = GroupFiniteElementApproximation(
+        dof_vector, lambda u: 1 / 2 * u**2
+    )
+    local_maximum = LocalMaximum(dof_vector)
+    local_minimum = LocalMinimum(dof_vector)
+    test_dofs = [np.array([1, 2, 3, 4])]
+    expected_right_hand_sides = [np.array([64, -11.6, -26, -7.4])]
