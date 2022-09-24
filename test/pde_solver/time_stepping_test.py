@@ -37,37 +37,57 @@ class TestSpatialMeshDependentTimeStepping(TestCase):
             self.assertAlmostEqual(delta_t, expected_delta_t, msg=f"index={i}")
 
 
-class TestAdaptiveMCLTimeStepping(TestCase):
+class TestMCLTimeStepping(TestCase):
     lumped_mass = LumpedMassVector(LINEAR_LAGRANGE_SPACE)
     discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
-    time_stepping = AdaptiveMCLTimeStepping()
-    time_stepping.start_time = 0
-    time_stepping.end_time = 1
-    time_stepping.lumped_mass = lumped_mass
+    adaptive_time_stepping = AdaptiveMCLTimeStepping()
+    adaptive_time_stepping.start_time = 0
+    adaptive_time_stepping.end_time = 1
+    adaptive_time_stepping.lumped_mass = lumped_mass
+    constant_time_stepping = ConstantMCLTimeStepping()
+    constant_time_stepping.start_time = 0
+    constant_time_stepping.end_time = 1
+    constant_time_stepping.lumped_mass = lumped_mass
 
     def test_constant_diffusion(self):
-        self.time_stepping.artificial_diffusion = DiscreteUpwind(self.discrete_gradient)
-        self.time_stepping.cfl_number = 1
+        self.adaptive_time_stepping.artificial_diffusion = DiscreteUpwind(
+            self.discrete_gradient
+        )
+        self.adaptive_time_stepping.cfl_number = 1
         expected_time_stepping = 4 * [0.25]
 
         for i, (delta_t, expected_delta_t) in enumerate(
-            zip(self.time_stepping, expected_time_stepping)
+            zip(self.adaptive_time_stepping, expected_time_stepping)
         ):
             self.assertAlmostEqual(delta_t, expected_delta_t, msg=f"index={i}")
 
     def test_non_constant_diffusion(self):
         dof_vector = LINEAR_DOF_VECTOR
-        self.time_stepping.artificial_diffusion = BurgersArtificialDiffusion(
+        self.adaptive_time_stepping.artificial_diffusion = BurgersArtificialDiffusion(
             dof_vector, self.discrete_gradient
         )
-        self.time_stepping.cfl_number = 1
+        self.adaptive_time_stepping.cfl_number = 1
         expected_time_stepping = [1 / 4, 1 / 8, 1 / 4, 1 / 8, 1 / 4]
         dofs = [np.array([1, 0, 1, 0]), np.array([2, 0, 2, 0])]
 
         dof_vector.dofs = dofs[0]
 
         for i, (delta_t, expected_delta_t) in enumerate(
-            zip(self.time_stepping, expected_time_stepping)
+            zip(self.adaptive_time_stepping, expected_time_stepping)
         ):
             dof_vector.dofs = dofs[(i + 1) % 2]
             self.assertAlmostEqual(delta_t, expected_delta_t, msg=f"index={i}")
+
+    def test_satisfy_cfl(self):
+        dof_vector = LINEAR_DOF_VECTOR
+        self.constant_time_stepping.artificial_diffusion = BurgersArtificialDiffusion(
+            dof_vector, self.discrete_gradient
+        )
+        self.constant_time_stepping.cfl_number = 1
+        dof_vector.dofs = np.array([1, 0, 1, 0])
+        self.constant_time_stepping.setup_delta_t()
+
+        self.assertTrue(self.constant_time_stepping.satisfy_cfl())
+
+        dof_vector.dofs = np.array([2, 0, 2, 0])
+        self.assertFalse(self.constant_time_stepping.satisfy_cfl())

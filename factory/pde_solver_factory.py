@@ -253,7 +253,7 @@ class LowOrderCGFactory(PDESolverFactory):
         time_stepping.cfl_number = self.attributes.cfl_number
         time_stepping.lumped_mass = self._lumped_mass
         time_stepping.artificial_diffusion = self._artificial_diffusion
-        time_stepping.set_delta_t()
+        time_stepping.setup_delta_t()
 
         self._solver.time_stepping = time_stepping
 

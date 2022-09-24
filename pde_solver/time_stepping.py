@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from mesh import Mesh
 from system.matrix.system_matrix import SystemMatrix
 from system.vector.system_vector import SystemVector
-from tqdm import tqdm
 
 
 class TimeStepping(ABC):
@@ -38,6 +37,10 @@ class TimeStepping(ABC):
     @abstractmethod
     def delta_t(self) -> float:
         ...
+
+    def satisfy_cfl(self) -> bool:
+        # can be modified by subclasses
+        return True
 
     def __next__(self):
         if self._time < self.end_time:
@@ -84,10 +87,16 @@ class MCLTimeStepping(TimeStepping):
 
     _delta_t: float
 
-    def set_delta_t(self):
-        self._delta_t = self._cfl_number * min(
+    def setup_delta_t(self):
+        self._delta_t = self._cfl_number * self.optimal_delta_t()
+
+    def optimal_delta_t(self) -> float:
+        return min(
             self.lumped_mass.values / abs(self.artificial_diffusion.values.diagonal())
         )
+
+    def satisfy_cfl(self) -> bool:
+        return self._delta_t < self.optimal_delta_t() + 1e-8
 
 
 class ConstantMCLTimeStepping(MCLTimeStepping):
@@ -117,5 +126,5 @@ class AdaptiveMCLTimeStepping(MCLTimeStepping):
 
     @property
     def delta_t(self) -> float:
-        self.set_delta_t()
+        self.setup_delta_t()
         return self._delta_t
