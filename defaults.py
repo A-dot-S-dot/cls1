@@ -1,6 +1,9 @@
 # mesh
 ELEMENTS_NUMBER_PLOT = 200
 ELEMENTS_NUMBER_EOC = 8
+
+# ode solver
+ODE_SOLVER = "euler"
 CFL_NUMBER = 0.1
 MCL_CFL_NUMBER = 1
 

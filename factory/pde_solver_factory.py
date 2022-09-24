@@ -258,7 +258,7 @@ class LowOrderCGFactory(PDESolverFactory):
         self._solver.time_stepping = time_stepping
 
     def _create_ode_solver(self):
-        ode_solver = ODE_SOLVER_FACTORY.get_ode_solver("euler")
+        ode_solver = ODE_SOLVER_FACTORY.get_ode_solver(self.attributes.ode_solver)
         self._solver.ode_solver = ode_solver
 
     @property
@@ -277,6 +277,7 @@ class LowOrderCGFactory(PDESolverFactory):
                 "p": self.attributes.polynomial_degree,
                 "cfl_number": self.attributes.cfl_number,
                 "DOFs": self.dofs,
+                "ode_solver": self.attributes.ode_solver,
             },
         }
 
@@ -289,7 +290,7 @@ class LowOrderCGFactory(PDESolverFactory):
 
     @property
     def info(self) -> str:
-        return f"Low CG (p={self.attributes.polynomial_degree}, cfl={self.attributes.cfl_number})"
+        return f"Low CG (p={self.attributes.polynomial_degree}, cfl={self.attributes.cfl_number}, ode_solver={self.attributes.ode_solver})"
 
 
 class MCLSolverFactory(LowOrderCGFactory):
@@ -335,15 +336,8 @@ class MCLSolverFactory(LowOrderCGFactory):
 
     @property
     def tqdm_kwargs(self) -> Dict:
-        tqdm_kwargs = {
-            "desc": "MCL Limiter",
-            "leave": False,
-            "postfix": {
-                "p": self.attributes.polynomial_degree,
-                "cfl_number": self.attributes.cfl_number,
-                "DOFs": self.dofs,
-            },
-        }
+        tqdm_kwargs = super().tqdm_kwargs
+        tqdm_kwargs["desc"] = "MCL Limiter"
 
         return tqdm_kwargs
 
@@ -354,4 +348,6 @@ class MCLSolverFactory(LowOrderCGFactory):
 
     @property
     def info(self) -> str:
-        return f"MCL (p={self.attributes.polynomial_degree}, cfl={self.attributes.cfl_number})"
+        info = super().info
+        attributes = info[info.find("(") :]
+        return f"MCL {attributes}"

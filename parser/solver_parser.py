@@ -1,20 +1,37 @@
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from abc import ABC, abstractmethod
 
 from defaults import *
 
 from . import types as parser_type
 
 
-class CGParser(ArgumentParser):
+class SolverParser(ArgumentParser, ABC):
+    prog: str
+    description: str
+
     def __init__(self):
         ArgumentParser.__init__(
             self,
-            prog="cg",
-            description="Continuous Galerkin Solver",
+            prog=self.prog,
+            description=self.description,
             prefix_chars="+",
             formatter_class=ArgumentDefaultsHelpFormatter,
             add_help=False,
         )
+
+        self._add_arguments()
+
+    @abstractmethod
+    def _add_arguments(self):
+        ...
+
+
+class CGParser(SolverParser):
+    prog = "cg"
+    description = "Continuous Galerkin Solver"
+
+    def _add_arguments(self):
         self._add_polynomial_degree()
         self._add_exact_flux()
         self._add_cfl_number()
@@ -50,18 +67,14 @@ class CGParser(ArgumentParser):
 
 
 class LowCGParser(CGParser):
-    def __init__(self):
-        ArgumentParser.__init__(
-            self,
-            prog="cg_low",
-            description="Low order Continuous Galerkin Solver",
-            prefix_chars="+",
-            formatter_class=ArgumentDefaultsHelpFormatter,
-            add_help=False,
-        )
+    prog = "cg_low"
+    description = "Low order Continuous Galerkin Solver"
+
+    def _add_arguments(self):
         self._add_polynomial_degree()
         self._add_cfl_number()
         self._add_label()
+        self._add_ode_solver()
 
     def _add_cfl_number(self):
         self.add_argument(
@@ -73,30 +86,20 @@ class LowCGParser(CGParser):
             default=MCL_CFL_NUMBER,
         )
 
-
-class MCLParser(CGParser):
-    def __init__(self):
-        ArgumentParser.__init__(
-            self,
-            prog="mcl",
-            description="MCL Limiter",
-            prefix_chars="+",
-            formatter_class=ArgumentDefaultsHelpFormatter,
-            add_help=False,
-        )
-        self._add_polynomial_degree()
-        self._add_cfl_number()
-        self._add_label()
-
-    def _add_cfl_number(self):
+    def _add_ode_solver(self):
         self.add_argument(
-            "++cfl",
-            help="specify the cfl number for time stepping",
-            type=parser_type.positive_float,
-            metavar="number",
-            dest="cfl_number",
-            default=MCL_CFL_NUMBER,
+            "++ode",
+            help="specify ode solver",
+            choices={"euler", "heun", "ssp3", "ssp4"},
+            metavar="solver",
+            dest="ode_solver",
+            default=ODE_SOLVER,
         )
+
+
+class MCLParser(LowCGParser):
+    prog = "mcl"
+    description = "MCL Limiter"
 
 
 SOLVER_PARSER = {"cg": CGParser(), "cg_low": LowCGParser(), "mcl": MCLParser()}
