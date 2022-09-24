@@ -25,7 +25,7 @@ class SystemMatrix:
         self._csr_values = csr_matrix(values)
         self._lil_values = lil_matrix(values)
 
-    def assemble(self):
+    def update(self):
         self.update_values()
 
     def build_inverse(self):
@@ -104,7 +104,7 @@ class LocallyAssembledSystemMatrix(SystemMatrix):
         SystemMatrix.__init__(self, element_space)
         self._entry_calculator = entry_calculator
 
-    def assemble(self):
+    def update(self):
         for simplex_index in range(len(self.element_space.mesh)):
             for local_index_1 in range(self.element_space.indices_per_simplex):
                 for local_index_2 in range(self.element_space.indices_per_simplex):

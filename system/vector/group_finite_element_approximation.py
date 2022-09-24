@@ -31,5 +31,5 @@ class GroupFiniteElementApproximation(DOFVector):
 
         dof_vector.register_observer(self)
 
-    def assemble(self):
+    def update(self):
         self.dofs = self._flux(self._dof_vector.values)

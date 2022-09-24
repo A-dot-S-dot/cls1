@@ -38,4 +38,4 @@ class DiscreteGradient(LocallyAssembledSystemMatrix):
     def __init__(self, element_space: FiniteElementSpace):
         entry_calculator = DiscreteGradientEntryCalculator(element_space)
         LocallyAssembledSystemMatrix.__init__(self, element_space, entry_calculator)
-        self.assemble()
+        self.update()

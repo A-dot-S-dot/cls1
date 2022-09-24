@@ -148,7 +148,7 @@ class BasisL2Product(LocallyAssembledSystemVector):
         )
 
         LocallyAssembledSystemVector.__init__(self, element_space, entry_calculator)
-        self.assemble()
+        self.update()
 
 
 class BasisGradientL2Product(LocallyAssembledSystemVector):
@@ -170,4 +170,4 @@ class BasisGradientL2Product(LocallyAssembledSystemVector):
         )
 
         LocallyAssembledSystemVector.__init__(self, element_space, entry_calculator)
-        self.assemble()
+        self.update()

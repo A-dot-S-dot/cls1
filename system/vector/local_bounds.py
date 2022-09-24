@@ -19,7 +19,7 @@ class LocalMaximum(SystemVector):
         self._dof_vector = dof_vector
         dof_vector.register_observer(self)
 
-    def assemble(self):
+    def update(self):
         for i in range(self.dimension):
             self[i] = max(
                 {
@@ -42,7 +42,7 @@ class LocalMinimum(LocalMaximum):
     def __init__(self, dof_vector: DOFVector):
         LocalMaximum.__init__(self, dof_vector)
 
-    def assemble(self):
+    def update(self):
         for i in range(self.dimension):
             self[i] = min(
                 {

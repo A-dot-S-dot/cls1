@@ -12,7 +12,7 @@ class SystemVector:
         self._values = np.zeros(element_space.dimension)
         self._element_space = element_space
 
-    def assemble(self):
+    def update(self):
         raise NotImplementedError
 
     @property
@@ -56,7 +56,7 @@ class LocallyAssembledSystemVector(SystemVector):
         SystemVector.__init__(self, element_space)
         self._entry_calculator = entry_calculator
 
-    def assemble(self):
+    def update(self):
         self[:] = 0
 
         for simplex_index in range(len(self._element_space.mesh)):

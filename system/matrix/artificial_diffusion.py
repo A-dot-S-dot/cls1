@@ -19,9 +19,9 @@ class DiscreteUpwind(SystemMatrix):
     def __init__(self, discrete_gradient: SystemMatrix):
         SystemMatrix.__init__(self, discrete_gradient.element_space)
         self._discrete_gradient = discrete_gradient
-        self.assemble()
+        self.update()
 
-    def assemble(self):
+    def update(self):
         values = abs(self._discrete_gradient.values)
         diagonal = -values.sum(axis=1)
         self._lil_values = values.tolil()
@@ -57,7 +57,7 @@ class BurgersArtificialDiffusion(DiscreteUpwind):
 
         dof_vector.register_observer(self)
 
-    def assemble(self):
+    def update(self):
         values = self._discrete_gradient.values
         values = values.multiply(
             self._dof_vector.values

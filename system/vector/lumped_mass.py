@@ -15,7 +15,7 @@ class LumpedMassVector(SystemVector):
     def __init__(self, element_space: FiniteElementSpace):
         SystemVector.__init__(self, element_space)
         self._mass = MassMatrix(element_space)
-        self.assemble()
+        self.update()
 
-    def assemble(self):
+    def update(self):
         self[:] = self._mass.values.sum(axis=1).reshape(self.dimension)

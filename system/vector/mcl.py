@@ -61,7 +61,7 @@ class MCLRightHandSide(SystemVector):
         self._discrete_gradient = low_cg.discrete_gradient
         self._flux_approximation = low_cg.flux_approximation
 
-    def assemble(self):
+    def update(self):
         corrected_flux = np.zeros(self.dimension)
 
         for element_index in range(len(self.element_space.mesh)):

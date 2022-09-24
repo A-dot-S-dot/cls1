@@ -12,13 +12,13 @@ from ...test_helper import LINEAR_LAGRANGE_SPACE
 class SimpleSystemMatrix(SystemMatrix):
     def __init__(self, element_space: FiniteElementSpace):
         SystemMatrix.__init__(self, element_space)
-        self.assemble()
+        self.update()
 
-    def assemble(self):
+    def update(self):
         for i in range(self.dimension):
             self[i, i] = i + 1
 
-        super().assemble()
+        super().update()
 
 
 class SimpleMatrixEntryCalculator(SystemMatrixEntryCalculator):
@@ -125,7 +125,7 @@ class TestLocallyAssembledSystemMatrix(TestCase):
             (self.element_space.dimension, self.element_space.dimension)
         )
         matrix = LocallyAssembledSystemMatrix(self.element_space, self.entry_calculator)
-        matrix.assemble()
+        matrix.update()
 
         for i in range(self.element_space.dimension):
             for j in range(self.element_space.dimension):

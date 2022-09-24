@@ -13,14 +13,14 @@ class SimpleVectorEntryCalculator(SystemVectorEntryCalculator):
 
 
 class SimpleSystemVector(SystemVector):
-    def assemble(self):
+    def update(self):
         self[:] = 1
 
 
 class TestSystemVector(TestCase):
     element_space = LINEAR_LAGRANGE_SPACE
     vector = SimpleSystemVector(element_space)
-    vector.assemble()
+    vector.update()
 
     def test_assemble(self):
         self.assertListEqual(
