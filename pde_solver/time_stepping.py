@@ -92,7 +92,8 @@ class MCLTimeStepping(TimeStepping):
 
     def optimal_delta_t(self) -> float:
         return min(
-            self.lumped_mass.values / abs(self.artificial_diffusion.values.diagonal())
+            self.lumped_mass.values
+            / (2 * abs(self.artificial_diffusion.values.diagonal()))
         )
 
     def satisfy_cfl(self) -> bool:
