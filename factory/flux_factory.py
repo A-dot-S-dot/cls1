@@ -42,3 +42,6 @@ class FluxFactory:
             return lambda u: 1 / 2 * u**2
         else:
             raise NotImplementedError(f"No flux for '{self.problem_name}' implemented.")
+
+
+FLUX_FACTORY = FluxFactory()

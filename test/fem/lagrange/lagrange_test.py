@@ -21,6 +21,8 @@ class TestLinearLagrangeFiniteElementSpace(TestCase):
     basis_coefficients = [(1, 0), (0, 1)]
     test_basis: List[PiecewiseLagrangeInterpolation]
     test_points = np.linspace(interval.a, interval.b)
+    test_dof_indices = [0]
+    test_neighbours = [{0, 1}]
 
     def __init__(self, *args, **kwargs):
         TestCase.__init__(self, *args, **kwargs)
@@ -107,6 +109,17 @@ class TestLinearLagrangeFiniteElementSpace(TestCase):
         self.assertFalse(self.element_space.is_dof_vector(not_dof_vector_1))
         self.assertFalse(self.element_space.is_dof_vector(not_dof_vector_2))
 
+    def test_get_neighbours(self):
+        for dof_index, expected_neighbours in zip(
+            self.test_dof_indices, self.test_neighbours
+        ):
+            neighbours = self.element_space.get_neighbour_indices(dof_index)
+            self.assertSetEqual(
+                neighbours,
+                expected_neighbours,
+                msg=f"index={dof_index}, neighbours={neighbours}, expected_neighbours={expected_neighbours}",
+            )
+
 
 class TestQuadraticLagrangeFiniteElementSpace(TestLinearLagrangeFiniteElementSpace):
     polynomial_degree = 2
@@ -119,6 +132,8 @@ class TestQuadraticLagrangeFiniteElementSpace(TestLinearLagrangeFiniteElementSpa
     basis_coefficients = [(1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)]
     test_basis: List[PiecewiseLagrangeInterpolation]
     test_points = np.linspace(interval.a, interval.b)
+    test_dof_indices = [0, 1]
+    test_neighbours = [{0, 1, 2, 3}, {0, 1, 2}]
 
     def _build_test_basis(self):
         element_1 = PiecewiseLagrangeInterpolation()

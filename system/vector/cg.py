@@ -21,5 +21,5 @@ class CGRightHandSide(SystemVector):
         SystemVector.__init__(self, dof_vector.element_space)
         dof_vector.register_observer(self)
 
-    def assemble(self):
+    def update(self):
         self[:] = self.mass.inverse(self.flux_gradient.values)

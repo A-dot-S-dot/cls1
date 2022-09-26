@@ -55,15 +55,17 @@ class PDESolver:
         )
 
     def _ode_right_hand_side_function(self, dofs: np.ndarray) -> np.ndarray:
-        # update all DOF dependent quantities using observer pattern
         self.discrete_solution_dofs.dofs = dofs
 
-        return self.right_hand_side.values
+        if not self.time_stepping.satisfy_cfl():
+            tqdm.write(f"WARNING: CFL condition is violated at time {self._time:.4f}")
+
+        return self.right_hand_side.values.copy()
 
     def update(self, delta_t: float):
+        self.ode_solver.execute_step(delta_t)
         self._time += delta_t
         self._time_steps += 1
-        self.ode_solver.execute_step(delta_t)
 
     def solve(self):
         progress_iterator = tqdm(self.time_stepping, **self.tqdm_kwargs)

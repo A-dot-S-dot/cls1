@@ -34,3 +34,6 @@ class ODESolverFactory:
             raise NotImplementedError(
                 f"No optimal solver for degree {degree} available."
             )
+
+
+ODE_SOLVER_FACTORY = ODESolverFactory()
