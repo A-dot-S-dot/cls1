@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from argparse import Namespace
 
 
-class Task(ABC):
+class Command(ABC):
     _args: Namespace
 
     def __init__(self, args: Namespace):

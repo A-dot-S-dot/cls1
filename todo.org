@@ -1,7 +1,0 @@
-#+title: Todos
-
-* TODO Test Bar states
-* TODO Target Flux
-* TODO Limited Target Flux
-* TODO MCL Limiter
-* TODO fix burgers solution...

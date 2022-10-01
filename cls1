@@ -10,7 +10,7 @@ More information are available with "cls1 --help".
 from parser import ArgumentParserFEM1D
 
 import profiler
-from task import EOCTask, HelpTask, PlotTask, TestTask
+from command import TestCommand, HelpCommand, PlotCommand, EOCCommand
 
 
 @profiler.profile
@@ -21,18 +21,18 @@ def main():
     if hasattr(args, "profile"):
         profiler.PRINT_PROFILE = args.profile
 
-    if args.task == "test":
-        task = TestTask(args)
-    elif args.task == "help":
-        task = HelpTask(args)
-    elif args.task == "plot":
-        task = PlotTask(args)
-    elif args.task == "eoc":
-        task = EOCTask(args)
+    if args.command == "test":
+        command = TestCommand(args)
+    elif args.command == "help":
+        command = HelpCommand(args)
+    elif args.plot:
+        command = PlotCommand(args)
+    elif args.eoc:
+        command = EOCCommand(args)
     else:
         raise NotImplementedError
 
-    task.execute()
+    command.execute()
 
 
 if __name__ == "__main__":

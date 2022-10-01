@@ -15,7 +15,7 @@ from pde_solver.solver_components import SolverComponents
 from quadrature.norm import L1Norm, L2Norm, LInfinityNorm, Norm
 from tqdm import tqdm, trange
 
-from .task import Task
+from .command import Command
 
 
 class EOCCalculator:
@@ -87,7 +87,7 @@ class EOCCalculator:
             norm.set_mesh(self.mesh)
 
 
-class EOCTask(Task):
+class EOCCommand(Command):
     _components: SolverComponents
     _args: Namespace
     _benchmark: Benchmark
@@ -106,7 +106,10 @@ class EOCTask(Task):
                 f"Benchmark {self._args.benchmark} of {self._args.problem} has no exact solution. No EOC can be calculated."
             )
 
-        self._print_eocs()
+        if self._args.quite or len(self._solver_factories) == 0:
+            print("WARNING: Nothing to do...")
+        else:
+            self._print_eocs()
 
     def _print_eocs(self):
         eocs = []
@@ -152,7 +155,7 @@ class EOCTask(Task):
         linf_norm = LInfinityNorm(mesh, solver_factory.cell_quadrature_degree + 5)
         raw_eoc.add_norm(l2_norm, l1_norm, linf_norm)
 
-        return raw_eoc.eoc(self._args.refine)
+        return raw_eoc.eoc(self._args.eoc)
 
     def _format_data_frame(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         dofs_format = "{:.0f}"

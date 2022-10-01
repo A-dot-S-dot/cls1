@@ -10,7 +10,7 @@ from mesh import Interval
 from pde_solver.solver_components import SolverComponents
 from tqdm import tqdm
 
-from .task import Task
+from .command import Command
 
 
 class FunctionPlotter:
@@ -57,7 +57,7 @@ class FunctionPlotter:
         plt.legend()
 
 
-class PlotTask(Task):
+class PlotCommand(Command):
     _args: Namespace
     _components: SolverComponents
     _benchmark: Benchmark
@@ -73,16 +73,17 @@ class PlotTask(Task):
         self._plotter = FunctionPlotter()
 
         domain = self._benchmark.domain
-        dofs_number = self._get_maximal_polynomial_degree() * self._args.elements_number
+        dofs_number = self._get_maximal_polynomial_degree() * self._components.mesh_size
 
         self._plotter.set_grid(domain, dofs_number)
 
     def _get_maximal_polynomial_degree(self) -> int:
         maximal_polynomial_degree = 0
-        for solver_args in self._args.solver:
-            maximal_polynomial_degree = max(
-                solver_args.polynomial_degree, maximal_polynomial_degree
-            )
+        if self._args.solver:
+            for solver_args in self._args.solver:
+                maximal_polynomial_degree = max(
+                    solver_args.polynomial_degree, maximal_polynomial_degree
+                )
 
         return maximal_polynomial_degree
 
@@ -90,7 +91,7 @@ class PlotTask(Task):
         self._add_functions()
         self._plotter.title = f"{len(self._components.mesh)} elements"
 
-        if not self._args.no_plot:
+        if not self._args.quite:
             self._plotter.show()
 
     def _add_functions(self):
@@ -106,7 +107,7 @@ class PlotTask(Task):
                 f"$u(\cdot, {self._benchmark.end_time:.1f})$",
             )
         elif len(self._components.solver_factories) == 0:
-            raise ValueError("Nothing to plot.")
+            print("WARNING: Nothing to do...")
 
     def _add_discrete_solutions(self):
         for solver_factory in tqdm(

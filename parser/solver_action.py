@@ -1,12 +1,14 @@
 """This module provides custom actions for ArgumentParser in parser.py."""
 from argparse import Action, ArgumentParser, Namespace
-from typing import List, Sequence
+from typing import Dict, List, Sequence
 
-from .solver_parser import SOLVER_PARSER
+from .solver_parser import ADVECTION_SOLVER_PARSERS, BURGERS_SOLVER_PARSERS
 
 
 class SolverAction(Action):
     """Creates a list of solver attribute"""
+
+    _solver_parsers: Dict
 
     def __call__(
         self,
@@ -26,7 +28,7 @@ class SolverAction(Action):
         slice_index = None
 
         for i, value in enumerate(values):
-            if i > 0 and value in SOLVER_PARSER.keys():
+            if i > 0 and value in self._solver_parsers.keys():
                 slice_index = i
                 break
 
@@ -38,6 +40,14 @@ class SolverAction(Action):
     def _get_solver_namespace(self, raw_solver_arguments: Sequence[str]) -> Namespace:
         solver_key = raw_solver_arguments[0]
         namespace = Namespace(solver=solver_key)
-        SOLVER_PARSER[solver_key].parse_args(raw_solver_arguments[1:], namespace)
+        self._solver_parsers[solver_key].parse_args(raw_solver_arguments[1:], namespace)
 
         return namespace
+
+
+class AdvectionSolverAction(SolverAction):
+    _solver_parsers = ADVECTION_SOLVER_PARSERS
+
+
+class BurgersSolverAction(SolverAction):
+    _solver_parsers = BURGERS_SOLVER_PARSERS

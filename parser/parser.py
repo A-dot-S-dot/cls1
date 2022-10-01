@@ -5,8 +5,8 @@ from typing import Any, List
 from defaults import *
 
 from . import types as parser_type
-from .solver_action import SolverAction
-from .solver_parser import SOLVER_PARSER
+from .solver_action import AdvectionSolverAction, BurgersSolverAction
+from .solver_parser import ADVECTION_SOLVER_PARSERS
 
 
 class ArgumentParserFEM1D:
@@ -18,34 +18,32 @@ class ArgumentParserFEM1D:
             """\
         Explore different PDE-Solver for one-dimension conservation laws.
 
-        The program is structured as follows. First, select a TASK. If you
-        choose 'plot' or 'eoc' select a CONSERVATION_LAW to be solved and
-        finally the SOLVER(S) to be used. """
+        """
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     _current_parser_layer: List[Any] = [_parser]
 
     def __init__(self):
-        self._add_task_parsers(self._parser)
+        self._add_command_parsers(self._parser)
 
-    def _add_task_parsers(self, parser):
-        task_parsers = parser.add_subparsers(
-            title="Tasks",
-            dest="task",
-            metavar="task",
+    def _add_command_parsers(self, parser):
+        command_parsers = parser.add_subparsers(
+            title="Commands",
+            dest="command",
+            metavar="command",
             required=True,
         )
 
-        self._add_help_parser(task_parsers)
-        self._add_plot_parser(task_parsers)
-        self._add_eoc_parser(task_parsers)
-        self._add_test_parser(task_parsers)
+        self._add_help_parser(command_parsers)
+        self._add_test_parser(command_parsers)
+        self._add_advection_parser(command_parsers)
+        self._add_burgers_parser(command_parsers)
 
-        return task_parsers
+        return command_parsers
 
-    def _add_test_parser(self, task_parsers):
-        test_parser = task_parsers.add_parser(
+    def _add_test_parser(self, command_parsers):
+        test_parser = command_parsers.add_parser(
             "test",
             help="run unit test",
             description="Task for running unit tests. If no argument is given run all tests.",
@@ -54,8 +52,8 @@ class ArgumentParserFEM1D:
             "file", nargs="*", help="run unittest contained in FILE_test.py"
         )
 
-    def _add_help_parser(self, task_parsers):
-        help_parser = task_parsers.add_parser(
+    def _add_help_parser(self, command_parsers):
+        help_parser = command_parsers.add_parser(
             "help",
             help="display help messages",
             description="Task for displaying different help messages for certain objects",
@@ -63,54 +61,63 @@ class ArgumentParserFEM1D:
 
         help_parser.add_argument(
             "page",
-            choices=[*SOLVER_PARSER.keys(), "benchmark"],
+            choices=[*ADVECTION_SOLVER_PARSERS.keys(), "benchmark"],
             help="page which should be displayed in terminal",
         )
 
-    def _add_plot_parser(self, task_parsers):
-        plot_parser = task_parsers.add_parser(
-            "plot",
-            help="plot discrete solution",
-            description="""Plot solution at a given time and compare with the
-            exact solution if it is available. For more information about solver
-            and benchmarks use the 'help' command.""",
+    def _add_advection_parser(self, command_parsers):
+        advection_parser = command_parsers.add_parser(
+            "advection",
+            help="solve linear Advection",
+            description="""Solver liner Advection. Available solvers are 'cg',
+            'low_cg' and 'mcl'. For more information use 'help' command.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        plot_parser.add_argument(
-            "--no-plot",
-            help="do not display plot (used for test purposes)",
+        self._add_plot_and_eoc_argument(advection_parser)
+        self._add_mesh_size_argument(advection_parser)
+        self._add_benchmark_argument(advection_parser)
+        self._add_end_time_argument(advection_parser)
+        self._add_quite_argument(advection_parser)
+        self._add_profile_argument(advection_parser)
+        self._add_solver_argument(advection_parser, AdvectionSolverAction)
+
+    def _add_plot_and_eoc_argument(self, parser):
+        task_group = parser.add_mutually_exclusive_group(required=True)
+        task_group.add_argument(
+            "-p",
+            "--plot",
+            help="plot discrete solution",
             action="store_true",
         )
-        plot_parser.add_argument(
+        task_group.add_argument(
             "-e",
-            "--elements-number",
-            help="mesh elements number",
+            "--eoc",
+            help=f"""Calculate experimental order of convergence (EOC). If
+            REFINE is not specified refine {REFINE_NUMBER} times.""",
+            nargs="?",
             type=parser_type.positive_int,
-            metavar="Nh",
-            default=ELEMENTS_NUMBER_PLOT,
+            const=REFINE_NUMBER,
+            metavar="REFINE",
         )
 
-        self._add_problem_argument(plot_parser, default_benchmark="plot_default")
-        plot_parser.add_argument(
-            "solver",
-            help="solver on which the task is applied. If no solver is given plot the benchmark.",
-            nargs="*",
-            action=SolverAction,
-        )
-        self._add_profile_argument(plot_parser)
-
-    def _add_problem_argument(self, parser, default_benchmark: str):
+    def _add_mesh_size_argument(self, parser):
         parser.add_argument(
-            "problem",
-            choices=["advection", "burgers"],
-            help="conservation law to be solved",
+            "-m",
+            "--mesh-size",
+            help="Number of mesh cells. If not specified use the default size for the chosen task.",
+            type=parser_type.positive_int,
+            metavar="SIZE",
         )
+
+    def _add_benchmark_argument(self, parser):
         parser.add_argument(
             "-b",
             "--benchmark",
-            default=default_benchmark,
-            help="benchmark for conservation law",
+            help="Benchmark for conservation law. If none is specified use the default one for the chosen task.",
+            type=int,
         )
+
+    def _add_end_time_argument(self, parser):
         parser.add_argument(
             "-T",
             "--end-time",
@@ -118,51 +125,46 @@ class ArgumentParserFEM1D:
             help="End time used by solvers. If not specified use benchmark's end time.",
         )
 
+    def _add_quite_argument(self, parser):
+        parser.add_argument(
+            "-q", "--quite", help="suppress output", action="store_true"
+        )
+
     def _add_profile_argument(self, parser):
         parser.add_argument(
-            "-p",
             "--profile",
             help="Profile program for optimization purposes. You can specify the number of lines to be printed. Otherwise print %(const)s lines.",
             type=int,
             nargs="?",
             const=30,
             default=0,
-            metavar="lines",
+            metavar="LINES",
         )
 
-    def _add_eoc_parser(self, task_parsers):
-        eoc_parser = task_parsers.add_parser(
-            "eoc",
-            help="test order of convergence",
-            description="""Specify experimental order of convergence (EOC) by
-            calculating discrete solutions after several refinements and
-            comparing L1-, L2- and Linf-errors.For more information about solver
-            and benchmarks use the 'help' command""",
+    def _add_solver_argument(self, parser, action):
+        parser.add_argument(
+            "-s",
+            "--solver",
+            help="Solver on which the task is applied.",
+            nargs="+",
+            action=action,
+        )
+
+    def _add_burgers_parser(self, command_parsers):
+        burgers_parser = command_parsers.add_parser(
+            "burgers",
+            help="solver Burgers",
+            description="""Solve Burgers. Available solvers are 'cg',
+            'low_cg' and 'mcl'. For more information use 'help' command.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        eoc_parser.add_argument(
-            "--refine",
-            help="specify how many times the mesh should be refined",
-            type=parser_type.positive_int,
-            default=REFINE_NUMBER,
-        )
-        eoc_parser.add_argument(
-            "-e",
-            "--elements-number",
-            help="initial mesh elements number",
-            type=parser_type.positive_int,
-            metavar="Nh",
-            default=ELEMENTS_NUMBER_EOC,
-        )
-
-        self._add_problem_argument(eoc_parser, default_benchmark="eoc_default")
-        eoc_parser.add_argument(
-            "solver",
-            help="solver on which the task is applied.",
-            nargs="+",
-            action=SolverAction,
-        )
-        self._add_profile_argument(eoc_parser)
+        self._add_plot_and_eoc_argument(burgers_parser)
+        self._add_mesh_size_argument(burgers_parser)
+        self._add_benchmark_argument(burgers_parser)
+        self._add_end_time_argument(burgers_parser)
+        self._add_quite_argument(burgers_parser)
+        self._add_profile_argument(burgers_parser)
+        self._add_solver_argument(burgers_parser, BurgersSolverAction)
 
     def parse_args(self) -> argparse.Namespace:
         return self._parser.parse_args()
