@@ -102,4 +102,10 @@ class MCLParser(LowCGParser):
     description = "MCL Limiter"
 
 
-SOLVER_PARSER = {"cg": CGParser(), "cg_low": LowCGParser(), "mcl": MCLParser()}
+SOLVER_PARSERS = {
+    "cg": CGParser(),
+    "cg_low": LowCGParser(),
+    "mcl": MCLParser(),
+}
+ADVECTION_SOLVER_PARSERS = SOLVER_PARSERS
+BURGERS_SOLVER_PARSERS = SOLVER_PARSERS

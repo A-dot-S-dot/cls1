@@ -55,7 +55,13 @@ class PDESolver:
         )
 
     def _ode_right_hand_side_function(self, dofs: np.ndarray) -> np.ndarray:
-        self.discrete_solution_dofs.dofs = dofs
+        if (dofs != self.ode_solver.solution).any():
+            self.discrete_solution_dofs.dofs = dofs
+
+            if not self.time_stepping.satisfy_cfl():
+                tqdm.write(
+                    f"WARNING: CFL condition is violated at time {self._time:.4f}"
+                )
 
         if not self.time_stepping.satisfy_cfl():
             tqdm.write(f"WARNING: CFL condition is violated at time {self._time:.4f}")
@@ -72,3 +78,6 @@ class PDESolver:
 
         for delta_t in progress_iterator:
             self.update(delta_t)
+
+            # update all DOF dependent quantities using observer pattern
+            self.discrete_solution_dofs.dofs = self.ode_solver.solution

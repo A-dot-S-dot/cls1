@@ -12,13 +12,13 @@ class UniformMesh(Mesh):
     _grid: np.ndarray
     _simplices: Sequence[Interval]
 
-    def __init__(self, domain: Interval, elements_number: int) -> None:
-        if elements_number <= 0:
-            raise ValueError("{elements_number} is not positive")
+    def __init__(self, domain: Interval, mesh_size: int) -> None:
+        if mesh_size <= 0:
+            raise ValueError(f"{mesh_size} is not positive")
 
         self._domain = domain
 
-        nodes_number = elements_number + 1
+        nodes_number = mesh_size + 1
         self._grid, step_length = np.linspace(
             domain.a, domain.b, nodes_number, retstep=True
         )
@@ -40,6 +40,6 @@ class UniformMesh(Mesh):
         return self.step_length == other.step_length and self.domain == other.domain
 
     def refine(self):
-        new_elements_number = 2 * len(self)
+        new_mesh_size = 2 * len(self)
 
-        return UniformMesh(self.domain, new_elements_number)
+        return UniformMesh(self.domain, new_mesh_size)

@@ -1,8 +1,9 @@
 """This module provides a task for displaying help messages.
 
 """
-from .task import Task
-from parser.solver_parser import SOLVER_PARSER
+from parser.solver_parser import SOLVER_PARSERS
+
+from .command import Command
 
 BENCHMARK_MESSAGE = """Available benchmarks.
 
@@ -22,12 +23,12 @@ Burgers
 """
 
 
-class HelpTask(Task):
+class HelpCommand(Command):
     def execute(self):
         page = self._args.page
 
-        if page in SOLVER_PARSER.keys():
-            SOLVER_PARSER[page].print_help()
+        if page in SOLVER_PARSERS.keys():
+            SOLVER_PARSERS[page].print_help()
         elif page == "benchmark":
             print(BENCHMARK_MESSAGE)
         else:
