@@ -113,7 +113,7 @@ class ArgumentParserFEM1D:
         parser.add_argument(
             "-b",
             "--benchmark",
-            help="Benchmark for conservation law. If none is specified use the default one for the chosen task.",
+            help="Benchmark for conservation law. If not specified use the default one for the chosen task.",
             type=int,
         )
 
