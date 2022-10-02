@@ -25,25 +25,25 @@ class ArgumentParserFEM1D:
     _current_parser_layer: List[Any] = [_parser]
 
     def __init__(self):
-        self._add_command_parsers(self._parser)
+        self._add_program_parsers(self._parser)
 
-    def _add_command_parsers(self, parser):
-        command_parsers = parser.add_subparsers(
-            title="Commands",
-            dest="command",
-            metavar="command",
+    def _add_program_parsers(self, parser):
+        program_parsers = parser.add_subparsers(
+            title="Programs",
+            dest="program",
+            metavar="program",
             required=True,
         )
 
-        self._add_help_parser(command_parsers)
-        self._add_test_parser(command_parsers)
-        self._add_advection_parser(command_parsers)
-        self._add_burgers_parser(command_parsers)
+        self._add_help_parser(program_parsers)
+        self._add_test_parser(program_parsers)
+        self._add_advection_parser(program_parsers)
+        self._add_burgers_parser(program_parsers)
 
-        return command_parsers
+        return program_parsers
 
-    def _add_test_parser(self, command_parsers):
-        test_parser = command_parsers.add_parser(
+    def _add_test_parser(self, program_parsers):
+        test_parser = program_parsers.add_parser(
             "test",
             help="run unit test",
             description="Task for running unit tests. If no argument is given run all tests.",
@@ -52,8 +52,8 @@ class ArgumentParserFEM1D:
             "file", nargs="*", help="run unittest contained in FILE_test.py"
         )
 
-    def _add_help_parser(self, command_parsers):
-        help_parser = command_parsers.add_parser(
+    def _add_help_parser(self, program_parsers):
+        help_parser = program_parsers.add_parser(
             "help",
             help="display help messages",
             description="Task for displaying different help messages for certain objects",
@@ -65,12 +65,12 @@ class ArgumentParserFEM1D:
             help="page which should be displayed in terminal",
         )
 
-    def _add_advection_parser(self, command_parsers):
-        advection_parser = command_parsers.add_parser(
+    def _add_advection_parser(self, program_parsers):
+        advection_parser = program_parsers.add_parser(
             "advection",
             help="solve linear Advection",
             description="""Solver liner Advection. Available solvers are 'cg',
-            'low_cg' and 'mcl'. For more information use 'help' command.""",
+            'low_cg' and 'mcl'. For more information use 'help' program.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         self._add_plot_and_eoc_arguments(advection_parser)
@@ -156,12 +156,12 @@ class ArgumentParserFEM1D:
             action=action,
         )
 
-    def _add_burgers_parser(self, command_parsers):
-        burgers_parser = command_parsers.add_parser(
+    def _add_burgers_parser(self, program_parsers):
+        burgers_parser = program_parsers.add_parser(
             "burgers",
             help="solver Burgers",
             description="""Solve Burgers. Available solvers are 'cg',
-            'low_cg' and 'mcl'. For more information use 'help' command.""",
+            'low_cg' and 'mcl'. For more information use 'help' program.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         self._add_plot_and_eoc_arguments(burgers_parser)

@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 from argparse import Namespace
-from typing import Dict
+from typing import Callable, Dict
+from math_type import MultidimensionalFunction
 
 from fem import FiniteElementSpace, GlobalFiniteElement
 from fem.lagrange import LagrangeFiniteElementSpace
-from math_type import FunctionRealToReal
+from math_type import ScalarFunction
 from mesh import Mesh
-from pde_solver.solver import PDESolver
+from pde_solver.solver import FiniteElementSolver, PDESolver
 from system.matrix import SystemMatrix
 from system.matrix.discrete_gradient import DiscreteGradient
 from system.matrix.mass import MassMatrix
@@ -31,19 +32,64 @@ class PDESolverFactory(ABC):
     attributes: Namespace
     problem_name: str
     mesh: Mesh
-    initial_data: FunctionRealToReal
+    initial_data: ScalarFunction
     start_time: float
     end_time: float
 
     _solver: PDESolver
-    _element_space: FiniteElementSpace
-    _dof_vector: DOFVector
 
     @property
     def solver(self) -> PDESolver:
         self._create_attributes()
 
         return self._solver
+
+    @abstractmethod
+    def _create_attributes(self):
+        ...
+
+    @property
+    @abstractmethod
+    def cell_quadrature_degree(self) -> int:
+        ...
+
+    @property
+    @abstractmethod
+    def dofs(self) -> int:
+        ...
+
+    @property
+    @abstractmethod
+    def plot_label(self) -> str:
+        ...
+
+    @property
+    @abstractmethod
+    def eoc_title(self) -> str:
+        ...
+
+    @property
+    @abstractmethod
+    def tqdm_kwargs(self) -> Dict:
+        ...
+
+    @property
+    @abstractmethod
+    def info(self) -> str:
+        ...
+
+    @property
+    @abstractmethod
+    def discrete_solution(self) -> MultidimensionalFunction:
+        ...
+
+
+class FiniteElementSolverFactory(PDESolverFactory):
+    """Superclass, some methods must be implemented by subclasses."""
+
+    _solver: FiniteElementSolver
+    _element_space: FiniteElementSpace
+    _dof_vector: DOFVector
 
     def _create_attributes(self):
         self._create_solver()
@@ -57,7 +103,7 @@ class PDESolverFactory(ABC):
         self._create_tqdm_kwargs()
 
     def _create_solver(self):
-        self._solver = PDESolver()
+        self._solver = FiniteElementSolver()
 
     def _create_element_space(self):
         self._element_space = LagrangeFiniteElementSpace(
@@ -68,17 +114,15 @@ class PDESolverFactory(ABC):
         self._dof_vector = DOFVector(self._element_space)
         self._solver.discrete_solution_dofs = self._dof_vector
 
-    @abstractmethod
     def _create_right_hand_side(self):
-        ...
+        raise NotImplementedError
 
-    @abstractmethod
     def _create_time_stepping(self):
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def _create_ode_solver(self):
-        ...
+        raise NotImplementedError
 
     def _create_tqdm_kwargs(self):
         self._solver.tqdm_kwargs = self.tqdm_kwargs
@@ -119,7 +163,7 @@ class PDESolverFactory(ABC):
         return GlobalFiniteElement(self._element_space, self._solver.solution)
 
 
-class ContinuousGalerkinSolverFactory(PDESolverFactory):
+class ContinuousGalerkinSolverFactory(FiniteElementSolverFactory):
     _problem_name: str
 
     @property
@@ -200,7 +244,7 @@ class ContinuousGalerkinSolverFactory(PDESolverFactory):
         return f"CG (p={self.attributes.polynomial_degree}, exact_flux={int(self.attributes.exact_flux)}, cfl={self.attributes.cfl_number})"
 
 
-class LowOrderCGFactory(PDESolverFactory):
+class LowOrderCGFactory(FiniteElementSolverFactory):
     _lumped_mass: SystemVector
     _artificial_diffusion: SystemMatrix
     _problem_name: str

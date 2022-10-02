@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 import numpy as np
-from math_type import FunctionRealToReal
+from math_type import ScalarFunction
 from mesh import Interval
 
 
@@ -29,5 +29,5 @@ class Quadrature(ABC):
         return len(self._nodes)
 
     @abstractmethod
-    def integrate(self, f: FunctionRealToReal):
+    def integrate(self, f: ScalarFunction):
         ...

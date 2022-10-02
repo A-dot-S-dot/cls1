@@ -1,6 +1,6 @@
 import numpy as np
 from fem import FiniteElementSpace
-from math_type import FunctionRealDToRealD
+from math_type import MultidimensionalFunction
 from scipy.sparse import csr_matrix, lil_matrix, spmatrix
 from scipy.sparse.linalg import SuperLU, splu, spsolve
 
@@ -33,7 +33,7 @@ class SystemMatrix:
         self._inverse_function = lambda vector: self._inverse.solve(vector)
 
     @property
-    def inverse(self) -> FunctionRealDToRealD:
+    def inverse(self) -> MultidimensionalFunction:
         return self._inverse_function
 
     @property

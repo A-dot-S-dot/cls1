@@ -2,7 +2,7 @@
 from typing import Sequence, Set
 
 import numpy as np
-from math_type import FunctionRealToReal
+from math_type import ScalarFunction
 from mesh import Interval, Mesh
 from mesh.transformation import AffineTransformation
 
@@ -139,7 +139,7 @@ class LagrangeFiniteElementSpace(FiniteElementSpace):
 
         return self._affine_transformation.inverse_derivative(simplex) * value
 
-    def interpolate(self, function: FunctionRealToReal) -> np.ndarray:
+    def interpolate(self, function: ScalarFunction) -> np.ndarray:
         if isinstance(self._dof_index_mapping, PeriodicDOFIndexMapping):
             self._check_continuity_at_periodic_point(function)
 
@@ -147,7 +147,7 @@ class LagrangeFiniteElementSpace(FiniteElementSpace):
 
         return dof_vector
 
-    def _check_continuity_at_periodic_point(self, function: FunctionRealToReal):
+    def _check_continuity_at_periodic_point(self, function: ScalarFunction):
         eps = 1e-12
 
         if abs(function(self.mesh.domain.a) - function(self.mesh.domain.b)) > eps:

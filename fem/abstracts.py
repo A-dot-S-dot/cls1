@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Iterator, Sequence, Set
 
 import numpy as np
-from math_type import FunctionRealToReal
+from math_type import ScalarFunction
 from mesh import Interval, Mesh
 
 
@@ -22,13 +22,13 @@ class FiniteElement(ABC):
 class LocalFiniteElement(FiniteElement):
     """Finite element basis element on the standard simplex."""
 
-    _call_method: FunctionRealToReal
-    _derivative: FunctionRealToReal
+    _call_method: ScalarFunction
+    _derivative: ScalarFunction
 
     def __init__(
         self,
-        call_method: FunctionRealToReal,
-        derivative: FunctionRealToReal,
+        call_method: ScalarFunction,
+        derivative: ScalarFunction,
     ):
         self._call_method = call_method
         self._derivative = derivative
@@ -161,7 +161,7 @@ class FiniteElementSpace(ABC):
         ...
 
     @abstractmethod
-    def interpolate(self, f: FunctionRealToReal) -> np.ndarray:
+    def interpolate(self, f: ScalarFunction) -> np.ndarray:
         ...
 
     def __eq__(self, other) -> bool:

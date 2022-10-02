@@ -1,5 +1,5 @@
 from fem.fast_element import QuadratureFastFiniteElement
-from math_type import FunctionRealToReal
+from math_type import ScalarFunction
 from system.matrix import SystemMatrix
 
 from .discrete_l2_product import AbstractBasisGradientL2ProductEntryCalculator
@@ -8,13 +8,13 @@ from .system_vector import LocallyAssembledSystemVector, SystemVector
 
 
 class FluxGradientEntryCalculator(AbstractBasisGradientL2ProductEntryCalculator):
-    _flux: FunctionRealToReal
+    _flux: ScalarFunction
     _fast_element: QuadratureFastFiniteElement
 
     def __init__(
         self,
         dof_vector: DOFVector,
-        flux: FunctionRealToReal,
+        flux: ScalarFunction,
         quadrature_degree: int,
     ):
         AbstractBasisGradientL2ProductEntryCalculator.__init__(
@@ -55,7 +55,7 @@ class FluxGradient(LocallyAssembledSystemVector):
     def __init__(
         self,
         dof_vector: DOFVector,
-        flux: FunctionRealToReal,
+        flux: ScalarFunction,
         quadrature_degree: int,
     ):
         entry_calculator = FluxGradientEntryCalculator(

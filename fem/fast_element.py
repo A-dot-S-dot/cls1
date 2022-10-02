@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Sequence
 
 import numpy as np
-from math_type import FunctionRealToReal
+from math_type import ScalarFunction
 from mesh import Mesh
 from mesh.transformation import AffineTransformation
 from quadrature.local import LocalElementQuadrature
@@ -27,16 +27,16 @@ class FastMapping(ABC):
 
 
 class FastFunction(FastMapping):
-    _function: FunctionRealToReal
-    _derivative: FunctionRealToReal
+    _function: ScalarFunction
+    _derivative: ScalarFunction
     _mesh: Mesh
     _local_points: Sequence[float]
     _affine_transformation: AffineTransformation
 
     def __init__(
         self,
-        function: FunctionRealToReal,
-        derivative: FunctionRealToReal,
+        function: ScalarFunction,
+        derivative: ScalarFunction,
         mesh: Mesh,
         local_points: Sequence[float],
     ):

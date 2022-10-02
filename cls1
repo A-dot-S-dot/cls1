@@ -21,9 +21,9 @@ def main():
     if hasattr(args, "profile"):
         profiler.PRINT_PROFILE = args.profile
 
-    if args.command == "test":
+    if args.program == "test":
         command = TestCommand(args)
-    elif args.command == "help":
+    elif args.program == "help":
         command = HelpCommand(args)
     elif args.plot:
         command = PlotCommand(args)

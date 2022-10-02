@@ -1,11 +1,14 @@
+from abc import ABC, abstractmethod
+
 import time
 from argparse import Namespace
 
 import matplotlib.pyplot as plt
 import numpy as np
 from benchmark import Benchmark
-from factory.pde_solver_factory import PDESolverFactory
-from math_type import FunctionRealToReal
+from factory.pde_solver_factory import FiniteElementSolverFactory
+from math_type import ScalarFunction
+from math_type.basic import MultidimensionalFunction
 from mesh import Interval
 from pde_solver.solver_components import SolverComponents
 from tqdm import tqdm
@@ -13,7 +16,7 @@ from tqdm import tqdm
 from .command import Command
 
 
-class FunctionPlotter:
+class FunctionPlotter(ABC):
     _grid: np.ndarray
     _suptitle: str
 
@@ -38,10 +41,9 @@ class FunctionPlotter:
     def suptitle(self, suptitle: str):
         plt.suptitle(suptitle, fontsize=14, fontweight="bold")
 
-    def add_function(self, function: FunctionRealToReal, function_label: str):
-        function_values = np.array([function(x) for x in self._grid])
-
-        plt.plot(self._grid, function_values, label=function_label)
+    @abstractmethod
+    def add_function(self, function: MultidimensionalFunction, function_label: str):
+        ...
 
     def save(self, path="output/plot.png"):
         self._setup()
@@ -57,11 +59,18 @@ class FunctionPlotter:
         plt.legend()
 
 
+class ScalarFunctionPlotter(FunctionPlotter):
+    def add_function(self, function: ScalarFunction, function_label: str):
+        function_values = np.array([function(x) for x in self._grid])
+
+        plt.plot(self._grid, function_values, label=function_label)
+
+
 class PlotCommand(Command):
     _args: Namespace
     _components: SolverComponents
     _benchmark: Benchmark
-    _plotter: FunctionPlotter
+    _plotter: ScalarFunctionPlotter
 
     def __init__(self, args: Namespace):
         self._args = args
@@ -70,7 +79,7 @@ class PlotCommand(Command):
         self._build_plotter()
 
     def _build_plotter(self):
-        self._plotter = FunctionPlotter()
+        self._plotter = ScalarFunctionPlotter()
 
         domain = self._benchmark.domain
         dofs_number = self._get_maximal_polynomial_degree() * self._components.mesh_size
@@ -119,7 +128,7 @@ class PlotCommand(Command):
         ):
             self._add_discrete_solution(solver_factory)
 
-    def _add_discrete_solution(self, solver_factory: PDESolverFactory):
+    def _add_discrete_solution(self, solver_factory: FiniteElementSolverFactory):
         solver = solver_factory.solver
 
         start_time = time.time()

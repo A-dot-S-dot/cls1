@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 import numpy as np
-from math_type import FunctionRealToReal
+from math_type import ScalarFunction
 from mesh import Interval
 
 from .abstracts import Quadrature
@@ -48,7 +48,7 @@ class GaussianQuadrature(Quadrature):
     def nodes(self) -> List[float]:
         return self._nodes
 
-    def integrate(self, function: FunctionRealToReal) -> float:
+    def integrate(self, function: ScalarFunction) -> float:
         quadrature_nodes_values = np.array([function(node) for node in self.nodes])
 
         return np.dot(self.weights, quadrature_nodes_values)

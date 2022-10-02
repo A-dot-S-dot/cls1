@@ -9,7 +9,7 @@ from factory import (
     ContinuousGalerkinSolverFactory,
     LowOrderCGFactory,
     MCLSolverFactory,
-    PDESolverFactory,
+    FiniteElementSolverFactory,
 )
 from mesh import Mesh
 from mesh.uniform import UniformMesh
@@ -17,7 +17,7 @@ from mesh.uniform import UniformMesh
 
 class SolverComponents:
     _args: Namespace
-    _solver_factories: Sequence[PDESolverFactory]
+    _solver_factories: Sequence[FiniteElementSolverFactory]
     _benchmark: Benchmark
     _mesh: UniformMesh
 
@@ -27,7 +27,7 @@ class SolverComponents:
         self._build_solver_factories()
 
     def _setup_benchmark_factory(self):
-        BENCHMARK_FACTORY.problem_name = self._args.command
+        BENCHMARK_FACTORY.problem_name = self._args.program
         BENCHMARK_FACTORY.benchmark_number = self._args.benchmark
         BENCHMARK_FACTORY.end_time = self._args.end_time
         BENCHMARK_FACTORY.command = self._get_command()
@@ -47,11 +47,13 @@ class SolverComponents:
             for solver_args in self._args.solver:
                 self._solver_factories.append(self._build_solver_factory(solver_args))
 
-    def _build_solver_factory(self, solver_args: Namespace) -> PDESolverFactory:
+    def _build_solver_factory(
+        self, solver_args: Namespace
+    ) -> FiniteElementSolverFactory:
         solver_factory = self._get_solver_factory(solver_args.solver)
 
         solver_factory.attributes = solver_args
-        solver_factory.problem_name = self._args.command
+        solver_factory.problem_name = self._args.program
         solver_factory.mesh = self.mesh
         solver_factory.initial_data = self.benchmark.initial_data
         solver_factory.start_time = self.benchmark.start_time
@@ -59,7 +61,7 @@ class SolverComponents:
 
         return solver_factory
 
-    def _get_solver_factory(self, solver_name: str) -> PDESolverFactory:
+    def _get_solver_factory(self, solver_name: str) -> FiniteElementSolverFactory:
         if solver_name == "cg":
             solver_factory = ContinuousGalerkinSolverFactory()
         elif solver_name == "cg_low":
@@ -91,5 +93,5 @@ class SolverComponents:
             raise NotImplementedError
 
     @property
-    def solver_factories(self) -> Sequence[PDESolverFactory]:
+    def solver_factories(self) -> Sequence[FiniteElementSolverFactory]:
         return self._solver_factories

@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
-from math_type import FunctionRealToReal
+from math_type import ScalarFunction
 from mesh import Interval, Mesh
 from mesh.uniform import UniformMesh
 from mesh.transformation import AffineTransformation
@@ -23,7 +23,7 @@ class Norm(ABC):
         return self._name
 
     @abstractmethod
-    def __call__(self, function: FunctionRealToReal) -> float:
+    def __call__(self, function: ScalarFunction) -> float:
         ...
 
 
@@ -53,7 +53,7 @@ class MeshDependentIntegralNorm(Norm):
 class L2Norm(MeshDependentIntegralNorm):
     _name = "L2-Norm"
 
-    def __call__(self, function: FunctionRealToReal) -> float:
+    def __call__(self, function: ScalarFunction) -> float:
         integral = 0
 
         for simplex in self._mesh:
@@ -62,7 +62,7 @@ class L2Norm(MeshDependentIntegralNorm):
         return np.sqrt(self._determinant_derivative_affine_mapping * integral)
 
     def _calculate_norm_on_simplex(
-        self, function: FunctionRealToReal, simplex: Interval
+        self, function: ScalarFunction, simplex: Interval
     ) -> float:
         node_values = np.array(
             [
@@ -76,7 +76,7 @@ class L2Norm(MeshDependentIntegralNorm):
 class L1Norm(MeshDependentIntegralNorm):
     _name = "L1-Norm"
 
-    def __call__(self, function: FunctionRealToReal) -> float:
+    def __call__(self, function: ScalarFunction) -> float:
         integral = 0
 
         for simplex in self._mesh:
@@ -85,7 +85,7 @@ class L1Norm(MeshDependentIntegralNorm):
         return self._determinant_derivative_affine_mapping * integral
 
     def _calculate_norm_on_simplex(
-        self, function: FunctionRealToReal, simplex: Interval
+        self, function: ScalarFunction, simplex: Interval
     ) -> float:
         node_values = np.array(
             [
@@ -108,7 +108,7 @@ class LInfinityNorm(Norm):
     def set_mesh(self, mesh: Mesh):
         self._mesh = mesh
 
-    def __call__(self, function: FunctionRealToReal) -> float:
+    def __call__(self, function: ScalarFunction) -> float:
         maximum_per_simplex = np.zeros(len(self._mesh))
 
         for simplex_index, simplex in enumerate(self._mesh):
@@ -119,7 +119,7 @@ class LInfinityNorm(Norm):
         return float(np.amax(maximum_per_simplex))
 
     def _calculate_norm_on_simplex(
-        self, function: FunctionRealToReal, simplex: Interval
+        self, function: ScalarFunction, simplex: Interval
     ) -> float:
         return np.amax(
             [

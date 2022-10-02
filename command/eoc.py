@@ -8,8 +8,8 @@ from typing import Sequence, Tuple
 import numpy as np
 import pandas as pd
 from benchmark import Benchmark
-from factory import PDESolverFactory
-from math_type import FunctionRealToReal
+from factory import FiniteElementSolverFactory
+from math_type import ScalarFunction
 from mesh import Mesh
 from pde_solver.solver_components import SolverComponents
 from quadrature.norm import L1Norm, L2Norm, LInfinityNorm, Norm
@@ -21,7 +21,7 @@ from .command import Command
 class EOCCalculator:
     mesh: Mesh
     benchmark: Benchmark
-    solver_factory: PDESolverFactory
+    solver_factory: FiniteElementSolverFactory
 
     _norm: Tuple[Norm, ...]
     _end_time: float
@@ -55,15 +55,13 @@ class EOCCalculator:
 
         return data_frame
 
-    def _calculate_discrete_solution(self) -> FunctionRealToReal:
+    def _calculate_discrete_solution(self) -> ScalarFunction:
         solver = self.solver_factory.solver
         solver.solve()
 
         return self.solver_factory.discrete_solution
 
-    def _calculate_error(
-        self, norm: Norm, discrete_solution: FunctionRealToReal
-    ) -> float:
+    def _calculate_error(self, norm: Norm, discrete_solution: ScalarFunction) -> float:
         exact_solution = self.benchmark.exact_solution_at_end_time
         function = lambda x: discrete_solution(x) - exact_solution(x)
 
@@ -91,7 +89,7 @@ class EOCCommand(Command):
     _components: SolverComponents
     _args: Namespace
     _benchmark: Benchmark
-    _solver_factories: Sequence[PDESolverFactory]
+    _solver_factories: Sequence[FiniteElementSolverFactory]
 
     def __init__(self, args: Namespace):
         self._args = args
@@ -129,7 +127,9 @@ class EOCCommand(Command):
             print(title)
             print(eoc)
 
-    def _calculate_eoc(self, solver_factory: PDESolverFactory) -> pd.DataFrame:
+    def _calculate_eoc(
+        self, solver_factory: FiniteElementSolverFactory
+    ) -> pd.DataFrame:
         raw_eoc = self._calculate_raw_eoc(solver_factory)
 
         columns = [
@@ -142,7 +142,9 @@ class EOCCommand(Command):
         data_frame = pd.DataFrame(raw_eoc, columns=columns)
         return self._format_data_frame(data_frame)
 
-    def _calculate_raw_eoc(self, solver_factory: PDESolverFactory) -> np.ndarray:
+    def _calculate_raw_eoc(
+        self, solver_factory: FiniteElementSolverFactory
+    ) -> np.ndarray:
         mesh = solver_factory.mesh
 
         raw_eoc = EOCCalculator()

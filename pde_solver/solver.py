@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Dict
 
 import numpy as np
@@ -9,10 +10,39 @@ from tqdm import tqdm
 from .time_stepping import TimeStepping
 
 
-class PDESolver:
-    right_hand_side: SystemVector
+class PDESolver(ABC):
     discrete_solution_dofs: DOFVector
+    time_stepping: TimeStepping
     tqdm_kwargs: Dict
+
+    @property
+    @abstractmethod
+    def solution(self) -> np.ndarray:
+        ...
+
+    @property
+    @abstractmethod
+    def time(self) -> float:
+        ...
+
+    @property
+    @abstractmethod
+    def time_steps(self) -> int:
+        ...
+
+    @abstractmethod
+    def update(self, delta_t: float):
+        ...
+
+    def solve(self):
+        progress_iterator = tqdm(self.time_stepping, **self.tqdm_kwargs)
+
+        for delta_t in progress_iterator:
+            self.update(delta_t)
+
+
+class FiniteElementSolver(PDESolver):
+    right_hand_side: SystemVector
 
     _time: float
     _time_steps: int
@@ -73,11 +103,5 @@ class PDESolver:
         self._time += delta_t
         self._time_steps += 1
 
-    def solve(self):
-        progress_iterator = tqdm(self.time_stepping, **self.tqdm_kwargs)
-
-        for delta_t in progress_iterator:
-            self.update(delta_t)
-
-            # update all DOF dependent quantities using observer pattern
-            self.discrete_solution_dofs.dofs = self.ode_solver.solution
+        # update all DOF dependent quantities using observer pattern
+        self.discrete_solution_dofs.dofs = self.ode_solver.solution

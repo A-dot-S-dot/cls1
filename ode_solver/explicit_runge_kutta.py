@@ -1,8 +1,7 @@
 """This Module contains diffrent methods for Solving ODEs."""
-from typing import List
+from typing import Callable, List
 
 import numpy as np
-from math_type import FunctionRealDToRealD
 from numpy import sqrt
 
 
@@ -12,7 +11,7 @@ class ExplicitRungeKuttaMethod:
     """
 
     time: float = 0
-    right_hand_side_function: FunctionRealDToRealD
+    right_hand_side_function: Callable[[np.ndarray], np.ndarray]
 
     _runge_kutta_matrix: np.ndarray  # A in Runge-Kutta tableau
     _weights: np.ndarray  # b in Runge-Kutta tableau

@@ -2,7 +2,7 @@ from typing import Tuple, Union
 from unittest import TestCase
 
 import numpy as np
-from math_type import FunctionRealDToRealD
+from math_type import MultidimensionalFunction
 
 from ode_solver.explicit_runge_kutta import (
     ForwardEuler,
@@ -21,7 +21,7 @@ class TestForwardEuler(TestCase):
     accuracy = None
 
     _start_value: Union[float, np.ndarray]
-    _right_hand_side_function: FunctionRealDToRealD
+    _right_hand_side_function: MultidimensionalFunction
     _expected_solution: Union[float, np.ndarray]
 
     def test_constant_right_side(self):

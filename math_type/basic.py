@@ -1,11 +1,8 @@
 """This module provides different types for typing."""
 from typing import Callable
 
-from numpy import ndarray
+from numpy.typing import ArrayLike
 
-RealD = ndarray
 
-FunctionRealToReal = Callable[[float], float]
-FunctionRealToRealD = Callable[[float], RealD]
-FunctionRealDToReal = Callable[[RealD], float]
-FunctionRealDToRealD = Callable[[RealD], RealD]
+ScalarFunction = Callable[[float], float]
+MultidimensionalFunction = Callable[[float], ArrayLike]

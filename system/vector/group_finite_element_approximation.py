@@ -1,4 +1,4 @@
-from math_type import FunctionRealDToRealD
+from math_type import MultidimensionalFunction
 
 from .dof_vector import DOFVector
 
@@ -18,12 +18,12 @@ class GroupFiniteElementApproximation(DOFVector):
     """
 
     _dof_vector: DOFVector
-    _flux: FunctionRealDToRealD
+    _flux: MultidimensionalFunction
 
     def __init__(
         self,
         dof_vector: DOFVector,
-        flux: FunctionRealDToRealD,
+        flux: MultidimensionalFunction,
     ):
         DOFVector.__init__(self, dof_vector.element_space)
         self._dof_vector = dof_vector
