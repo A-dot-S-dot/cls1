@@ -73,7 +73,7 @@ class ArgumentParserFEM1D:
             'low_cg' and 'mcl'. For more information use 'help' command.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        self._add_plot_and_eoc_argument(advection_parser)
+        self._add_plot_and_eoc_arguments(advection_parser)
         self._add_mesh_size_argument(advection_parser)
         self._add_benchmark_argument(advection_parser)
         self._add_end_time_argument(advection_parser)
@@ -81,15 +81,21 @@ class ArgumentParserFEM1D:
         self._add_profile_argument(advection_parser)
         self._add_solver_argument(advection_parser, AdvectionSolverAction)
 
-    def _add_plot_and_eoc_argument(self, parser):
+    def _add_plot_and_eoc_arguments(self, parser):
         task_group = parser.add_mutually_exclusive_group(required=True)
-        task_group.add_argument(
+        self._add_plot_argument(task_group)
+        self._add_eoc_argument(task_group)
+
+    def _add_plot_argument(self, parser):
+        parser.add_argument(
             "-p",
             "--plot",
             help="plot discrete solution",
             action="store_true",
         )
-        task_group.add_argument(
+
+    def _add_eoc_argument(self, parser):
+        parser.add_argument(
             "-e",
             "--eoc",
             help=f"""Calculate experimental order of convergence (EOC). If
@@ -158,7 +164,7 @@ class ArgumentParserFEM1D:
             'low_cg' and 'mcl'. For more information use 'help' command.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        self._add_plot_and_eoc_argument(burgers_parser)
+        self._add_plot_and_eoc_arguments(burgers_parser)
         self._add_mesh_size_argument(burgers_parser)
         self._add_benchmark_argument(burgers_parser)
         self._add_end_time_argument(burgers_parser)
