@@ -79,7 +79,7 @@ class FiniteElementSolver(PDESolver):
     def ode_solver(self, ode_solver: ExplicitRungeKuttaMethod):
         self._ode_solver = ode_solver
         self._ode_solver.time = self.time_stepping.start_time
-        self._ode_solver.set_start_value(self.discrete_solution_dofs.dofs.copy())
+        self._ode_solver.set_start_value(self.discrete_solution_dofs.dofs)
         self._ode_solver.right_hand_side_function = (
             lambda dofs: self._ode_right_hand_side_function(dofs)
         )

@@ -1,4 +1,6 @@
-from math_type import MultidimensionalFunction
+from typing import Callable
+
+import numpy as np
 
 from .dof_vector import DOFVector
 
@@ -18,12 +20,12 @@ class GroupFiniteElementApproximation(DOFVector):
     """
 
     _dof_vector: DOFVector
-    _flux: MultidimensionalFunction
+    _flux: Callable[[np.ndarray], np.ndarray]
 
     def __init__(
         self,
         dof_vector: DOFVector,
-        flux: MultidimensionalFunction,
+        flux: Callable[[np.ndarray], np.ndarray],
     ):
         DOFVector.__init__(self, dof_vector.element_space)
         self._dof_vector = dof_vector

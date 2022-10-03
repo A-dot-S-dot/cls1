@@ -1,4 +1,6 @@
-from math_type import ScalarFunction
+from typing import Callable
+
+ScalarFunction = Callable[[float], float]
 
 
 def discrete_derivative(f: ScalarFunction, x: float, eps: float = 1e-7):

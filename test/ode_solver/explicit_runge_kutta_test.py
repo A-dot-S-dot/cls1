@@ -1,10 +1,10 @@
-from typing import Tuple, Union
+from typing import Callable, Generic, Iterable, Tuple, TypeVar
 from unittest import TestCase
 
 import numpy as np
-from math_type import MultidimensionalFunction
 
 from ode_solver.explicit_runge_kutta import (
+    ExplicitRungeKuttaMethod,
     ForwardEuler,
     Heun,
     RungeKutta8,
@@ -12,46 +12,32 @@ from ode_solver.explicit_runge_kutta import (
     StrongStabilityPreservingRungeKutta4,
 )
 
+T = TypeVar("T", float, np.ndarray)
 
-class TestForwardEuler(TestCase):
-    solver_class = ForwardEuler
+
+class TestExplicitRungeKutta(TestCase, Generic[T]):
+    solver_class: Callable[..., ExplicitRungeKuttaMethod]
     target_time = 1.0
-    expected_solution_linear = 2.0
-    expected_solution_linear_system = np.array([2.0, 4.0])
+    time_step_numbers: Iterable[int] = []
     accuracy = None
 
-    _start_value: Union[float, np.ndarray]
-    _right_hand_side_function: MultidimensionalFunction
-    _expected_solution: Union[float, np.ndarray]
+    start_value: T
+    expected_solution: T
 
-    def test_constant_right_side(self):
-        """Test with the ode x'(t)=1.
+    def test(self):
+        for time_step_number in self.time_step_numbers:
+            solution_time, solution = self._calculate_ode_solution(time_step_number)
 
-        The exact solution is x(t)=t+x0.
-
-        """
-        self._right_hand_side_function = lambda _: np.array(1.0)
-        self._start_value = 0.0
-        self._expected_solution = self.target_time
-
-        time_steps_numbers = [1, 10, 100, 1000]
-
-        for time_step_number in time_steps_numbers:
-            self._test_solution_and_time(time_step_number)
-
-    def _test_solution_and_time(self, time_step_number: int = 1):
-        solution_time, solution = self._calculate_ode_solution(time_step_number)
-
-        self.assertEqual(solution_time, self.target_time)
-        self._test_solution(solution)
+            self.assertEqual(solution_time, self.target_time)
+            self._test_solution(solution)
 
     def _calculate_ode_solution(
         self,
         time_step_number: int,
-    ) -> Tuple[float, np.ndarray]:
+    ) -> Tuple[float, T]:
         solver = self.solver_class()
-        solver.right_hand_side_function = self._right_hand_side_function
-        solver.set_start_value(np.array(self._start_value).copy())
+        solver.right_hand_side_function = self.right_hand_side
+        solver.set_start_value(self.start_value)
         time_grid = np.linspace(0, self.target_time, time_step_number + 1)
 
         for i in range(len(time_grid) - 1):
@@ -60,80 +46,134 @@ class TestForwardEuler(TestCase):
 
         return solver.time, solver.solution
 
+    def right_hand_side(self, x: T) -> T:
+        ...
+
+    def _test_solution(self, solution: T):
+        ...
+
+
+class TestConstantEuler(TestExplicitRungeKutta[float]):
+    solver_class = ForwardEuler
+    target_time = 1
+
+    start_value = 0.0
+    expected_solution = target_time
+    time_step_numbers = [1, 10, 100, 1000]
+
+    def right_hand_side(self, x: float) -> float:
+        return 1
+
+    def _test_solution(self, solution: float):
+        self.assertAlmostEqual(solution, self.expected_solution, delta=self.accuracy)
+
+
+class TestLinearEuler(TestConstantEuler):
+    start_value = 1
+    expected_solution = 2.0
+    time_step_numbers = [1]
+
+    def right_hand_side(self, x: float) -> float:
+        return x
+
+
+class TestConstantSystemEuler(TestExplicitRungeKutta[np.ndarray]):
+    solver_class = ForwardEuler
+    target_time = 1
+
+    start_value = np.array([0.0, 0.0])
+    expected_solution = np.array([target_time, target_time])
+    time_step_numbers = [1, 10, 100, 1000]
+
+    def right_hand_side(self, x: np.ndarray) -> np.ndarray:
+        return np.array([1.0, 1.0])
+
     def _test_solution(self, solution: np.ndarray):
-        if isinstance(self._expected_solution, float):
-            self.assertAlmostEqual(
-                float(solution), self._expected_solution, delta=self.accuracy
-            )
-        else:
-            for solution_i, expected_solution_i in zip(
-                solution, self._expected_solution
-            ):
-                self.assertAlmostEqual(
-                    solution_i, expected_solution_i, delta=self.accuracy
-                )
-
-    def test_linear_right_side(self):
-        """Test with the ode x'(t)=x(t).
-
-        The exact solution is x(t)=x0*exp(t).
-
-        """
-        self._right_hand_side_function = lambda x: np.array(x)
-        self._start_value = 1.0
-        self._expected_solution = self.expected_solution_linear
-
-        self._test_solution_and_time()
-
-    def test_system_constant_right_side(self):
-        """Test with the ode (x'(t), y'(t))=(1,1).
-
-        The exact solution is (x(t),y(t))=(t,t)+(x0, y0).
-
-        """
-        self._right_hand_side_function = lambda _: np.array([1.0, 1.0])
-        self._start_value = np.array([0.0, 0.0])
-        self._expected_solution = np.array([self.target_time, self.target_time])
-
-        time_steps_numbers = [1, 10, 100, 1000]
-
-        for time_step_number in time_steps_numbers:
-            self._test_solution_and_time(time_step_number)
-
-    def test_system_linear_right_side(self):
-        """Test with the ode (x'(t), y'(t))=(x(t), y(t)).
-
-        The exact solution is (x(t), y(t))=(x0*exp(t), y0*exp(t)).
-
-        """
-        self._right_hand_side_function = lambda x: np.array(x)
-        self._start_value = np.array([1.0, 2.0])
-        self._expected_solution = self.expected_solution_linear_system
-
-        self._test_solution_and_time()
+        for solution_i, expected_solution_i in zip(solution, self.expected_solution):
+            self.assertAlmostEqual(solution_i, expected_solution_i, delta=self.accuracy)
 
 
-class TestHeun(TestForwardEuler):
+class TestLinearSystemEuler(TestConstantSystemEuler):
+    start_value = np.array([1.0, 2.0])
+    expected_solution = np.array([2.0, 4.0])
+    time_step_numbers = [1]
+
+    def right_hand_side(self, x: np.ndarray) -> np.ndarray:
+        return x
+
+
+class TestConstantHeun(TestConstantEuler):
     solver_class = Heun
-    expected_solution_linear = 2.5
-    expected_solution_linear_system = np.array([2.5, 5.0])
 
 
-class TestStrongStabilityPreservingRungeKutta3(TestForwardEuler):
+class TestLinearHeun(TestLinearEuler):
+    solver_class = Heun
+    expected_solution = 2.5
+
+
+class TestConstantSystemHeun(TestConstantSystemEuler):
+    solver_class = Heun
+
+
+class TestLinearSystemHeun(TestLinearSystemEuler):
+    solver_class = Heun
+    expected_solution = np.array([2.5, 5.0])
+
+
+class TestConstantStrongStabilityPreservingRungeKutta3(TestConstantEuler):
     solver_class = StrongStabilityPreservingRungeKutta3
-    expected_solution_linear = 8 / 3
-    expected_solution_linear_system = np.array([8 / 3, 16 / 3])
 
 
-class TestStrongStabilityPreservingRungeKutta4(TestForwardEuler):
+class TestLinearStrongStabilityPreservingRungeKutta3(TestLinearEuler):
+    solver_class = StrongStabilityPreservingRungeKutta3
+
+    expected_solution = 8 / 3
+
+
+class TestConstantSystemStrongStabilityPreservingRungeKutta3(TestConstantSystemEuler):
+    solver_class = StrongStabilityPreservingRungeKutta3
+
+
+class TestLinearSystemStrongStabilityPreservingRungeKutta3(TestLinearSystemEuler):
+    solver_class = StrongStabilityPreservingRungeKutta3
+    expected_solution = np.array([8 / 3, 16 / 3])
+
+
+class TestConstantStrongStabilityPreservingRungeKutta4(TestConstantEuler):
     solver_class = StrongStabilityPreservingRungeKutta4
-    expected_solution_linear = np.exp(1)
-    expected_solution_linear_system = np.array([np.exp(1), 2 * np.exp(1)])
+
+
+class TestLinearStrongStabilityPreservingRungeKutta4(TestLinearEuler):
+    solver_class = StrongStabilityPreservingRungeKutta4
+    expected_solution = np.exp(1)
     accuracy = 0.05
 
 
-class TestRungeKutta8(TestForwardEuler):
+class TestConstantSystemStrongStabilityPreservingRungeKutta4(TestConstantSystemEuler):
+    solver_class = StrongStabilityPreservingRungeKutta4
+
+
+class TestLinearSystemStrongStabilityPreservingRungeKutta4(TestLinearSystemEuler):
+    solver_class = StrongStabilityPreservingRungeKutta4
+    expected_solution = np.array([np.exp(1), 2 * np.exp(1)])
+    accuracy = 0.05
+
+
+class TestConstantRungeKutta8(TestConstantEuler):
     solver_class = RungeKutta8
-    expected_solution_linear = np.exp(1)
-    expected_solution_linear_system = np.array([np.exp(1), 2 * np.exp(1)])
+
+
+class TestLinearRungeKutta8(TestLinearEuler):
+    solver_class = RungeKutta8
+    expected_solution = np.exp(1)
+    accuracy = 1e-4
+
+
+class TestConstantSystemRungeKutta8(TestConstantSystemEuler):
+    solver_class = RungeKutta8
+
+
+class TestLinearSystemRungeKutta8(TestLinearSystemEuler):
+    solver_class = RungeKutta8
+    expected_solution = np.array([np.exp(1), 2 * np.exp(1)])
     accuracy = 1e-4

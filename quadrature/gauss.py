@@ -1,10 +1,11 @@
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 
 import numpy as np
-from math_type import ScalarFunction
 from mesh import Interval
 
 from .abstracts import Quadrature
+
+ScalarFunction = Callable[[float], float]
 
 
 class GaussianQuadrature(Quadrature):

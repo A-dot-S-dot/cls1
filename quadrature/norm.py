@@ -1,13 +1,15 @@
 """This module provides objects for calculating errors with finite elements."""
 from abc import ABC, abstractmethod
+from typing import Callable
 
 import numpy as np
-from math_type import ScalarFunction
 from mesh import Interval, Mesh
 from mesh.uniform import UniformMesh
 from mesh.transformation import AffineTransformation
 
 from quadrature.local import LocalElementQuadrature
+
+ScalarFunction = Callable[[float], float]
 
 
 class Norm(ABC):

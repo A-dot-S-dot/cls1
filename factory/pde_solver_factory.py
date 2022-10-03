@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
 from argparse import Namespace
-from typing import Callable, Dict
-from math_type import MultidimensionalFunction
+from typing import Callable, Dict, Generic, TypeVar
 
+import numpy as np
 from fem import FiniteElementSpace, GlobalFiniteElement
 from fem.lagrange import LagrangeFiniteElementSpace
-from math_type import ScalarFunction
 from mesh import Mesh
 from pde_solver.solver import FiniteElementSolver, PDESolver
 from system.matrix import SystemMatrix
@@ -27,12 +26,14 @@ from .flux_factory import FLUX_FACTORY
 from .ode_solver_factory import ODE_SOLVER_FACTORY
 from .time_stepping_factory import TIME_STEPPING_FACTORY
 
+T = TypeVar("T", np.ndarray, float)
 
-class PDESolverFactory(ABC):
+
+class PDESolverFactory(ABC, Generic[T]):
     attributes: Namespace
     problem_name: str
     mesh: Mesh
-    initial_data: ScalarFunction
+    initial_data: Callable[[float], T]
     start_time: float
     end_time: float
 
@@ -80,7 +81,7 @@ class PDESolverFactory(ABC):
 
     @property
     @abstractmethod
-    def discrete_solution(self) -> MultidimensionalFunction:
+    def discrete_solution(self) -> Callable[[float], T]:
         ...
 
 

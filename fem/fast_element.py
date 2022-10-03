@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Callable, Sequence
 
 import numpy as np
-from math_type import ScalarFunction
 from mesh import Mesh
 from mesh.transformation import AffineTransformation
 from quadrature.local import LocalElementQuadrature
 from system.vector.dof_vector import DOFVector
 
 from .abstracts import FiniteElementSpace, LocalFiniteElement
+
+ScalarFunction = Callable[[float], float]
 
 
 class FastMapping(ABC):

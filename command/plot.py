@@ -1,22 +1,22 @@
-from abc import ABC, abstractmethod
-
 import time
+from abc import ABC, abstractmethod
 from argparse import Namespace
+from typing import Callable, Generic, TypeVar
 
 import matplotlib.pyplot as plt
 import numpy as np
 from benchmark import Benchmark
-from factory.pde_solver_factory import FiniteElementSolverFactory
-from math_type import ScalarFunction
-from math_type.basic import MultidimensionalFunction
+from factory.pde_solver_factory import PDESolverFactory
 from mesh import Interval
 from pde_solver.solver_components import SolverComponents
 from tqdm import tqdm
 
 from .command import Command
 
+T = TypeVar("T", float, np.ndarray)
 
-class FunctionPlotter(ABC):
+
+class FunctionPlotter(ABC, Generic[T]):
     _grid: np.ndarray
     _suptitle: str
 
@@ -42,7 +42,7 @@ class FunctionPlotter(ABC):
         plt.suptitle(suptitle, fontsize=14, fontweight="bold")
 
     @abstractmethod
-    def add_function(self, function: MultidimensionalFunction, function_label: str):
+    def add_function(self, function: Callable[[float], T], function_label: str):
         ...
 
     def save(self, path="output/plot.png"):
@@ -59,10 +59,9 @@ class FunctionPlotter(ABC):
         plt.legend()
 
 
-class ScalarFunctionPlotter(FunctionPlotter):
-    def add_function(self, function: ScalarFunction, function_label: str):
+class ScalarFunctionPlotter(FunctionPlotter[float]):
+    def add_function(self, function: Callable[[float], float], function_label: str):
         function_values = np.array([function(x) for x in self._grid])
-
         plt.plot(self._grid, function_values, label=function_label)
 
 
@@ -70,7 +69,7 @@ class PlotCommand(Command):
     _args: Namespace
     _components: SolverComponents
     _benchmark: Benchmark
-    _plotter: ScalarFunctionPlotter
+    _plotter: FunctionPlotter
 
     def __init__(self, args: Namespace):
         self._args = args
@@ -128,7 +127,7 @@ class PlotCommand(Command):
         ):
             self._add_discrete_solution(solver_factory)
 
-    def _add_discrete_solution(self, solver_factory: FiniteElementSolverFactory):
+    def _add_discrete_solution(self, solver_factory: PDESolverFactory):
         solver = solver_factory.solver
 
         start_time = time.time()

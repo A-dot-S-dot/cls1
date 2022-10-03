@@ -1,10 +1,11 @@
 """This module provides abstract classes for finite elements."""
 from abc import ABC, abstractmethod
-from typing import Iterator, Sequence, Set
+from typing import Callable, Iterator, Sequence, Set
 
 import numpy as np
-from math_type import ScalarFunction
 from mesh import Interval, Mesh
+
+ScalarFunction = Callable[[float], float]
 
 
 class FiniteElement(ABC):

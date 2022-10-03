@@ -1,14 +1,15 @@
 """Provides Lagrange Finite Elements."""
-from typing import Sequence, Set
+from typing import Callable, Sequence, Set
 
 import numpy as np
-from math_type import ScalarFunction
 from mesh import Interval, Mesh
 from mesh.transformation import AffineTransformation
 
 from ..abstracts import FiniteElementSpace
 from ..dof_index_mapping import DOFIndexMapping, PeriodicDOFIndexMapping
 from .local_lagrange import LocalLagrangeBasis
+
+ScalarFunction = Callable[[float], float]
 
 
 class LagrangeFiniteElementSpace(FiniteElementSpace):

@@ -1,10 +1,12 @@
+from typing import Callable
 from fem.fast_element import QuadratureFastFiniteElement
-from math_type import ScalarFunction
 from system.matrix import SystemMatrix
 
 from .discrete_l2_product import AbstractBasisGradientL2ProductEntryCalculator
 from .dof_vector import DOFVector
 from .system_vector import LocallyAssembledSystemVector, SystemVector
+
+ScalarFunction = Callable[[float], float]
 
 
 class FluxGradientEntryCalculator(AbstractBasisGradientL2ProductEntryCalculator):

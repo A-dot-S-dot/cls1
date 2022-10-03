@@ -2,14 +2,14 @@
 solution and a discrete one of a PDE with diffrent norms.
 
 """
+from abc import ABC
 from argparse import Namespace
-from typing import Sequence, Tuple
+from typing import Callable, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
 from benchmark import Benchmark
-from factory import FiniteElementSolverFactory
-from math_type import ScalarFunction
+from factory.pde_solver_factory import PDESolverFactory
 from mesh import Mesh
 from pde_solver.solver_components import SolverComponents
 from quadrature.norm import L1Norm, L2Norm, LInfinityNorm, Norm
@@ -17,11 +17,17 @@ from tqdm import tqdm, trange
 
 from .command import Command
 
+ScalarFunction = Callable[[float], float]
 
-class EOCCalculator:
+
+class EOCCalculator(ABC):
+    ...
+
+
+class ScalarEOCCalculator(EOCCalculator):
     mesh: Mesh
     benchmark: Benchmark
-    solver_factory: FiniteElementSolverFactory
+    solver_factory: PDESolverFactory
 
     _norm: Tuple[Norm, ...]
     _end_time: float
@@ -89,7 +95,7 @@ class EOCCommand(Command):
     _components: SolverComponents
     _args: Namespace
     _benchmark: Benchmark
-    _solver_factories: Sequence[FiniteElementSolverFactory]
+    _solver_factories: Sequence[PDESolverFactory]
 
     def __init__(self, args: Namespace):
         self._args = args
@@ -127,9 +133,7 @@ class EOCCommand(Command):
             print(title)
             print(eoc)
 
-    def _calculate_eoc(
-        self, solver_factory: FiniteElementSolverFactory
-    ) -> pd.DataFrame:
+    def _calculate_eoc(self, solver_factory: PDESolverFactory) -> pd.DataFrame:
         raw_eoc = self._calculate_raw_eoc(solver_factory)
 
         columns = [
@@ -142,12 +146,10 @@ class EOCCommand(Command):
         data_frame = pd.DataFrame(raw_eoc, columns=columns)
         return self._format_data_frame(data_frame)
 
-    def _calculate_raw_eoc(
-        self, solver_factory: FiniteElementSolverFactory
-    ) -> np.ndarray:
+    def _calculate_raw_eoc(self, solver_factory: PDESolverFactory) -> np.ndarray:
         mesh = solver_factory.mesh
 
-        raw_eoc = EOCCalculator()
+        raw_eoc = ScalarEOCCalculator()
         raw_eoc.mesh = mesh
         raw_eoc.solver_factory = solver_factory
         raw_eoc.benchmark = self._components.benchmark

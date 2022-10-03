@@ -1,33 +1,32 @@
 """This Module contains diffrent methods for Solving ODEs."""
-from typing import Callable, List
+from typing import Callable, Generic, List, TypeVar
 
 import numpy as np
 from numpy import sqrt
 
+RealD = TypeVar("RealD", float, np.ndarray)
 
-class ExplicitRungeKuttaMethod:
+
+class ExplicitRungeKuttaMethod(Generic[RealD]):
     """Class for explicit s staged Runge Kutta method for solving the ODE
     x'(t)=f(t,x(t)).
     """
 
     time: float = 0
-    right_hand_side_function: Callable[[np.ndarray], np.ndarray]
+    right_hand_side_function: Callable[[RealD], RealD]
 
     _runge_kutta_matrix: np.ndarray  # A in Runge-Kutta tableau
     _weights: np.ndarray  # b in Runge-Kutta tableau
-    _solution: np.ndarray
+    _solution: RealD
 
-    def set_start_value(self, start_value: np.ndarray | float):
-        self._build_solution(start_value)
-
-    def _build_solution(self, start_value: np.ndarray | float):
-        if isinstance(start_value, float):
-            start_value = np.array(start_value)
-
-        self._solution = start_value
+    def set_start_value(self, start_value: RealD):
+        if isinstance(start_value, np.ndarray):
+            self._solution = start_value.copy()
+        else:
+            self._solution = start_value
 
     @property
-    def solution(self) -> np.ndarray:
+    def solution(self) -> RealD:
         return self._solution
 
     def execute_step(self, delta_t: float):

@@ -9,15 +9,15 @@ from factory import (
     ContinuousGalerkinSolverFactory,
     LowOrderCGFactory,
     MCLSolverFactory,
-    FiniteElementSolverFactory,
 )
+from factory.pde_solver_factory import PDESolverFactory
 from mesh import Mesh
 from mesh.uniform import UniformMesh
 
 
 class SolverComponents:
     _args: Namespace
-    _solver_factories: Sequence[FiniteElementSolverFactory]
+    _solver_factories: Sequence[PDESolverFactory]
     _benchmark: Benchmark
     _mesh: UniformMesh
 
@@ -47,9 +47,7 @@ class SolverComponents:
             for solver_args in self._args.solver:
                 self._solver_factories.append(self._build_solver_factory(solver_args))
 
-    def _build_solver_factory(
-        self, solver_args: Namespace
-    ) -> FiniteElementSolverFactory:
+    def _build_solver_factory(self, solver_args: Namespace) -> PDESolverFactory:
         solver_factory = self._get_solver_factory(solver_args.solver)
 
         solver_factory.attributes = solver_args
@@ -61,7 +59,7 @@ class SolverComponents:
 
         return solver_factory
 
-    def _get_solver_factory(self, solver_name: str) -> FiniteElementSolverFactory:
+    def _get_solver_factory(self, solver_name: str) -> PDESolverFactory:
         if solver_name == "cg":
             solver_factory = ContinuousGalerkinSolverFactory()
         elif solver_name == "cg_low":
@@ -93,5 +91,5 @@ class SolverComponents:
             raise NotImplementedError
 
     @property
-    def solver_factories(self) -> Sequence[FiniteElementSolverFactory]:
+    def solver_factories(self) -> Sequence[PDESolverFactory]:
         return self._solver_factories
