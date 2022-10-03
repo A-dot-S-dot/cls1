@@ -2,8 +2,7 @@ from mesh import Interval
 from numpy import cos, pi, sin
 from scipy.optimize import newton
 
-from .abstract import Benchmark
-from tqdm import tqdm
+from .abstract import Benchmark, NoExactSolutionError
 
 
 class BurgersBenchmark(Benchmark):
@@ -17,18 +16,17 @@ class BurgersBenchmark(Benchmark):
         raise NotImplementedError
 
     def exact_solution(self, x: float, t: float) -> float:
+        self._check_shock_formation()
+
         func = lambda u: self.initial_data(x - u * t) - u
         fprime = lambda u: -t * self.initial_data_derivaitive(x - u * t) - 1
         return newton(func, self.initial_data(x), fprime)
 
-    def has_exact_solution(self) -> bool:
+    def _check_shock_formation(self):
         if self.end_time > self._critical_time + 1e-15:
-            tqdm.write(
-                f"WARNING: End time {self.end_time} after shock formation. No exact solution can be calculated."
+            raise NoExactSolutionError(
+                f"End time {self.end_time} after shock formation. No exact solution can be calculated."
             )
-            return False
-        else:
-            return super().has_exact_solution()
 
 
 class BurgersPlotBenchmark(BurgersBenchmark):

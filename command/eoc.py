@@ -9,6 +9,7 @@ from typing import Callable, Sequence, Tuple
 import numpy as np
 import pandas as pd
 from benchmark import Benchmark
+from benchmark.abstract import NoExactSolutionError
 from factory.pde_solver_factory import PDESolverFactory
 from mesh import Mesh
 from pde_solver.solver_components import SolverComponents
@@ -105,15 +106,14 @@ class EOCCommand(Command):
         self._solver_factories = self._components.solver_factories
 
     def execute(self):
-        if not self._benchmark.has_exact_solution():
-            raise ValueError(
-                f"Benchmark {self._args.benchmark} of {self._args.problem} has no exact solution. No EOC can be calculated."
-            )
-
         if self._args.quite or len(self._solver_factories) == 0:
             print("WARNING: Nothing to do...")
-        else:
+            return
+
+        try:
             self._print_eocs()
+        except NoExactSolutionError as error:
+            print("ERROR: " + str(error))
 
     def _print_eocs(self):
         eocs = []

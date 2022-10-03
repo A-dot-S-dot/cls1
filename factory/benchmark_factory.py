@@ -27,7 +27,7 @@ class BenchmarkFactory:
 
     @property
     def benchmark(self) -> Benchmark:
-        if self.benchmark_number:
+        if isinstance(self.benchmark_number, int):
             benchmark = self._benchmark[self.problem_name][self.benchmark_number]()
         else:
             benchmark = self._default_benchmark[self.problem_name][self.command]()

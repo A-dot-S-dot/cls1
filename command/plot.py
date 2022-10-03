@@ -6,6 +6,7 @@ from typing import Callable, Generic, TypeVar
 import matplotlib.pyplot as plt
 import numpy as np
 from benchmark import Benchmark
+from benchmark.abstract import NoExactSolutionError
 from factory.pde_solver_factory import PDESolverFactory
 from mesh import Interval
 from pde_solver.solver_components import SolverComponents
@@ -109,13 +110,16 @@ class PlotCommand(Command):
     def _add_exact_solution(self):
         benchmark = self._components.benchmark
 
-        if benchmark.has_exact_solution():
+        try:
             self._plotter.add_function(
                 benchmark.exact_solution_at_end_time,
                 f"$u(\cdot, {self._benchmark.end_time:.1f})$",
             )
-        elif len(self._components.solver_factories) == 0:
-            print("WARNING: Nothing to do...")
+        except NotImplementedError as error:
+            tqdm.write("WARNING: " + str(error))
+
+            if len(self._components.solver_factories) == 0:
+                print("WARNING: Nothing to do...")
 
     def _add_discrete_solutions(self):
         for solver_factory in tqdm(
