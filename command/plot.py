@@ -17,7 +17,11 @@ from .command import Command
 T = TypeVar("T", float, np.ndarray)
 
 
-class FunctionPlotter(ABC, Generic[T]):
+class NothingToPlotError(Exception):
+    ...
+
+
+class SolutionPlotter(ABC, Generic[T]):
     _figure = plt.figure()
     _grid: np.ndarray
     _suptitle: str
@@ -43,12 +47,16 @@ class FunctionPlotter(ABC, Generic[T]):
         plt.suptitle(suptitle, fontsize=14, fontweight="bold")
 
     @abstractmethod
-    def add_function(self, function: Callable[[float], T], function_label: str):
+    def add_initial_data(self):
         ...
 
-    def save(self, path="output/plot.png"):
-        self._setup()
-        plt.savefig(path)
+    @abstractmethod
+    def add_exact_solution(self):
+        ...
+
+    @abstractmethod
+    def add_function(self, function: Callable[[float], T], label: str):
+        ...
 
     def show(self):
         if self._figure.get_axes():
@@ -56,20 +64,37 @@ class FunctionPlotter(ABC, Generic[T]):
             plt.show()
             plt.close()
 
+        else:
+            raise NothingToPlotError
+
     @abstractmethod
     def _setup(self):
         ...
 
 
-class ScalarFunctionPlotter(FunctionPlotter[float]):
+class ScalarFunctionPlotter(SolutionPlotter[float]):
     _axes: plt.Axes
+    _benchmark: Benchmark
 
-    def __init__(self):
+    def __init__(self, benchmark: Benchmark):
         self._axes = self._figure.subplots()
+        self._benchmark = benchmark
 
-    def add_function(self, function: Callable[[float], float], function_label: str):
+    def add_initial_data(self):
+        self.add_function(
+            self._benchmark.initial_data,
+            "$u_0$",
+        )
+
+    def add_exact_solution(self):
+        self.add_function(
+            self._benchmark.exact_solution_at_end_time,
+            f"$u(\cdot, {self._benchmark.end_time:.1f})$",
+        )
+
+    def add_function(self, function: Callable[[float], float], label: str):
         function_values = np.array([function(x) for x in self._grid])
-        self._axes.plot(self._grid, function_values, label=function_label)
+        self._axes.plot(self._grid, function_values, label=label)
 
     def _setup(self):
         self._axes.set_xlabel("x")
@@ -79,57 +104,52 @@ class ScalarFunctionPlotter(FunctionPlotter[float]):
 class PlotCommand(Command):
     _args: Namespace
     _components: SolverComponents
-    _benchmark: Benchmark
-    _plotter: FunctionPlotter
+    _plotter: SolutionPlotter
 
     def __init__(self, args: Namespace):
         self._args = args
         self._components = SolverComponents(args)
-        self._benchmark = self._components.benchmark
         self._build_plotter()
 
     def _build_plotter(self):
-        self._plotter = ScalarFunctionPlotter()
+        benchmark = self._components.benchmark
+        domain = benchmark.domain
+        dofs_number = self._get_cell_resolution() * self._components.mesh_size
 
-        domain = self._benchmark.domain
-        dofs_number = self._get_maximal_polynomial_degree() * self._components.mesh_size
-
+        self._plotter = ScalarFunctionPlotter(benchmark)
         self._plotter.set_grid(domain, dofs_number)
 
-    def _get_maximal_polynomial_degree(self) -> int:
-        maximal_polynomial_degree = 0
-        if self._args.solver:
-            for solver_args in self._args.solver:
-                maximal_polynomial_degree = max(
-                    solver_args.polynomial_degree, maximal_polynomial_degree
-                )
+    def _get_cell_resolution(self) -> int:
+        cell_resolution = 1
+        for solver_factory in self._components.solver_factories:
+            cell_resolution = max(
+                cell_resolution, solver_factory.cell_quadrature_degree
+            )
 
-        return maximal_polynomial_degree
+        return cell_resolution
 
     def execute(self):
-        self._add_functions()
-        self._plotter.title = f"{len(self._components.mesh)} elements"
+        self._add_plots()
+        self._plotter.title = f"{len(self._components.mesh)} cells"
 
         if not self._args.plot.quite:
-            self._plotter.show()
+            try:
+                self._plotter.show()
+            except NothingToPlotError:
+                tqdm.write("WARNING: Nothing to plot...")
 
-    def _add_functions(self):
+    def _add_plots(self):
         self._add_exact_solution()
         self._add_discrete_solutions()
 
-    def _add_exact_solution(self):
-        benchmark = self._components.benchmark
+        if self._args.plot.initial:
+            self._plotter.add_initial_data()
 
+    def _add_exact_solution(self):
         try:
-            self._plotter.add_function(
-                benchmark.exact_solution_at_end_time,
-                f"$u(\cdot, {self._benchmark.end_time:.1f})$",
-            )
+            self._plotter.add_exact_solution()
         except NoExactSolutionError as error:
             tqdm.write("WARNING: " + str(error))
-
-            if len(self._components.solver_factories) == 0:
-                print("WARNING: Nothing to do...")
 
     def _add_discrete_solutions(self):
         for solver_factory in tqdm(
