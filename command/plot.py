@@ -18,11 +18,11 @@ T = TypeVar("T", float, np.ndarray)
 
 
 class FunctionPlotter(ABC, Generic[T]):
+    _figure = plt.figure()
     _grid: np.ndarray
     _suptitle: str
 
     def set_grid(self, interval: Interval, dof_number: int = 0):
-
         grid_number = max(500, dof_number * 2)
         self._grid = np.linspace(interval.a, interval.b, grid_number)
 
@@ -51,19 +51,29 @@ class FunctionPlotter(ABC, Generic[T]):
         plt.savefig(path)
 
     def show(self):
-        self._setup()
-        plt.show()
-        plt.close()
+        if self._figure.get_axes():
+            self._setup()
+            plt.show()
+            plt.close()
 
+    @abstractmethod
     def _setup(self):
-        plt.xlabel("x")
-        plt.legend()
+        ...
 
 
 class ScalarFunctionPlotter(FunctionPlotter[float]):
+    _axes: plt.Axes
+
+    def __init__(self):
+        self._axes = self._figure.subplots()
+
     def add_function(self, function: Callable[[float], float], function_label: str):
         function_values = np.array([function(x) for x in self._grid])
-        plt.plot(self._grid, function_values, label=function_label)
+        self._axes.plot(self._grid, function_values, label=function_label)
+
+    def _setup(self):
+        self._axes.set_xlabel("x")
+        self._axes.legend()
 
 
 class PlotCommand(Command):
@@ -115,7 +125,7 @@ class PlotCommand(Command):
                 benchmark.exact_solution_at_end_time,
                 f"$u(\cdot, {self._benchmark.end_time:.1f})$",
             )
-        except NotImplementedError as error:
+        except NoExactSolutionError as error:
             tqdm.write("WARNING: " + str(error))
 
             if len(self._components.solver_factories) == 0:
