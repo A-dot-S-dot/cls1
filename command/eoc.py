@@ -106,7 +106,7 @@ class EOCCommand(Command):
         self._solver_factories = self._components.solver_factories
 
     def execute(self):
-        if self._args.quite or len(self._solver_factories) == 0:
+        if len(self._solver_factories) == 0:
             print("WARNING: Nothing to do...")
             return
 
@@ -159,7 +159,7 @@ class EOCCommand(Command):
         linf_norm = LInfinityNorm(mesh, solver_factory.cell_quadrature_degree + 5)
         raw_eoc.add_norm(l2_norm, l1_norm, linf_norm)
 
-        return raw_eoc.eoc(self._args.eoc)
+        return raw_eoc.eoc(self._args.eoc.refine)
 
     def _format_data_frame(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         dofs_format = "{:.0f}"

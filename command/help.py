@@ -1,6 +1,7 @@
 """This module provides a task for displaying help messages.
 
 """
+from parser.command_parser import EOCParser, PlotParser
 from parser.solver_parser import SOLVER_PARSERS
 
 from .command import Command
@@ -31,5 +32,11 @@ class HelpCommand(Command):
             SOLVER_PARSERS[page].print_help()
         elif page == "benchmark":
             print(BENCHMARK_MESSAGE)
+        elif page == "plot":
+            parser = PlotParser()
+            parser.print_help()
+        elif page == "eoc":
+            parser = EOCParser()
+            parser.print_help()
         else:
             raise NotImplementedError(f"No help message for {page} available.")

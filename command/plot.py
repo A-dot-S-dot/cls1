@@ -110,7 +110,7 @@ class PlotCommand(Command):
         self._add_functions()
         self._plotter.title = f"{len(self._components.mesh)} elements"
 
-        if not self._args.quite:
+        if not self._args.plot.quite:
             self._plotter.show()
 
     def _add_functions(self):
