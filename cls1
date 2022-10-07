@@ -27,10 +27,10 @@ def main():
         command = HelpCommand(args)
     elif args.plot:
         command = PlotCommand(args)
-    elif args.eoc:
+    elif hasattr(args, "eoc") and args.eoc:
         command = EOCCommand(args)
     else:
-        raise NotImplementedError
+        raise ValueError("no action specified")
 
     command.execute()
 

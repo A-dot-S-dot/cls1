@@ -1,11 +1,11 @@
-from mesh import Interval
 from numpy import cos, pi, sin
+from pde_solver.mesh import Interval
 from scipy.optimize import newton
 
 from .abstract import Benchmark, NoExactSolutionError
 
 
-class BurgersBenchmark(Benchmark):
+class BurgersBenchmark(Benchmark[float]):
     start_time = 0
     end_time = 0.5
 
@@ -25,12 +25,12 @@ class BurgersBenchmark(Benchmark):
     def _check_shock_formation(self):
         if self.end_time > self._critical_time + 1e-15:
             raise NoExactSolutionError(
-                f"End time {self.end_time} after shock formation. No exact solution can be calculated."
+                f"End time {self.end_time} is after shock formation. No exact solution can be calculated."
             )
 
 
 class BurgersPlotBenchmark(BurgersBenchmark):
-    _domain = Interval(0, 1)
+    domain = Interval(0, 1)
     _critical_time = 1 / (2 * pi)
 
     def initial_data(self, x: float) -> float:
@@ -41,7 +41,7 @@ class BurgersPlotBenchmark(BurgersBenchmark):
 
 
 class BurgersEOCBenchmark(BurgersBenchmark):
-    _domain = Interval(0, 2 * pi)
+    domain = Interval(0, 2 * pi)
     _critical_time = 1
 
     def initial_data(self, x: float) -> float:

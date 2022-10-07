@@ -1,38 +1,33 @@
-from system.matrix import SystemMatrix
-from system.vector import SystemVector
-from system.vector.dof_vector import DOFVector
-from system.vector.flux_gradient import (
+import numpy as np
+from pde_solver.solver_space import LagrangeFiniteElementSpace
+from pde_solver.system_matrix import SystemMatrix
+from pde_solver.system_vector import (
     AdvectionFluxGradient,
     ApproximatedFluxGradient,
     FluxGradient,
-)
-from system.vector.group_finite_element_approximation import (
-    GroupFiniteElementApproximation,
+    SystemVector,
 )
 
 
 class FluxFactory:
+    element_space: LagrangeFiniteElementSpace
     problem_name: str
     exact_flux = False
 
-    def get_flux_gradient(
-        self,
-        dof_vector: DOFVector,
-        discrete_gradient: SystemMatrix,
-    ) -> SystemVector:
+    def get_flux_gradient(self, discrete_gradient: SystemMatrix) -> SystemVector:
         if self.problem_name == "advection":
-            return AdvectionFluxGradient(dof_vector, discrete_gradient)
+            return AdvectionFluxGradient(discrete_gradient)
 
         else:
-            flux = self.flux
+            return self._non_advection_flux_gradient(discrete_gradient)
 
-            if self.exact_flux:
-                return FluxGradient(
-                    dof_vector, flux, 2 * dof_vector.element_space.polynomial_degree
-                )
-            else:
-                flux_approximation = GroupFiniteElementApproximation(dof_vector, flux)
-                return ApproximatedFluxGradient(flux_approximation, discrete_gradient)
+    def _non_advection_flux_gradient(self, discrete_gradient: SystemMatrix):
+        if self.exact_flux:
+            return FluxGradient(
+                self.element_space, 2 * self.element_space.polynomial_degree, self.flux
+            )
+        else:
+            return ApproximatedFluxGradient(discrete_gradient, self.flux)
 
     @property
     def flux(self):

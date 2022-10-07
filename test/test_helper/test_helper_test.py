@@ -2,11 +2,10 @@ from typing import Callable
 from unittest import TestCase
 
 import numpy as np
-from mesh.interval import Interval
 from numpy import cos, exp, sin
+from pde_solver.mesh import Interval
 
 from .discrete_derivative import discrete_derivative
-from . import lagrange_basis_elements as lagrange
 from .piecewise_lagrange_interpolation import PiecewiseLagrangeInterpolation
 
 

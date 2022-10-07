@@ -1,7 +1,8 @@
-from typing import Optional, Callable
+from typing import Optional
 from benchmark import Benchmark
 from benchmark.advection import *
 from benchmark.burgers import *
+from benchmark.shallow_water import *
 
 
 class BenchmarkFactory:
@@ -13,6 +14,7 @@ class BenchmarkFactory:
     _default_benchmark = {
         "advection": {"plot": AdvectionPlot2Benchmark, "eoc": AdvectionEOCBenchmark1},
         "burgers": {"plot": BurgersPlotBenchmark, "eoc": BurgersEOCBenchmark},
+        "swe": {"plot": SWEBumpSteadyStateBenchmark},
     }
     _benchmark = {
         "advection": [
@@ -23,6 +25,7 @@ class BenchmarkFactory:
             AdvectionEOCBenchmark2,
         ],
         "burgers": [BurgersPlotBenchmark, BurgersEOCBenchmark],
+        "swe": [SWEBumpSteadyStateBenchmark, SWEWetDryTransitionBenchmark],
     }
 
     @property

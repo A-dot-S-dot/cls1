@@ -5,8 +5,14 @@ from typing import Any, List
 from defaults import *
 
 from . import types as parser_type
-from .action import AdvectionSolverAction, BurgersSolverAction, EOCAction, PlotAction
-from .solver_parser import ADVECTION_SOLVER_PARSERS
+from .action import (
+    AdvectionSolverAction,
+    BurgersSolverAction,
+    EOCAction,
+    PlotAction,
+    SWESolverAction,
+)
+from .solver_parser import SOLVER_PARSERS
 
 
 class ArgumentParserFEM1D:
@@ -39,6 +45,7 @@ class ArgumentParserFEM1D:
         self._add_test_parser(program_parsers)
         self._add_advection_parser(program_parsers)
         self._add_burgers_parser(program_parsers)
+        self._add_shallow_water_parser(program_parsers)
 
         return program_parsers
 
@@ -61,7 +68,7 @@ class ArgumentParserFEM1D:
 
         help_parser.add_argument(
             "page",
-            choices=[*ADVECTION_SOLVER_PARSERS.keys(), "benchmark", "plot", "eoc"],
+            choices=[*SOLVER_PARSERS.keys(), "benchmark", "plot", "eoc"],
             help="page which should be displayed in terminal",
         )
 
@@ -150,10 +157,10 @@ class ArgumentParserFEM1D:
             action=action,
         )
 
-    def _add_burgers_parser(self, program_parsers):
-        burgers_parser = program_parsers.add_parser(
+    def _add_burgers_parser(self, parsers):
+        burgers_parser = parsers.add_parser(
             "burgers",
-            help="solver Burgers",
+            help="solve Burgers",
             description="""Solve Burgers. Available solvers are 'cg',
             'low_cg' and 'mcl'. For more information use 'help' program.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -164,6 +171,21 @@ class ArgumentParserFEM1D:
         self._add_end_time_argument(burgers_parser)
         self._add_profile_argument(burgers_parser)
         self._add_solver_argument(burgers_parser, BurgersSolverAction)
+
+    def _add_shallow_water_parser(self, parsers):
+        shallow_water_parser = parsers.add_parser(
+            "swe",
+            help="solve shallow water equations",
+            description="""Solve shallow water equations (SWE). Only available
+            solver is 'godunov'. For more information use 'help' program.""",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+        self._add_plot_argument(shallow_water_parser)
+        self._add_mesh_size_argument(shallow_water_parser)
+        self._add_benchmark_argument(shallow_water_parser)
+        self._add_end_time_argument(shallow_water_parser)
+        self._add_profile_argument(shallow_water_parser)
+        self._add_solver_argument(shallow_water_parser, SWESolverAction)
 
     def parse_args(self) -> argparse.Namespace:
         return self._parser.parse_args()

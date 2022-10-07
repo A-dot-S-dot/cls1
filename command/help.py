@@ -21,6 +21,11 @@ Burgers
     0           Sinus:          u(x)=sin(2*pi*x), I=[0,1], periodic boundaries, T=0.5 (plot_default)
     1           Sinus:          u(x)=sin(x)+0.5, I=[0,1], periodic boundaries, T=0.5 (eoc_default)
 
+Shallow Water
+-------------
+    0           WetDry:         I=[0,1], periodic boundaries, T=1 (plot_default)
+        Transition between wet and dry states. Steady state solution.
+
 """
 
 

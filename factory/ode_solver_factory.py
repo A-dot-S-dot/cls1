@@ -1,4 +1,4 @@
-from ode_solver.explicit_runge_kutta import (
+from pde_solver.ode_solver import (
     ExplicitRungeKuttaMethod,
     ForwardEuler,
     Heun,

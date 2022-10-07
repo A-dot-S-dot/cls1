@@ -1,7 +1,7 @@
 from typing import Dict, Sequence
 
-from mesh.interval import Interval
 from numpy import nan, poly1d
+from pde_solver.mesh import Interval
 from scipy.interpolate import lagrange
 
 

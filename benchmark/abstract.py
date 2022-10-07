@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
-from mesh import Interval
 
 import numpy as np
+from pde_solver.mesh import Interval
 
 T = TypeVar("T", float, np.ndarray)
 
@@ -12,14 +12,9 @@ class NoExactSolutionError(Exception):
 
 
 class Benchmark(ABC, Generic[T]):
+    domain: Interval
     start_time: float
     end_time: float
-
-    _domain: Interval
-
-    @property
-    def domain(self) -> Interval:
-        return self._domain
 
     @abstractmethod
     def initial_data(self, x: float) -> T:

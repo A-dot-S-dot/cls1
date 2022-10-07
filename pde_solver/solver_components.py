@@ -4,15 +4,16 @@ from typing import Sequence
 
 from benchmark import Benchmark
 from defaults import EOC_MESH_SIZE, PLOT_MESH_SIZE
-from factory import (
-    BENCHMARK_FACTORY,
+from factory import BENCHMARK_FACTORY
+from factory.pde_solver_factory import (
     ContinuousGalerkinSolverFactory,
     LowOrderCGFactory,
     MCLSolverFactory,
+    PDESolverFactory,
+    SWEGodunovSolverFactory,
 )
-from factory.pde_solver_factory import PDESolverFactory
-from mesh import Mesh
-from mesh.uniform import UniformMesh
+
+from pde_solver.mesh import Mesh, UniformMesh
 
 
 class SolverComponents:
@@ -53,9 +54,7 @@ class SolverComponents:
         solver_factory.attributes = solver_args
         solver_factory.problem_name = self._args.program
         solver_factory.mesh = self.mesh
-        solver_factory.initial_data = self.benchmark.initial_data
-        solver_factory.start_time = self.benchmark.start_time
-        solver_factory.end_time = self.benchmark.end_time
+        solver_factory.benchmark = self.benchmark
 
         return solver_factory
 
@@ -66,8 +65,10 @@ class SolverComponents:
             solver_factory = LowOrderCGFactory()
         elif solver_name == "mcl":
             solver_factory = MCLSolverFactory()
+        elif solver_name == "godunov":
+            solver_factory = SWEGodunovSolverFactory()
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"no solver '{solver_name}' implemented.")
 
         return solver_factory
 

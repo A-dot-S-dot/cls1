@@ -1,14 +1,13 @@
-from mesh import Interval
 from numpy import cos, exp, pi, sqrt
+from pde_solver.mesh import Interval
 
 from .abstract import Benchmark
 
 
-class AdvectionBenchmark(Benchmark):
+class AdvectionBenchmark(Benchmark[float]):
+    domain = Interval(0, 1)
     start_time = 0
     end_time = 1
-
-    _domain = Interval(0, 1)
 
     def exact_solution(self, x: float, t: float) -> float:
         argument = (x - t) % self.domain.length

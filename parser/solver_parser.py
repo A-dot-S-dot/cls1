@@ -26,16 +26,19 @@ class SolverParser(ArgumentParser, ABC):
     def _add_arguments(self):
         ...
 
+    def _add_label(self):
+        self.add_argument("++label", type=str, help="label for ploting")
+
 
 class CGParser(SolverParser):
     prog = "cg"
-    description = "Continuous Galerkin Solver"
+    description = "Continuous Galerkin Solver."
 
     def _add_arguments(self):
+        self._add_label()
         self._add_polynomial_degree()
         self._add_exact_flux()
         self._add_cfl_number()
-        self._add_label()
 
     def _add_polynomial_degree(self):
         self.add_argument(
@@ -62,18 +65,15 @@ class CGParser(SolverParser):
             default=CFL_NUMBER,
         )
 
-    def _add_label(self):
-        self.add_argument("++label", type=str, help="label for ploting")
-
 
 class LowCGParser(CGParser):
     prog = "cg_low"
-    description = "Low order Continuous Galerkin Solver"
+    description = "Low order Continuous Galerkin Solver."
 
     def _add_arguments(self):
+        self._add_label()
         self._add_polynomial_degree()
         self._add_cfl_number()
-        self._add_label()
         self._add_ode_solver()
 
     def _add_cfl_number(self):
@@ -99,13 +99,41 @@ class LowCGParser(CGParser):
 
 class MCLParser(LowCGParser):
     prog = "mcl"
-    description = "MCL Limiter"
+    description = "MCL Limiter."
 
 
-SOLVER_PARSERS = {
+class GodunovParser(SolverParser):
+    prog = "godunov"
+    description = "Godunov's finite volume scheme."
+
+    def _add_arguments(self):
+        self._add_label()
+        self._add_cfl_number()
+
+    def _add_cfl_number(self):
+        self.add_argument(
+            "++cfl",
+            help="specify the cfl number for time stepping",
+            type=parser_type.positive_float,
+            metavar="number",
+            dest="cfl_number",
+            default=GODUNOV_CFL_NUMBER,
+        )
+
+
+ADVECTION_SOLVER_PARSERS = {
     "cg": CGParser(),
     "cg_low": LowCGParser(),
     "mcl": MCLParser(),
 }
-ADVECTION_SOLVER_PARSERS = SOLVER_PARSERS
-BURGERS_SOLVER_PARSERS = SOLVER_PARSERS
+BURGERS_SOLVER_PARSERS = {
+    "cg": CGParser(),
+    "cg_low": LowCGParser(),
+    "mcl": MCLParser(),
+}
+SWE_SOLVER_PARSERS = {"godunov": GodunovParser()}
+
+SOLVER_PARSERS = {}
+SOLVER_PARSERS.update(ADVECTION_SOLVER_PARSERS)
+SOLVER_PARSERS.update(BURGERS_SOLVER_PARSERS)
+SOLVER_PARSERS.update(SWE_SOLVER_PARSERS)

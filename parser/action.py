@@ -3,7 +3,11 @@ from argparse import Action, ArgumentParser, Namespace
 from typing import Dict, List, Optional, Sequence
 
 from .command_parser import EOCParser, PlotParser
-from .solver_parser import ADVECTION_SOLVER_PARSERS, BURGERS_SOLVER_PARSERS
+from .solver_parser import (
+    ADVECTION_SOLVER_PARSERS,
+    BURGERS_SOLVER_PARSERS,
+    SWE_SOLVER_PARSERS,
+)
 
 
 class PlotAction(Action):
@@ -17,7 +21,6 @@ class PlotAction(Action):
         option_string: Optional[str] = ...,
     ) -> None:
         plot_parser = PlotParser()
-        print(values)
         arguments = plot_parser.parse_args(values)
 
         setattr(namespace, "plot", arguments)
@@ -85,3 +88,7 @@ class AdvectionSolverAction(SolverAction):
 
 class BurgersSolverAction(SolverAction):
     _solver_parsers = BURGERS_SOLVER_PARSERS
+
+
+class SWESolverAction(SolverAction):
+    _solver_parsers = SWE_SOLVER_PARSERS

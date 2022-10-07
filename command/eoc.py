@@ -4,21 +4,21 @@ solution and a discrete one of a PDE with diffrent norms.
 """
 from abc import ABC
 from argparse import Namespace
-from typing import Callable, Sequence, Tuple
+from typing import Sequence, Tuple
 
 import numpy as np
 import pandas as pd
 from benchmark import Benchmark
 from benchmark.abstract import NoExactSolutionError
+from custom_type import ScalarFunction
 from factory.pde_solver_factory import PDESolverFactory
-from mesh import Mesh
+from pde_solver.discretization.finite_element import LagrangeFiniteElement
+from pde_solver.error import L1Norm, L2Norm, LInfinityNorm, Norm
+from pde_solver.mesh import Mesh
 from pde_solver.solver_components import SolverComponents
-from quadrature.norm import L1Norm, L2Norm, LInfinityNorm, Norm
 from tqdm import tqdm, trange
 
 from .command import Command
-
-ScalarFunction = Callable[[float], float]
 
 
 class EOCCalculator(ABC):
@@ -48,7 +48,7 @@ class ScalarEOCCalculator(EOCCalculator):
         ):
             discrete_solution = self._calculate_discrete_solution()
 
-            data_frame[index, [0, 3, 6]] = discrete_solution.degree_of_freedom
+            data_frame[index, [0, 3, 6]] = self.solver_factory.dimension
             for i, norm in enumerate(self._norm):
                 data_frame[index, 1 + 3 * i] = self._calculate_error(
                     norm, discrete_solution
@@ -66,7 +66,9 @@ class ScalarEOCCalculator(EOCCalculator):
         solver = self.solver_factory.solver
         solver.solve()
 
-        return self.solver_factory.discrete_solution
+        return LagrangeFiniteElement(
+            self.solver_factory._element_space, solver.solution.end_solution
+        )
 
     def _calculate_error(self, norm: Norm, discrete_solution: ScalarFunction) -> float:
         exact_solution = self.benchmark.exact_solution_at_end_time
@@ -89,7 +91,7 @@ class ScalarEOCCalculator(EOCCalculator):
         self.solver_factory.mesh = self.mesh
 
         for norm in self._norm:
-            norm.set_mesh(self.mesh)
+            norm.mesh = self.mesh
 
 
 class EOCCommand(Command):
