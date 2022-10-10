@@ -34,10 +34,12 @@ class SolverComponents:
         BENCHMARK_FACTORY.command = self._get_command()
 
     def _get_command(self) -> str:
-        if self._args.plot:
+        if hasattr(self._args, "plot") and self._args.plot:
             return "plot"
-        elif self._args.eoc:
+        elif hasattr(self._args, "eoc") and self._args.eoc:
             return "eoc"
+        elif hasattr(self._args, "calculation") and self._args.calculation:
+            return "calculation"
         else:
             raise NotImplementedError
 
@@ -84,10 +86,12 @@ class SolverComponents:
     def mesh_size(self) -> int:
         if self._args.mesh_size:
             return self._args.mesh_size
-        elif self._args.plot:
+        elif hasattr(self._args, "plot") and self._args.plot:
             return PLOT_MESH_SIZE
-        elif self._args.eoc:
+        elif hasattr(self._args, "eoc") and self._args.eoc:
             return EOC_MESH_SIZE
+        elif hasattr(self._args, "calculation") and self._args.calculation:
+            return PLOT_MESH_SIZE
         else:
             raise NotImplementedError
 

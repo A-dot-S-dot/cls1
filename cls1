@@ -9,8 +9,8 @@ More information are available with "cls1 --help".
 
 from parser import ArgumentParserFEM1D
 
+import command as cmd
 import profiler
-from command import TestCommand, HelpCommand, PlotCommand, EOCCommand
 
 
 @profiler.profile
@@ -22,13 +22,15 @@ def main():
         profiler.PRINT_PROFILE = args.profile
 
     if args.program == "test":
-        command = TestCommand(args)
+        command = cmd.TestCommand(args)
     elif args.program == "help":
-        command = HelpCommand(args)
-    elif args.plot:
-        command = PlotCommand(args)
+        command = cmd.HelpCommand(args)
+    elif hasattr(args, "plot") and args.plot:
+        command = cmd.PlotCommand(args)
     elif hasattr(args, "eoc") and args.eoc:
-        command = EOCCommand(args)
+        command = cmd.EOCCommand(args)
+    elif hasattr(args, "calculation") and args.calculation:
+        command = cmd.CalculationCommand(args)
     else:
         raise ValueError("no action specified")
 

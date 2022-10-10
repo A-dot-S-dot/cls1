@@ -1,17 +1,11 @@
 import argparse
 import textwrap
-from typing import Any, List
+from typing import Any, List, Tuple
 
 from defaults import *
 
 from . import types as parser_type
-from .action import (
-    AdvectionSolverAction,
-    BurgersSolverAction,
-    EOCAction,
-    PlotAction,
-    SWESolverAction,
-)
+from .action import *
 from .solver_parser import SOLVER_PARSERS
 
 
@@ -87,10 +81,15 @@ class ArgumentParserFEM1D:
         self._add_profile_argument(advection_parser)
         self._add_solver_argument(advection_parser, AdvectionSolverAction)
 
-    def _add_command_arguments(self, parser):
+    def _add_command_arguments(self, parser, plot=True, eoc=True, calculation=True):
         task_group = parser.add_mutually_exclusive_group(required=True)
-        self._add_plot_argument(task_group)
-        self._add_eoc_argument(task_group)
+
+        if plot:
+            self._add_plot_argument(task_group)
+        if eoc:
+            self._add_eoc_argument(task_group)
+        if calculation:
+            self._add_calculation_argument(task_group)
 
     def _add_plot_argument(self, parser):
         parser.add_argument(
@@ -110,6 +109,16 @@ class ArgumentParserFEM1D:
             nargs="*",
             action=EOCAction,
             metavar="EOC_ARGS",
+        )
+
+    def _add_calculation_argument(self, parser):
+        parser.add_argument(
+            "-c",
+            "--calculation",
+            help="Calculate solutions without doing with them something.",
+            nargs="*",
+            action=CalculationAction,
+            metavar="CALCULATION_ARGS",
         )
 
     def _add_mesh_size_argument(self, parser):
@@ -180,7 +189,7 @@ class ArgumentParserFEM1D:
             solver is 'godunov'. For more information use 'help' program.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        self._add_plot_argument(shallow_water_parser)
+        self._add_command_arguments(shallow_water_parser, eoc=False)
         self._add_mesh_size_argument(shallow_water_parser)
         self._add_benchmark_argument(shallow_water_parser)
         self._add_end_time_argument(shallow_water_parser)

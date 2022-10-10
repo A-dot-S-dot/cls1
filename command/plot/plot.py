@@ -73,7 +73,6 @@ class PlotCommand(Command):
             self._components.solver_factories,
             desc="Calculate solutions",
             unit="solver",
-            position=0,
             leave=False,
         ):
             self._add_discrete_solution(solver_factory)

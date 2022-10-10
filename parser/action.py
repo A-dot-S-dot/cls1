@@ -2,7 +2,7 @@
 from argparse import Action, ArgumentParser, Namespace
 from typing import Dict, List, Optional, Sequence
 
-from .command_parser import EOCParser, PlotParser
+from .command_parser import EOCParser, PlotParser, CalculationParser
 from .solver_parser import (
     ADVECTION_SOLVER_PARSERS,
     BURGERS_SOLVER_PARSERS,
@@ -40,6 +40,22 @@ class EOCAction(Action):
         arguments = eoc_parser.parse_args(values)
 
         setattr(namespace, "eoc", arguments)
+
+
+class CalculationAction(Action):
+    "Calculate solutions without doing anything with them."
+
+    def __call__(
+        self,
+        parser: ArgumentParser,
+        namespace: Namespace,
+        values: List[str],
+        option_string: Optional[str] = ...,
+    ) -> None:
+        calculation_parser = CalculationParser()
+        arguments = calculation_parser.parse_args(values)
+
+        setattr(namespace, "calculation", arguments)
 
 
 class SolverAction(Action):

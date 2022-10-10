@@ -1,4 +1,5 @@
 """This module takes arguments from argparse and processes them."""
+from .calculate import *
 from .command import *
 from .eoc import *
 from .help import *

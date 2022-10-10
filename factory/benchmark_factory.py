@@ -12,9 +12,20 @@ class BenchmarkFactory:
     end_time: Optional[float]
 
     _default_benchmark = {
-        "advection": {"plot": AdvectionPlot2Benchmark, "eoc": AdvectionEOCBenchmark1},
-        "burgers": {"plot": BurgersPlotBenchmark, "eoc": BurgersEOCBenchmark},
-        "swe": {"plot": SWEBumpSteadyStateBenchmark},
+        "advection": {
+            "plot": AdvectionPlot2Benchmark,
+            "eoc": AdvectionEOCBenchmark1,
+            "calculation": AdvectionPlot2Benchmark,
+        },
+        "burgers": {
+            "plot": BurgersPlotBenchmark,
+            "eoc": BurgersEOCBenchmark,
+            "calculation": BurgersPlotBenchmark,
+        },
+        "swe": {
+            "plot": SWEBumpSteadyStateBenchmark,
+            "calculation": SWEBumpSteadyStateBenchmark,
+        },
     }
     _benchmark = {
         "advection": [
