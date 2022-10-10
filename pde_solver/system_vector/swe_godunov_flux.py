@@ -6,10 +6,10 @@ from pde_solver.system_vector import SystemVector
 
 
 class SWEGodunovNumericalFlux(SystemVector):
-    """Calculates the shallow-water Godunov numerical fluxes for each cell,
+    """Calculates the shallow-water Godunov numerical fluxes,
     i.e.
 
-        FL_{i+1/2}-FR_{i-1/2},
+        FR_{i-1/2}, FL_{i+1/2}
 
     where i is the cell index.
 
@@ -43,18 +43,19 @@ class SWEGodunovNumericalFlux(SystemVector):
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         self.left_intermediate_velocity = np.zeros(self.volume_space.edge_number)
         self.right_intermediate_velocity = np.zeros(self.volume_space.edge_number)
-        numerical_flux = np.zeros((2, self.volume_space.dimension))
+        right_numerical_fluxes = np.empty((2, self.volume_space.dimension))
+        left_numerical_fluxes = np.empty((2, self.volume_space.dimension))
         self._discrete_solution = dof_vector
 
         for edge_index in range(self.volume_space.edge_number):
             self._build_help_attributes(edge_index)
 
-            left_numerical_flux, right_numerical_flux = self._calculate_numerical_flux()
+            left_cell_flux, right_cell_flux = self._calculate_cell_fluxes()
 
-            numerical_flux[:, self._left_cell_index] += left_numerical_flux
-            numerical_flux[:, self._right_cell_index] -= right_numerical_flux
+            left_numerical_fluxes[:, self._left_cell_index] = left_cell_flux
+            right_numerical_fluxes[:, self._right_cell_index] = right_cell_flux
 
-        return numerical_flux
+        return np.array([left_numerical_fluxes, right_numerical_fluxes])
 
     def _build_help_attributes(self, edge_index: int):
         (
@@ -137,7 +138,7 @@ class SWEGodunovNumericalFlux(SystemVector):
             - self.bottom_topography[self._left_cell_index]
         )
 
-    def _calculate_numerical_flux(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _calculate_cell_fluxes(self) -> Tuple[np.ndarray, np.ndarray]:
         if self._left_velocity < self.eps and self._right_velocity < self.eps:
             return (np.zeros(2), np.zeros(2))
 
