@@ -16,6 +16,10 @@ class Benchmark(ABC, Generic[T]):
     start_time: float
     end_time: float
 
+    name: str
+    short_facts: str
+    description: str
+
     @abstractmethod
     def initial_data(self, x: float) -> T:
         ...
