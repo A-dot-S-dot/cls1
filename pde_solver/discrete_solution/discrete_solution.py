@@ -39,30 +39,3 @@ class DiscreteSolution:
         new_time = self.time[-1] + time_step
         self.time.append(new_time)
         self.solution.append(solution)
-
-
-class DiscreteSolutionObserver(ABC):
-    @abstractmethod
-    def update(self):
-        ...
-
-
-class DiscreteSolutionObservable(DiscreteSolution):
-    """Every time discrete solutiion is changed it informes observers."""
-
-    _observers: List[DiscreteSolutionObserver]
-
-    def __init__(self, start_time: float, initial_data: np.ndarray):
-        super().__init__(start_time, initial_data)
-        self._observers = []
-
-    def register_observer(self, observer: DiscreteSolutionObserver):
-        self._observers.append(observer)
-
-    def notify_observers(self):
-        for observer in self._observers:
-            observer.update()
-
-    def add_solution(self, time_step: float, solution: np.ndarray):
-        super().add_solution(time_step, solution)
-        self.notify_observers()
