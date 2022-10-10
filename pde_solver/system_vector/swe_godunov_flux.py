@@ -43,8 +43,8 @@ class SWEGodunovNumericalFlux(SystemVector):
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         self.left_intermediate_velocity = np.zeros(self.volume_space.edge_number)
         self.right_intermediate_velocity = np.zeros(self.volume_space.edge_number)
-        right_numerical_fluxes = np.empty((2, self.volume_space.dimension))
-        left_numerical_fluxes = np.empty((2, self.volume_space.dimension))
+        right_numerical_fluxes = np.empty((self.volume_space.dimension, 2))
+        left_numerical_fluxes = np.empty((self.volume_space.dimension, 2))
         self._discrete_solution = dof_vector
 
         for edge_index in range(self.volume_space.edge_number):
@@ -52,8 +52,8 @@ class SWEGodunovNumericalFlux(SystemVector):
 
             left_cell_flux, right_cell_flux = self._calculate_cell_fluxes()
 
-            left_numerical_fluxes[:, self._left_cell_index] = left_cell_flux
-            right_numerical_fluxes[:, self._right_cell_index] = right_cell_flux
+            left_numerical_fluxes[self._left_cell_index] = left_cell_flux
+            right_numerical_fluxes[self._right_cell_index] = right_cell_flux
 
         return np.array([left_numerical_fluxes, right_numerical_fluxes])
 
@@ -72,8 +72,8 @@ class SWEGodunovNumericalFlux(SystemVector):
 
     def _build_swe_values(self):
         left_swe_values, right_swe_values = (
-            self._discrete_solution[:, self._left_cell_index],
-            self._discrete_solution[:, self._right_cell_index],
+            self._discrete_solution[self._left_cell_index],
+            self._discrete_solution[self._right_cell_index],
         )
 
         if left_swe_values[0] < self.eps:
