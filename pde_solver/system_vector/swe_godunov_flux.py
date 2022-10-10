@@ -6,6 +6,15 @@ from pde_solver.system_vector import SystemVector
 
 
 class SWEGodunovNumericalFlux(SystemVector):
+    """Calculates the shallow-water Godunov numerical fluxes for each cell,
+    i.e.
+
+        FL_{i+1/2}-FR_{i-1/2},
+
+    where i is the cell index.
+
+    """
+
     volume_space: FiniteVolumeSpace
     gravitational_acceleration: float
     bottom_topography: np.ndarray
@@ -42,8 +51,8 @@ class SWEGodunovNumericalFlux(SystemVector):
 
             left_numerical_flux, right_numerical_flux = self._calculate_numerical_flux()
 
-            numerical_flux[:, self._left_cell_index] -= left_numerical_flux
-            numerical_flux[:, self._right_cell_index] += right_numerical_flux
+            numerical_flux[:, self._left_cell_index] += left_numerical_flux
+            numerical_flux[:, self._right_cell_index] -= right_numerical_flux
 
         return numerical_flux
 
@@ -110,12 +119,6 @@ class SWEGodunovNumericalFlux(SystemVector):
             0,
         )
 
-    def _build_topography_step(self):
-        self._topography_step = (
-            self.bottom_topography[self._right_cell_index]
-            - self.bottom_topography[self._left_cell_index]
-        )
-
     def _get_height_and_velocity(
         self, height: float, discharge: float
     ) -> Tuple[float, float]:
@@ -127,6 +130,12 @@ class SWEGodunovNumericalFlux(SystemVector):
     def _update_intermediate_velocities(self, edge_index: int):
         self.left_intermediate_velocity[edge_index] = self._left_velocity
         self.right_intermediate_velocity[edge_index] = self._right_velocity
+
+    def _build_topography_step(self):
+        self._topography_step = (
+            self.bottom_topography[self._right_cell_index]
+            - self.bottom_topography[self._left_cell_index]
+        )
 
     def _calculate_numerical_flux(self) -> Tuple[np.ndarray, np.ndarray]:
         if self._left_velocity < self.eps and self._right_velocity < self.eps:
@@ -142,16 +151,25 @@ class SWEGodunovNumericalFlux(SystemVector):
         )
 
     def _calculate_modified_intermediate_states(self) -> Tuple[np.ndarray, np.ndarray]:
-        left_height, right_height = self._calculate_modified_intermediate_height()
+        (
+            left_modified_height,
+            right_modified_height,
+        ) = self._calculate_modified_intermediate_height()
+
         discharge = self._calculate_intermediate_discharge()
 
         return (
-            np.array([left_height, self._left_velocity * discharge]),
-            np.array([right_height, self._right_velocity * discharge]),
+            np.array([left_modified_height, self._left_velocity * discharge]),
+            np.array([right_modified_height, self._right_velocity * discharge]),
         )
 
     def _calculate_modified_intermediate_height(self) -> Tuple[float, float]:
+        # returns intermediate_velocity * intermediate_height. The last one is
+        # modified to ensure positivity. The product is returned for avoiding
+        # division with small numbers.
+
         height_HLL = self._calculate_height_HLL()
+
         left_height = (
             height_HLL
             + self._right_velocity
@@ -167,6 +185,7 @@ class SWEGodunovNumericalFlux(SystemVector):
 
         if self._topography_step >= 0:
             modified_right_height = self._right_velocity * max(right_height, 0)
+
             return (
                 self._left_velocity * left_height
                 - self._right_velocity * right_height
@@ -175,6 +194,7 @@ class SWEGodunovNumericalFlux(SystemVector):
             )
         else:
             modified_left_height = self._left_velocity * max(left_height, 0)
+
             return (
                 modified_left_height,
                 self._right_velocity * right_height
@@ -194,6 +214,7 @@ class SWEGodunovNumericalFlux(SystemVector):
         discharge_HLL = self._calculate_discharge_HLL()
         step_length = self.volume_space.mesh.step_length
         source_term = self._calculate_source_term_approximation()
+
         return (
             discharge_HLL
             - self.gravitational_acceleration
@@ -212,6 +233,7 @@ class SWEGodunovNumericalFlux(SystemVector):
 
     def _calculate_source_term_approximation(self) -> float:
         step_length = self.volume_space.mesh.step_length
+
         if self._topography_step >= 0:
             return (
                 (self._left_height + self._right_height)
