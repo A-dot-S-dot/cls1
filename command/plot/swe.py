@@ -38,7 +38,7 @@ class SWEFunctionPlotter(SolutionPlotter[np.ndarray]):
         discharge_label: str,
     ):
         swe_values = np.array([function(x) for x in self.grid])
-        self.add_function_values(self.grid, swe_values.T, height_label, discharge_label)
+        self.add_function_values(self.grid, swe_values, height_label, discharge_label)
 
     def add_function_values(
         self,
@@ -47,8 +47,8 @@ class SWEFunctionPlotter(SolutionPlotter[np.ndarray]):
         height_label: str,
         discharge_label: str,
     ):
-        height = swe_values[0]
-        discharge = swe_values[1]
+        height = swe_values.T[0]
+        discharge = swe_values.T[1]
 
         self.add_height(grid, height, height_label)
         self.add_discharge(grid, discharge, discharge_label)

@@ -5,7 +5,7 @@ import numpy as np
 import pde_solver.system_vector as sv
 from benchmark.shallow_water import SWEBenchmark
 from factory.pde_solver_factory import PDESolverFactory
-from pde_solver.discrete_solution import DiscreteSolutionObservable
+from pde_solver.discrete_solution import DiscreteSolution, DiscreteSolutionObservable
 from pde_solver.interpolate import CellAverageInterpolator
 from pde_solver.solver.finite_volume import SWEGodunovSolver
 from pde_solver.solver_space import FiniteVolumeSpace
@@ -43,9 +43,10 @@ class SWEGodunovSolverFactory(PDESolverFactory[np.ndarray]):
         )
         self._bottom_topography = interpolator.interpolate(self.benchmark.topography)
 
-        self._solver.solution = DiscreteSolutionObservable(
-            self.benchmark.start_time, np.array([height, discharge])
+        discrete_solution = DiscreteSolution(
+            self.benchmark.start_time, np.array([height, discharge]).T
         )
+        self._solver.solution = DiscreteSolutionObservable(discrete_solution)
 
     def _build_tqdm_kwargs(self):
         self._solver.tqdm_kwargs = self.tqdm_kwargs

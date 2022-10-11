@@ -1,10 +1,10 @@
 from unittest import TestCase
 
 import numpy as np
-
 from pde_solver.discrete_solution import (
-    DiscreteSolutionObserver,
+    DiscreteSolution,
     DiscreteSolutionObservable,
+    DiscreteSolutionObserver,
 )
 
 
@@ -17,7 +17,8 @@ class Observer(DiscreteSolutionObserver):
 
 class TestDiscreteSolution(TestCase):
     initial_data = np.array([0, 0])
-    observable = DiscreteSolutionObservable(0, initial_data)
+    discrete_solution = DiscreteSolution(0, initial_data)
+    observable = DiscreteSolutionObservable(discrete_solution)
     observer = Observer()
     observable.register_observer(observer)
 

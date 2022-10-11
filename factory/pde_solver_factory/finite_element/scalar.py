@@ -5,7 +5,7 @@ import numpy as np
 import pde_solver.system_matrix as sm
 import pde_solver.system_vector as sv
 from factory.pde_solver_factory import PDESolverFactory
-from pde_solver.discrete_solution import DiscreteSolutionObservable
+from pde_solver.discrete_solution import DiscreteSolution, DiscreteSolutionObservable
 from pde_solver.interpolate import NodeValuesInterpolator
 from pde_solver.ode_solver import ExplicitRungeKuttaMethod
 from pde_solver.solver.finite_element import ScalarFiniteElementSolver
@@ -38,10 +38,11 @@ class ScalarFiniteElementSolverFactory(PDESolverFactory[int]):
 
     def _build_solution(self):
         interpolator = NodeValuesInterpolator(*self._element_space.basis_nodes)
-        self._solver.solution = DiscreteSolutionObservable(
+        discrete_solution = DiscreteSolution(
             self.benchmark.start_time,
             interpolator.interpolate(self.benchmark.initial_data),
         )
+        self._solver.solution = DiscreteSolutionObservable(discrete_solution)
 
     def _build_tqdm_kwargs(self):
         self._solver.tqdm_kwargs = self.tqdm_kwargs

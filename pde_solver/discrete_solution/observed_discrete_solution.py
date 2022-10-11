@@ -17,8 +17,10 @@ class DiscreteSolutionObservable(DiscreteSolution):
 
     _observers: List[DiscreteSolutionObserver]
 
-    def __init__(self, start_time: float, initial_data: np.ndarray):
-        super().__init__(start_time, initial_data)
+    def __init__(self, discrete_solution: DiscreteSolution):
+        self.solution = discrete_solution.solution
+        self.time = discrete_solution.time
+
         self._observers = []
 
     def register_observer(self, observer: DiscreteSolutionObserver):
