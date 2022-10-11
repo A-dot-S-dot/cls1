@@ -49,11 +49,10 @@ class PlotCommand(Command):
         self._add_plots()
         self._plotter.set_suptitle(f"{len(self._components.mesh)} cells")
 
-        if not self._args.plot.quite:
-            try:
-                self._plotter.show()
-            except NothingToPlotError:
-                tqdm.write("WARNING: Nothing to plot...")
+        try:
+            self._plotter.show()
+        except NothingToPlotError:
+            tqdm.write("WARNING: Nothing to plot...")
 
     def _add_plots(self):
         self._add_exact_solution()
