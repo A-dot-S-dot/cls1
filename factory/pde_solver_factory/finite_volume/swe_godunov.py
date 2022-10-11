@@ -3,7 +3,7 @@ from typing import Dict, Iterable
 import factory
 import numpy as np
 import pde_solver.system_vector as sv
-from benchmark.shallow_water import SWEBenchmark
+from benchmark import SWEBenchmark
 from factory.pde_solver_factory import PDESolverFactory
 from pde_solver.discrete_solution import DiscreteSolution, DiscreteSolutionObservable
 from pde_solver.interpolate import CellAverageInterpolator

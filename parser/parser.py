@@ -1,12 +1,12 @@
 import argparse
 import textwrap
-from typing import Any, List, Tuple
+from typing import Type
 
+from command import AVAILABLE_HELP_ARGUMENTS
 from defaults import *
 
 from . import types as parser_type
 from .action import *
-from .solver_parser import SOLVER_PARSERS
 
 
 class ArgumentParserFEM1D:
@@ -22,16 +22,15 @@ class ArgumentParserFEM1D:
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    _current_parser_layer: List[Any] = [_parser]
 
     def __init__(self):
-        self._add_program_parsers(self._parser)
+        self._add_program_parsers()
 
-    def _add_program_parsers(self, parser):
-        program_parsers = parser.add_subparsers(
+    def _add_program_parsers(self):
+        program_parsers = self._parser.add_subparsers(
             title="Programs",
             dest="program",
-            metavar="program",
+            metavar="PROGRAM",
             required=True,
         )
 
@@ -57,13 +56,16 @@ class ArgumentParserFEM1D:
         help_parser = parsers.add_parser(
             "help",
             help="display help messages",
-            description="Task for displaying different help messages for certain objects",
+            description="Task for displaying different help messages for certain objects. Available arguments are: "
+            + AVAILABLE_HELP_ARGUMENTS,
         )
 
         help_parser.add_argument(
             "page",
-            choices=[*SOLVER_PARSERS.keys(), "benchmark", "plot", "eoc"],
             help="page which should be displayed in terminal",
+        )
+        help_parser.add_argument(
+            "option", help="additional option for page if it is available. ", nargs="*"
         )
 
     def _add_advection_parser(self, parsers):
@@ -76,7 +78,7 @@ class ArgumentParserFEM1D:
         )
         self._add_command_arguments(advection_parser)
         self._add_mesh_size_argument(advection_parser)
-        self._add_benchmark_argument(advection_parser)
+        self._add_benchmark_argument(advection_parser, AdvectionBenchmarkAction)
         self._add_end_time_argument(advection_parser)
         self._add_profile_argument(advection_parser)
         self._add_solver_argument(advection_parser, AdvectionSolverAction)
@@ -130,12 +132,13 @@ class ArgumentParserFEM1D:
             metavar="SIZE",
         )
 
-    def _add_benchmark_argument(self, parser):
+    def _add_benchmark_argument(self, parser, benchmark_action: Type[BenchmarkAction]):
         parser.add_argument(
             "-b",
             "--benchmark",
             help="Benchmark for conservation law. If not specified use the default one for the chosen task.",
-            type=int,
+            nargs="+",
+            action=benchmark_action,
         )
 
     def _add_end_time_argument(self, parser):
@@ -176,7 +179,7 @@ class ArgumentParserFEM1D:
         )
         self._add_command_arguments(burgers_parser)
         self._add_mesh_size_argument(burgers_parser)
-        self._add_benchmark_argument(burgers_parser)
+        self._add_benchmark_argument(burgers_parser, BurgersBenchmarkAction)
         self._add_end_time_argument(burgers_parser)
         self._add_profile_argument(burgers_parser)
         self._add_solver_argument(burgers_parser, BurgersSolverAction)
@@ -191,10 +194,10 @@ class ArgumentParserFEM1D:
         )
         self._add_command_arguments(shallow_water_parser, eoc=False)
         self._add_mesh_size_argument(shallow_water_parser)
-        self._add_benchmark_argument(shallow_water_parser)
+        self._add_benchmark_argument(shallow_water_parser, SWEBenchmarkAction)
         self._add_end_time_argument(shallow_water_parser)
         self._add_profile_argument(shallow_water_parser)
         self._add_solver_argument(shallow_water_parser, SWESolverAction)
 
-    def parse_args(self) -> argparse.Namespace:
-        return self._parser.parse_args()
+    def parse_args(self, *args) -> argparse.Namespace:
+        return self._parser.parse_args(*args)

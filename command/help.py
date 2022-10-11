@@ -8,9 +8,16 @@ from benchmark import Benchmark
 from factory.benchmark_factory import BENCHMARK_FACTORY
 
 from .command import Command
+from parser.benchmark_parser import *
+
+AVAILABLE_HELP_ARGUMENTS = ", ".join(
+    [*SOLVER_PARSERS.keys(), "benchmark", "plot", "eoc"]
+)
 
 
 class HelpCommand(Command):
+    benchmarks_parser = BenchmarkParsers()
+
     def execute(self):
         page = self._args.page
 
@@ -25,27 +32,19 @@ class HelpCommand(Command):
             parser = EOCParser()
             parser.print_help()
         else:
-            raise NotImplementedError(f"No help message for {page} available.")
+            raise NotImplementedError(
+                f"No help message for {page} available. Available arguments are: {AVAILABLE_HELP_ARGUMENTS}"
+            )
+
+        if self._args.option:
+            print()
+            print(f"WARNING: Options {self._args.option} couldn't be processed.")
 
     def _print_benchmarks(self):
-        problem_titles = ["Linear Advection", "Burgers", "Shallow-Water Equations"]
-        for problem_key, problem_title in zip(
-            BENCHMARK_FACTORY._benchmark.keys(), problem_titles
-        ):
-            self._print_problem_benchmarks(problem_key, problem_title)
-
-    def _print_problem_benchmarks(self, problem_key: str, problem_title: str):
-        self._print_description(problem_title)
-        benchmarks = BENCHMARK_FACTORY._benchmark[problem_key]
-
-        for benchmark_index, benchmark in enumerate(benchmarks):
-            self._print_benchmark_information(benchmark_index, benchmark)
-            print()
-
-    def _print_description(self, problem_title: str):
-        print(problem_title + "\n" + len(problem_title) * "-")
-
-    def _print_benchmark_information(self, benchmark_number: int, benchmark: Benchmark):
-        print_message = f"\t{benchmark_number}) {benchmark.name.upper()} ({benchmark.short_facts})\n\t\t{benchmark.description}"
-
-        print(print_message)
+        if self._args.option:
+            BENCHMARK_PARSERS[self._args.option[0]].parse_args(
+                [*self._args.option[1:], "+h"]
+            )
+            self._args.option = None
+        else:
+            self.benchmarks_parser.print_help()

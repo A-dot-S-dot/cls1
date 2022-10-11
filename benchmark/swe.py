@@ -26,9 +26,9 @@ class SWEBumpSteadyStateBenchmark(SWEBenchmark):
 
     """
 
-    name = "Steady State"
+    name = "Steady State with bump in topography (plot default)"
     short_facts = "I=(-2,2), g=9.81, h ca. 2.5, u ca. 0.4, periodic boundaries, T=0.1, PLOT_DEFAULT"
-    description = "This benchmark dos not change in time (steady state)."
+    description = "This benchmark does not change in time (steady state)."
 
     domain = Interval(-2, 2)
     start_time = 0
@@ -58,7 +58,7 @@ class SWEBumpSteadyStateBenchmark(SWEBenchmark):
 
 class SWEWetDryTransitionBenchmark(SWEBenchmark):
     # TODO should als satisfy the above equations
-    name = "Steady State"
+    name = "Wet-Dry transitions"
     short_facts = "I=(-2,2), periodic boundaries, T=0.1"
     description = "This benchmark has wet dry transitions."
 

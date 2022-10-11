@@ -29,7 +29,7 @@ class SolverComponents:
 
     def _setup_benchmark_factory(self):
         BENCHMARK_FACTORY.problem_name = self._args.program
-        BENCHMARK_FACTORY.benchmark_number = self._args.benchmark
+        BENCHMARK_FACTORY.benchmark_args = self._args.benchmark
         BENCHMARK_FACTORY.end_time = self._args.end_time
         BENCHMARK_FACTORY.command = self._get_command()
 

@@ -15,7 +15,7 @@ class AdvectionBenchmark(Benchmark[float]):
 
 
 class AdvectionPlot1Benchmark(AdvectionBenchmark):
-    name = "Three Hills"
+    name = "Three Hills (plot default)"
     short_facts = "I=[0,1], periodic boundaries, T=1, PLOT_DEFAULT"
     description = "Three diffrent hills, how the scheme handles different difficulties."
 
@@ -57,7 +57,7 @@ class AdvectionPlot3Benchmark(AdvectionBenchmark):
 
 
 class AdvectionEOCBenchmark1(AdvectionBenchmark):
-    name = "Cosine Benchmark"
+    name = "Cosine Benchmark (eoc default)"
     short_facts = (
         "u(x)=cos(2*pi*(x-0.5)), I=[0,1], periodic boundaries, T=1, EOC_DEFAULT"
     )

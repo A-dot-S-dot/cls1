@@ -1,6 +1,6 @@
 """This module provides custom actions for ArgumentParser in parser.py."""
 from argparse import Action, ArgumentParser, Namespace
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Type
 
 from .command_parser import EOCParser, PlotParser, CalculationParser
 from .solver_parser import (
@@ -8,6 +8,7 @@ from .solver_parser import (
     BURGERS_SOLVER_PARSERS,
     SWE_SOLVER_PARSERS,
 )
+from .benchmark_parser import *
 
 
 class PlotAction(Action):
@@ -108,3 +109,31 @@ class BurgersSolverAction(SolverAction):
 
 class SWESolverAction(SolverAction):
     _solver_parsers = SWE_SOLVER_PARSERS
+
+
+class BenchmarkAction(Action):
+    _benchmark_parser_class: Type[BenchmarkParser]
+
+    def __call__(
+        self,
+        parser: ArgumentParser,
+        namespace: Namespace,
+        values: List[str],
+        option_string: Optional[str] = ...,
+    ) -> None:
+        benchmark_parser = self._benchmark_parser_class()
+        arguments = benchmark_parser.parse_args(values)
+
+        setattr(namespace, "benchmark", arguments)
+
+
+class AdvectionBenchmarkAction(BenchmarkAction):
+    _benchmark_parser_class = AdvectionBenchmarkParser
+
+
+class BurgersBenchmarkAction(BenchmarkAction):
+    _benchmark_parser_class = BurgersBenchmarkParser
+
+
+class SWEBenchmarkAction(BenchmarkAction):
+    _benchmark_parser_class = SWEBenchmarkParser
