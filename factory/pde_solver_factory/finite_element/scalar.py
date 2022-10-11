@@ -73,6 +73,10 @@ class ScalarFiniteElementSolverFactory(PDESolverFactory[int]):
     def dimension(self) -> int:
         return self._element_space.dimension
 
+    @property
+    def element_space(self) -> LagrangeFiniteElementSpace:
+        return self._element_space
+
 
 class ContinuousGalerkinSolverFactory(ScalarFiniteElementSolverFactory):
     _problem_name: str

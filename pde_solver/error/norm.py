@@ -21,14 +21,13 @@ class IntegralNorm(Norm):
     _local_quadrature: LocalElementQuadrature
     _affine_mapping: AffineTransformation
 
-    def __init__(self, mesh: Mesh, quadrature_degree: int):
+    def __init__(self, quadrature_degree: int):
         self._local_quadrature = LocalElementQuadrature(quadrature_degree)
         self._affine_mapping = AffineTransformation()
-        self.mesh = mesh
 
 
 class L2Norm(IntegralNorm):
-    name = "L2-Norm"
+    name = "L2"
 
     def __call__(self, function: ScalarFunction) -> float:
         integral = 0
@@ -53,7 +52,7 @@ class L2Norm(IntegralNorm):
 
 
 class L1Norm(IntegralNorm):
-    name = "L1-Norm"
+    name = "L1"
 
     def __call__(self, function: ScalarFunction) -> float:
         integral = 0
@@ -78,13 +77,12 @@ class L1Norm(IntegralNorm):
 
 
 class LInfinityNorm(Norm):
-    name = "Linf-Norm"
+    name = "Linf"
 
     _points_per_cell: int
 
-    def __init__(self, mesh: Mesh, points_per_cell: int):
+    def __init__(self, points_per_cell: int):
         self._points_per_cell = points_per_cell
-        self.mesh = mesh
 
     def __call__(self, function: ScalarFunction) -> float:
         maximum_per_cell = np.zeros(len(self.mesh))
