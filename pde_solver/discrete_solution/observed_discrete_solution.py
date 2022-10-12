@@ -18,7 +18,7 @@ class DiscreteSolutionObservable(DiscreteSolution):
     _observers: List[DiscreteSolutionObserver]
 
     def __init__(self, discrete_solution: DiscreteSolution):
-        self.solution = discrete_solution.solution
+        self.values = discrete_solution.values
         self.time = discrete_solution.time
 
         self._observers = []

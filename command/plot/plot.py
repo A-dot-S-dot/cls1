@@ -99,5 +99,5 @@ class PlotCommand(Command):
         self, solution: DiscreteSolution, solver_factory: PDESolverFactory
     ):
         self._plotter.add_function_values(
-            solver_factory.grid, solution.end_solution, *solver_factory.plot_label
+            solver_factory.grid, solution.end_values, *solver_factory.plot_label
         )

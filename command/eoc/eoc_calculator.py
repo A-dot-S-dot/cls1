@@ -121,7 +121,7 @@ class ScalarEOCCalculator(EOCCalculator):
         solver.solve()
 
         return LagrangeFiniteElement(
-            self._solver_factory.element_space, solver.solution.end_solution
+            self._solver_factory.element_space, solver.solution.end_values
         )
 
     def _calculate_error(self, discrete_solution: ScalarFunction) -> np.ndarray:

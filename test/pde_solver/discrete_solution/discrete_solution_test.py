@@ -16,11 +16,11 @@ class TestDiscreteSolution(TestCase):
     def time(self):
         self.assertListEqual(self.solution.time, [0, 1])
 
-    def test_solution(self):
+    def test_values(self):
         for i in range(2):
             for j in range(3):
                 for k in range(2):
-                    self.assertEqual(self.solution.solution[i, j, k], i)
+                    self.assertEqual(self.solution.values[i, j, k], i)
 
     def test_dimension(self):
         self.assertEqual(self.solution.dimension, 3)
@@ -28,7 +28,7 @@ class TestDiscreteSolution(TestCase):
     def test_end_solution(self):
         for j in range(3):
             for k in range(2):
-                self.assertEqual(self.solution.end_solution[j, k], 1)
+                self.assertEqual(self.solution.end_values[j, k], 1)
 
     def test_end_time(self):
         self.assertEqual(self.solution.end_time, 1)

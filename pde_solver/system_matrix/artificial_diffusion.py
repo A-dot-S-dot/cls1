@@ -62,7 +62,7 @@ class BurgersArtificialDiffusion(DiscreteUpwind, DiscreteSolutionObserver):
         discrete_solution.register_observer(self)
 
     def update(self):
-        self._update(self._discrete_solution.end_solution)
+        self._update(self._discrete_solution.end_values)
 
     def _update(self, discrete_solution: np.ndarray):
         values = self._discrete_gradient()
@@ -76,5 +76,5 @@ class BurgersArtificialDiffusion(DiscreteUpwind, DiscreteSolutionObserver):
         self.update_csr_values()
 
     def assemble(self, dof_vector: np.ndarray):
-        if (dof_vector != self._discrete_solution.end_solution).any():
+        if (dof_vector != self._discrete_solution.end_values).any():
             self._update(dof_vector)
