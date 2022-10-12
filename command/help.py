@@ -1,18 +1,12 @@
 """This module provides a task for displaying help messages.
 
 """
+from parser.benchmark_parser import *
 from parser.command_parser import EOCParser, PlotParser
+from parser.parser import AVAILABLE_HELP_ARGUMENTS
 from parser.solver_parser import SOLVER_PARSERS
 
-from benchmark import Benchmark
-from factory.benchmark_factory import BENCHMARK_FACTORY
-
 from .command import Command
-from parser.benchmark_parser import *
-
-AVAILABLE_HELP_ARGUMENTS = ", ".join(
-    [*SOLVER_PARSERS.keys(), "benchmark", "plot", "eoc"]
-)
 
 
 class HelpCommand(Command):

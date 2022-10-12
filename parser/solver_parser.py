@@ -1,9 +1,8 @@
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from abc import ABC, abstractmethod
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
+import custom_type
 from defaults import *
-
-from . import types as parser_type
 
 
 class SolverParser(ArgumentParser, ABC):
@@ -46,7 +45,7 @@ class CGParser(SolverParser):
             "++polynomial-degree",
             help="polynomial degree used for finite elements",
             metavar="degree",
-            type=parser_type.positive_int,
+            type=custom_type.positive_int,
             default=POLYNOMIAL_DEGREE,
         )
 
@@ -59,7 +58,7 @@ class CGParser(SolverParser):
         self.add_argument(
             "++cfl",
             help="specify the cfl number for time stepping",
-            type=parser_type.positive_float,
+            type=custom_type.positive_float,
             metavar="number",
             dest="cfl_number",
             default=CFL_NUMBER,
@@ -80,7 +79,7 @@ class LowCGParser(CGParser):
         self.add_argument(
             "++cfl",
             help="specify the cfl number for time stepping",
-            type=parser_type.positive_float,
+            type=custom_type.positive_float,
             metavar="number",
             dest="cfl_number",
             default=MCL_CFL_NUMBER,
@@ -114,7 +113,7 @@ class GodunovParser(SolverParser):
         self.add_argument(
             "++cfl",
             help="specify the cfl number for time stepping",
-            type=parser_type.positive_float,
+            type=custom_type.positive_float,
             metavar="number",
             dest="cfl_number",
             default=GODUNOV_CFL_NUMBER,

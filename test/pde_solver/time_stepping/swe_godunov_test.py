@@ -8,8 +8,8 @@ from pde_solver.time_stepping import *
 
 class GodunovTimeSteppingTest(TestCase):
     test_dofs = [
-        np.array([[0.5, 0, 0.5, 0], [0.1, 0, 0.1, 0]]),
-        np.array([[0, 0.5, 0, 0.5], [0, 0.2, 0, 0.2]]),
+        np.array([[0.5, 0, 0.5, 0], [0.1, 0, 0.1, 0]]).T,
+        np.array([[0, 0.5, 0, 0.5], [0, 0.2, 0, 0.2]]).T,
     ]
     numerical_flux = SWEGodunovNumericalFlux()
     numerical_flux.volume_space = VOLUME_SPACE

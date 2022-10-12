@@ -1,5 +1,4 @@
-from parser import types as parser_type
-
+import custom_type
 import numpy as np
 from defaults import *
 from pde_solver.mesh import Interval
@@ -47,7 +46,7 @@ class SWEBumpSteadyStateBenchmark(SWEBenchmark):
             ],
             {
                 "help": "gravitational acceleration",
-                "type": parser_type.positive_float,
+                "type": custom_type.positive_float,
                 "metavar": "ACCELERATION",
                 "default": GRAVITATIONAL_ACCELERATION,
                 "dest": "gravitational_acceleration",

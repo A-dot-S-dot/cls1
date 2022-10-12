@@ -2,11 +2,15 @@ import argparse
 import textwrap
 from typing import Type
 
-from command import AVAILABLE_HELP_ARGUMENTS
+import custom_type
 from defaults import *
+from .solver_parser import SOLVER_PARSERS
 
-from . import types as parser_type
 from .action import *
+
+AVAILABLE_HELP_ARGUMENTS = ", ".join(
+    [*SOLVER_PARSERS.keys(), "benchmark", "plot", "eoc"]
+)
 
 
 class ArgumentParserFEM1D:
@@ -128,7 +132,7 @@ class ArgumentParserFEM1D:
             "-m",
             "--mesh-size",
             help="Number of mesh cells. If not specified use the default size for the chosen task.",
-            type=parser_type.positive_int,
+            type=custom_type.positive_int,
             metavar="SIZE",
         )
 
@@ -145,7 +149,7 @@ class ArgumentParserFEM1D:
         parser.add_argument(
             "-T",
             "--end-time",
-            type=parser_type.positive_float,
+            type=custom_type.positive_float,
             help="End time used by solvers. If not specified use benchmark's end time.",
         )
 

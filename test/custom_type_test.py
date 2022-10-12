@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from parser.types import positive_float, positive_int, percent_number
+from custom_type import percent_number, positive_float, positive_int
 
 
 class TestPositiveInt(TestCase):

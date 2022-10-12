@@ -2,7 +2,7 @@ from test.test_helper import LINEAR_LAGRANGE_SPACE, QUADRATIC_LAGRANGE_SPACE
 from unittest import TestCase
 
 import numpy as np
-from pde_solver.discrete_solution import DiscreteSolutionObservable
+from pde_solver.discrete_solution import DiscreteSolution, DiscreteSolutionObservable
 from pde_solver.system_matrix.artificial_diffusion import (
     BurgersArtificialDiffusion,
     DiscreteUpwind,
@@ -37,7 +37,8 @@ class TestQuadraticDiscreteUpwind(TestLinearDiscreteUpwind):
 
 class TestLinearBurgersArtificialDiffusion(TestCase):
     discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
-    discrete_solution = DiscreteSolutionObservable(0, np.zeros(4))
+    raw_discrete_solution = DiscreteSolution(0, np.zeros(4))
+    discrete_solution = DiscreteSolutionObservable(raw_discrete_solution)
     burgers_diffusion = BurgersArtificialDiffusion(discrete_gradient, discrete_solution)
     test_dofs = np.array([1, 2, 3, 4])
     expected_burgers_diffusion = (
@@ -56,7 +57,8 @@ class TestLinearBurgersArtificialDiffusion(TestCase):
 
 class TestQuadraticBurgersArtificialDiffusion(TestLinearBurgersArtificialDiffusion):
     discrete_gradient = DiscreteGradient(QUADRATIC_LAGRANGE_SPACE)
-    discrete_solution = DiscreteSolutionObservable(0, np.zeros(4))
+    raw_discrete_solution = DiscreteSolution(0, np.zeros(4))
+    discrete_solution = DiscreteSolutionObservable(raw_discrete_solution)
     burgers_diffusion = BurgersArtificialDiffusion(discrete_gradient, discrete_solution)
     expected_burgers_diffusion = (
         2 / 3 * np.array([[-6, 2, 0, 4], [2, -5, 3, 0], [0, 3, -7, 4], [4, 0, 4, -8]])

@@ -1,8 +1,7 @@
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
+import custom_type
 from defaults import *
-
-from . import types as parser_type
 
 
 class PlotParser(ArgumentParser):
@@ -46,7 +45,7 @@ class EOCParser(ArgumentParser):
             "+r",
             "++refine",
             help="specify number of refinements",
-            type=parser_type.positive_int,
+            type=custom_type.positive_int,
             default=REFINE_NUMBER,
         )
 
