@@ -38,7 +38,11 @@ class BenchmarkFactory:
             AdvectionEOCBenchmark2,
         ],
         "burgers": [BurgersPlotBenchmark, BurgersEOCBenchmark],
-        "swe": [SWEBumpSteadyStateBenchmark, SWEWetDryTransitionBenchmark],
+        "swe": [
+            SWEBumpSteadyStateBenchmark,
+            SWEOscillationNoTopographyBenchmark,
+            SWEWetDryTransitionBenchmark,
+        ],
     }
 
     @property

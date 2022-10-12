@@ -1,3 +1,4 @@
+from sys import api_version
 import custom_type
 import numpy as np
 from defaults import *
@@ -31,7 +32,7 @@ class SWEBumpSteadyStateBenchmark(SWEBenchmark):
     domain = Interval(-2, 2)
     start_time = 0
     end_time = 0.1
-    gravitational_accelration = 9.81
+    gravitational_acceleration = 9.81
     K1 = 1
     K2 = 25
 
@@ -71,6 +72,58 @@ class SWEBumpSteadyStateBenchmark(SWEBenchmark):
 
     def exact_solution(self, x: float, t: float) -> np.ndarray:
         return self.initial_data(x)
+
+
+class SWEOscillationNoTopographyBenchmark(SWEBenchmark):
+    """H and u should oscillate about 5% their real height. Initial u and h are
+    equal therefore the discharge is h^2.
+
+    """
+
+    domain = Interval(0, 2 * np.pi)
+    start_time = 0
+    end_time = 0.1
+    gravitational_acceleration = GRAVITATIONAL_ACCELERATION
+    N = 1  # oscillation degree
+    base_height = 2.5
+    relative_amplitude = 0.05
+
+    name = "Steady State with bump in topography (plot default)"
+    short_facts = f"I={domain}, g={GRAVITATIONAL_ACCELERATION}, h ca. 2.5, u ca. 0.4, periodic boundaries, T={end_time}, PLOT_DEFAULT"
+    description = "This benchmark does not change in time (steady state)."
+
+    parser_arguments = {
+        "N": (
+            [
+                "+N",
+            ],
+            {
+                "help": "Determines how many oscillations the benchmark should have.",
+                "type": custom_type.positive_int,
+                "metavar": "OSCILLATION_NUMBER",
+                "default": N,
+            },
+        ),
+        "relative_amplitude": (
+            ["+a", "++relative-amplitude"],
+            {
+                "help": "Amplitude relative to the absolute height.",
+                "type": custom_type.positive_float,
+                "metavar": "PERCENTAGE",
+                "default": relative_amplitude,
+            },
+        ),
+    }
+
+    def topography(self, x: float) -> float:
+        return 0
+
+    def initial_data(self, x: float) -> np.ndarray:
+        h = (
+            self.base_height * self.relative_amplitude * np.sin(self.N * x)
+            + self.base_height
+        )
+        return np.array([h, h**2])
 
 
 class SWEWetDryTransitionBenchmark(SWEBenchmark):
