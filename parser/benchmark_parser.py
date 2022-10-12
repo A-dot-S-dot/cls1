@@ -32,12 +32,18 @@ class BenchmarkParser:
             self._add_benchmark(benchmark_parsers, i, benchmark)
 
     def _add_benchmark(self, parsers, benchmark_index: int, benchmark: Benchmark):
-        parsers.add_parser(
+        benchmark_parser = parsers.add_parser(
             str(benchmark_index),
             help=benchmark.name,
             description=f"{benchmark.description} ({benchmark.short_facts})",
             prefix_chars="+",
         )
+
+        self._add_arguments(benchmark_parser, benchmark)
+
+    def _add_arguments(self, parser, benchmark: Benchmark):
+        for (args, kwargs) in benchmark.parser_arguments.values():
+            parser.add_argument(*args, **kwargs)
 
     def parse_args(self, *args) -> Namespace:
         return self._parser.parse_args(*args)

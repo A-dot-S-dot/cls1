@@ -46,12 +46,17 @@ class BenchmarkFactory:
         if self.benchmark_args:
             benchmark_number = int(self.benchmark_args.benchmark)
             benchmark = self._benchmark[self.problem_name][benchmark_number]()
+            self._add_arguments(benchmark)
         else:
             benchmark = self._default_benchmark[self.problem_name][self.command]()
 
         self._set_end_time(benchmark)
 
         return benchmark
+
+    def _add_arguments(self, benchmark: Benchmark):
+        for argument in benchmark.parser_arguments.keys():
+            setattr(benchmark, argument, getattr(self.benchmark_args, argument))
 
     def _set_end_time(self, benchmark: Benchmark):
         if isinstance(self.end_time, float):

@@ -1,8 +1,11 @@
+from parser import types as parser_type
+
 import numpy as np
+from defaults import *
 from pde_solver.mesh import Interval
+from scipy.optimize import newton
 
 from .abstract import Benchmark
-from scipy.optimize import newton
 
 
 class SWEBenchmark(Benchmark[np.ndarray]):
@@ -26,16 +29,31 @@ class SWEBumpSteadyStateBenchmark(SWEBenchmark):
 
     """
 
-    name = "Steady State with bump in topography (plot default)"
-    short_facts = "I=(-2,2), g=9.81, h ca. 2.5, u ca. 0.4, periodic boundaries, T=0.1, PLOT_DEFAULT"
-    description = "This benchmark does not change in time (steady state)."
-
     domain = Interval(-2, 2)
     start_time = 0
     end_time = 0.1
-    gravitational_acceleration = 9.81
+    gravitational_accelration = 9.81
     K1 = 1
     K2 = 25
+
+    name = "Steady State with bump in topography (plot default)"
+    short_facts = f"I={domain}, g={GRAVITATIONAL_ACCELERATION}, h ca. 2.5, u ca. 0.4, periodic boundaries, T={end_time}, PLOT_DEFAULT"
+    description = "This benchmark does not change in time (steady state)."
+
+    parser_arguments = {
+        "gravitational_acceleration": (
+            [
+                "+g",
+            ],
+            {
+                "help": "gravitational acceleration",
+                "type": parser_type.positive_float,
+                "metavar": "ACCELERATION",
+                "default": GRAVITATIONAL_ACCELERATION,
+                "dest": "gravitational_acceleration",
+            },
+        )
+    }
 
     def topography(self, x: float) -> float:
         if x in Interval(-0.1, 0.1):
