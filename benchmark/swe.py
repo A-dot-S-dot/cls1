@@ -89,7 +89,9 @@ class SWEOscillationNoTopographyBenchmark(SWEBenchmark):
     relative_amplitude = 0.05
 
     name = "Steady State with bump in topography (plot default)"
-    short_facts = f"I={domain}, g={GRAVITATIONAL_ACCELERATION}, h ca. 2.5, u ca. 0.4, periodic boundaries, T={end_time}, PLOT_DEFAULT"
+    short_facts = (
+        f"I={domain}, g={GRAVITATIONAL_ACCELERATION}, periodic boundaries, T={end_time}"
+    )
     description = "This benchmark does not change in time (steady state)."
 
     parser_arguments = {
@@ -119,11 +121,13 @@ class SWEOscillationNoTopographyBenchmark(SWEBenchmark):
         return 0
 
     def initial_data(self, x: float) -> np.ndarray:
-        h = (
+        height = (
             self.base_height * self.relative_amplitude * np.sin(self.N * x)
             + self.base_height
         )
-        return np.array([h, h**2])
+        velocity = height
+
+        return np.array([height, height * velocity])
 
 
 class SWEWetDryTransitionBenchmark(SWEBenchmark):
