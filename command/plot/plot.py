@@ -16,25 +16,26 @@ from .swe import SWEFunctionPlotter
 
 class PlotCommand(Command):
     _args: Namespace
+    _benchmark: Benchmark
     _components: SolverComponents
     _plotter: SolutionPlotter
 
     def __init__(self, args: Namespace):
         self._args = args
         self._components = SolverComponents(args)
-        benchmark = self._components.benchmark
+        self._benchmark = self._components.benchmark
 
-        self._build_plotter(benchmark)
-        self._build_grid(benchmark)
+        self._build_plotter()
+        self._build_grid()
 
-    def _build_plotter(self, benchmark: Benchmark):
-        if isinstance(benchmark, SWEBenchmark):
-            self._plotter = SWEFunctionPlotter(benchmark)
+    def _build_plotter(self):
+        if isinstance(self._benchmark, SWEBenchmark):
+            self._plotter = SWEFunctionPlotter(self._benchmark)
         else:
-            self._plotter = ScalarFunctionPlotter(benchmark)
+            self._plotter = ScalarFunctionPlotter(self._benchmark)
 
-    def _build_grid(self, benchmark: Benchmark):
-        self._plotter.set_grid(benchmark.domain, PLOT_MESH_SIZE)
+    def _build_grid(self):
+        self._plotter.set_grid(self._benchmark.domain, PLOT_MESH_SIZE)
 
     def _get_cell_resolution(self) -> int:
         cell_resolution = 1
@@ -47,7 +48,9 @@ class PlotCommand(Command):
 
     def execute(self):
         self._add_plots()
-        self._plotter.set_suptitle(f"{len(self._components.mesh)} cells")
+        self._plotter.set_suptitle(
+            f"{len(self._components.mesh)} cells, T={self._benchmark.end_time}"
+        )
 
         try:
             self._plotter.show()

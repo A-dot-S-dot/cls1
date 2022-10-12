@@ -21,7 +21,7 @@ class SWEFunctionPlotter(SolutionPlotter[np.ndarray]):
         self._figure.suptitle(suptitle, fontsize=14, fontweight="bold")
 
     def add_initial_data(self):
-        self.add_function(self._benchmark.initial_data, "$h_0$", "$q_0")
+        self.add_function(self._benchmark.initial_data, "$h_0$", "$q_0$")
 
     def add_exact_solution(self):
         end_time = self._benchmark.end_time
