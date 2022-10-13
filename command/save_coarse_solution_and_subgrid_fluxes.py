@@ -25,7 +25,7 @@ class SaveCoarseSolutionAndSubgridFluxes(Command):
     _components: SolverComponents
     _coarsening_degree: int
     _local_degree: int
-    _fine_numerical_flux: SWEGodunovNumericalFlux
+    _fine_numerical_fluxes: List
     _coarse_numerical_flux: SWEGodunovNumericalFlux
 
     def __init__(self, args: Namespace):
@@ -57,19 +57,19 @@ class SaveCoarseSolutionAndSubgridFluxes(Command):
 
             coarse_solution = CoarseSolution(solver.solution, self._coarsening_degree)
             left_subgrid_flux, right_subgrid_flux = self._get_subgrid_fluxes(
-                coarse_solution, solver.solution
+                coarse_solution
             )
 
             self._save(coarse_solution, left_subgrid_flux, right_subgrid_flux)
 
     def _build_numerical_fluxes(self, solver: SWEGodunovSolver):
-        self._fine_numerical_flux = solver.numerical_flux
+        self._fine_numerical_fluxes = solver.numerical_fluxes
         self._coarse_numerical_flux = SWEGodunovNumericalFlux()
         self._coarse_numerical_flux.volume_space = CoarsenedFiniteVolumeSpace(
-            self._fine_numerical_flux.volume_space, self._coarsening_degree
+            solver.numerical_flux.volume_space, self._coarsening_degree
         )
         self._coarse_numerical_flux.gravitational_acceleration = (
-            self._fine_numerical_flux.gravitational_acceleration
+            solver.numerical_flux.gravitational_acceleration
         )
 
         # TODO should depend on every benchmark's topography
@@ -78,12 +78,12 @@ class SaveCoarseSolutionAndSubgridFluxes(Command):
         )
 
     def _get_subgrid_fluxes(
-        self, coarse_solution: CoarseSolution, fine_solution: DiscreteSolution
+        self, coarse_solution: CoarseSolution
     ) -> Tuple[np.ndarray, np.ndarray]:
         left_subgrid_flux = np.array(
             [
-                self._get_left_subgrid_flux(time_index, coarse_solution, fine_solution)
-                for time_index in range(len(coarse_solution.time))
+                self._get_left_subgrid_flux(time_index, coarse_solution)
+                for time_index in range(len(coarse_solution.time) - 1)
             ]
         )
 
@@ -95,12 +95,11 @@ class SaveCoarseSolutionAndSubgridFluxes(Command):
         self,
         time_index: int,
         coarse_solution: CoarseSolution,
-        fine_solution: DiscreteSolution,
     ) -> np.ndarray:
         left_coarse_flux = self._coarse_numerical_flux(
             coarse_solution.values[time_index]
         )[0]
-        left_fine_flux = self._fine_numerical_flux(fine_solution.values[time_index])[0]
+        left_fine_flux = self._fine_numerical_fluxes[time_index][0]
 
         return left_fine_flux[:: self._coarsening_degree] - left_coarse_flux
 
@@ -111,7 +110,7 @@ class SaveCoarseSolutionAndSubgridFluxes(Command):
         right_subgrid_flux: np.ndarray,
     ):
         data_frame = pd.DataFrame(columns=self._create_columns())
-        for time_index in range(len(coarse_solution.time)):
+        for time_index in range(len(coarse_solution.time) - 1):
             data_frame = self._append_values(
                 data_frame,
                 coarse_solution.values[time_index],
