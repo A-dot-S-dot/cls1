@@ -2,7 +2,7 @@
 
 """
 from parser.benchmark_parser import *
-from parser.command_parser import EOCParser, PlotParser
+from parser.command_parser import *
 from parser.parser import AVAILABLE_HELP_ARGUMENTS
 from parser.solver_parser import SOLVER_PARSERS
 
@@ -24,6 +24,9 @@ class HelpCommand(Command):
             parser.print_help()
         elif page == "eoc":
             parser = EOCParser()
+            parser.print_help()
+        elif page == "save":
+            parser = SaveCoarseSolutionAndSubgridFluxesParser()
             parser.print_help()
         else:
             raise NotImplementedError(

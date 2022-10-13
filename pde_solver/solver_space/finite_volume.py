@@ -36,3 +36,9 @@ class FiniteVolumeSpace(SolverSpace):
     @property
     def cell_centers(self) -> np.ndarray:
         return self._cell_centers
+
+
+class CoarsenedFiniteVolumeSpace(FiniteVolumeSpace):
+    def __init__(self, volume_space: FiniteVolumeSpace, coarsening_degree: int):
+        coarsened_mesh = volume_space.mesh.coarsen(coarsening_degree)
+        FiniteVolumeSpace.__init__(self, coarsened_mesh)

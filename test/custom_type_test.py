@@ -25,6 +25,16 @@ class TestPositiveFloat(TestCase):
         self.assertRaises(ValueError, positive_int, "weird string")
 
 
+class TestNonNegativeFloat(TestCase):
+    def test_value_errors(self):
+        self.assertRaises(ValueError, positive_int, "-2")
+
+    def test_types(self):
+        self.assertRaises(ValueError, positive_int, "1 + 3j")
+        self.assertRaises(ValueError, positive_int, "True")
+        self.assertRaises(ValueError, positive_int, "weird string")
+
+
 class TestPositiveRatioNumber(TestCase):
     def test_value_errors(self):
         self.assertRaises(ValueError, percent_number, "-2")

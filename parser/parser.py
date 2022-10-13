@@ -9,7 +9,7 @@ from .solver_parser import SOLVER_PARSERS
 from .action import *
 
 AVAILABLE_HELP_ARGUMENTS = ", ".join(
-    [*SOLVER_PARSERS.keys(), "benchmark", "plot", "eoc"]
+    [*SOLVER_PARSERS.keys(), "benchmark", "plot", "eoc", "save"]
 )
 
 
@@ -87,7 +87,14 @@ class ArgumentParserFEM1D:
         self._add_profile_argument(advection_parser)
         self._add_solver_argument(advection_parser, AdvectionSolverAction)
 
-    def _add_command_arguments(self, parser, plot=True, eoc=True, calculation=True):
+    def _add_command_arguments(
+        self,
+        parser,
+        plot=True,
+        eoc=True,
+        calculation=True,
+        save_coarsen_solution_and_subgrid_fluxes=False,
+    ):
         task_group = parser.add_mutually_exclusive_group(required=True)
 
         if plot:
@@ -96,6 +103,8 @@ class ArgumentParserFEM1D:
             self._add_eoc_argument(task_group)
         if calculation:
             self._add_calculation_argument(task_group)
+        if save_coarsen_solution_and_subgrid_fluxes:
+            self._add_save_coarse_solution_and_subgrid_fluxes_argument(task_group)
 
     def _add_plot_argument(self, parser):
         parser.add_argument(
@@ -125,6 +134,15 @@ class ArgumentParserFEM1D:
             nargs="*",
             action=CalculationAction,
             metavar="CALCULATION_ARGS",
+        )
+
+    def _add_save_coarse_solution_and_subgrid_fluxes_argument(self, parser):
+        parser.add_argument(
+            "--save",
+            help="Saves coarse solution and subgrid fluxes.",
+            nargs="*",
+            action=SaveCoarseSolutionAndSubgridFluxesAction,
+            metavar="SAVE_ARGS",
         )
 
     def _add_mesh_size_argument(self, parser):
@@ -196,7 +214,11 @@ class ArgumentParserFEM1D:
             solver is 'godunov'. For more information use 'help' program.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        self._add_command_arguments(shallow_water_parser, eoc=False)
+        self._add_command_arguments(
+            shallow_water_parser,
+            eoc=False,
+            save_coarsen_solution_and_subgrid_fluxes=True,
+        )
         self._add_mesh_size_argument(shallow_water_parser)
         self._add_benchmark_argument(shallow_water_parser, SWEBenchmarkAction)
         self._add_end_time_argument(shallow_water_parser)

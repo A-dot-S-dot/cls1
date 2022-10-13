@@ -69,3 +69,10 @@ class TestUniformMesh(TestCase):
     def test_find_cell_indices(self):
         for point, indices in zip(self.points, self.expected_indices):
             self.assertListEqual(list(self.mesh.find_cell_indices(point)), indices)
+
+    def test_coarsen(self):
+        coarsened_mesh = UniformMesh(self.domain, 1)
+        self.assertEqual(self.mesh.coarsen(2), coarsened_mesh)
+
+    def test_coarsen_error(self):
+        self.assertRaises(AssertionError, self.mesh.coarsen, 3)

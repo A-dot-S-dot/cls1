@@ -40,8 +40,10 @@ class SolverComponents:
             return "eoc"
         elif hasattr(self._args, "calculation") and self._args.calculation:
             return "calculation"
+        elif hasattr(self._args, "save") and self._args.save:
+            return "save"
         else:
-            raise NotImplementedError
+            raise NotImplementedError("No known command is available.")
 
     def _build_solver_factories(self):
         self._solver_factories = []
@@ -86,14 +88,14 @@ class SolverComponents:
     def mesh_size(self) -> int:
         if self._args.mesh_size:
             return self._args.mesh_size
-        elif hasattr(self._args, "plot") and self._args.plot:
-            return PLOT_MESH_SIZE
-        elif hasattr(self._args, "eoc") and self._args.eoc:
-            return EOC_MESH_SIZE
-        elif hasattr(self._args, "calculation") and self._args.calculation:
-            return PLOT_MESH_SIZE
         else:
-            raise NotImplementedError
+            command = self._get_command()
+            if command in ["plot", "calculation", "save"]:
+                return PLOT_MESH_SIZE
+            elif command in ["eoc"]:
+                return EOC_MESH_SIZE
+            else:
+                raise NotImplementedError(f"No mesh size for '{command}' implemented.")
 
     @property
     def solver_factories(self) -> Sequence[PDESolverFactory]:

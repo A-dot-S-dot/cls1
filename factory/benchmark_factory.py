@@ -27,6 +27,7 @@ class BenchmarkFactory:
         "swe": {
             "plot": SWEBumpSteadyStateBenchmark,
             "calculation": SWEBumpSteadyStateBenchmark,
+            "save": SWEOscillationNoTopographyBenchmark,
         },
     }
     _benchmark = {

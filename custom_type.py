@@ -21,6 +21,14 @@ def positive_int(string: str) -> int:
     return value
 
 
+def non_negative_int(string: str) -> int:
+    value = int(string)
+    if value < 0:
+        raise ValueError(f"{value} is negative integer")
+
+    return value
+
+
 def percent_number(string: str) -> float:
     value = float(string)
     if value < 0 or value > 1:

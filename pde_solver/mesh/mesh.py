@@ -55,3 +55,7 @@ class Mesh(ABC):
     @abstractmethod
     def refine(self) -> "Mesh":
         ...
+
+    @abstractmethod
+    def coarsen(self, coarsening_degree: int) -> "Mesh":
+        ...

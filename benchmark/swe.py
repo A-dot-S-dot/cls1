@@ -82,7 +82,7 @@ class SWEOscillationNoTopographyBenchmark(SWEBenchmark):
 
     domain = Interval(0, 2 * np.pi)
     start_time = 0
-    end_time = 0.1
+    end_time = 1
     gravitational_acceleration = GRAVITATIONAL_ACCELERATION
     N = 1  # oscillation degree
     base_height = 2.5

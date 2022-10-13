@@ -49,3 +49,10 @@ class UniformMesh(Mesh):
         new_mesh_size = 2 * len(self)
 
         return UniformMesh(self.domain, new_mesh_size)
+
+    def coarsen(self, coarsening_degree: int) -> "UniformMesh":
+        assert (
+            len(self) % coarsening_degree == 0
+        ), f"Mesh of size {len(self)} cannot be coarsened with degree of {coarsening_degree}"
+
+        return UniformMesh(self.domain, len(self) // coarsening_degree)

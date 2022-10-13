@@ -2,7 +2,12 @@
 from argparse import Action, ArgumentParser, Namespace
 from typing import Dict, List, Optional, Sequence, Type
 
-from .command_parser import EOCParser, PlotParser, CalculationParser
+from .command_parser import (
+    EOCParser,
+    PlotParser,
+    CalculationParser,
+    SaveCoarseSolutionAndSubgridFluxesParser,
+)
 from .solver_parser import (
     ADVECTION_SOLVER_PARSERS,
     BURGERS_SOLVER_PARSERS,
@@ -57,6 +62,20 @@ class CalculationAction(Action):
         arguments = calculation_parser.parse_args(values)
 
         setattr(namespace, "calculation", arguments)
+
+
+class SaveCoarseSolutionAndSubgridFluxesAction(Action):
+    def __call__(
+        self,
+        parser: ArgumentParser,
+        namespace: Namespace,
+        values: List[str],
+        option_string: Optional[str] = ...,
+    ) -> None:
+        save_parser = SaveCoarseSolutionAndSubgridFluxesParser()
+        arguments = save_parser.parse_args(values)
+
+        setattr(namespace, "save", arguments)
 
 
 class SolverAction(Action):
