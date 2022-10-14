@@ -91,7 +91,7 @@ class ScalarFunctionAnimator(SolutionAnimator[float]):
         self._animation = animation.FuncAnimation(
             self._figure,
             self._animate,
-            interval=10000 / len(self.temporal_grid),
+            interval=self.interval,
             blit=True,
             frames=len(self.temporal_grid),
         )

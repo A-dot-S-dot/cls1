@@ -13,6 +13,7 @@ class NothingToPlotError(Exception):
 
 
 class SolutionAnimator(ABC, Generic[T]):
+    interval: int
     spatial_grid: np.ndarray
     _temporal_grid: np.ndarray = np.array([])
 

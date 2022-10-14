@@ -39,9 +39,18 @@ class AnimateParser(ArgumentParser):
 
     def _add_arguments(self):
         self._add_initial_data_argument()
+        self._add_interval_argument()
 
     def _add_initial_data_argument(self):
         self.add_argument("++initial", help="plot initial data", action="store_true")
+
+    def _add_interval_argument(self):
+        self.add_argument(
+            "++interval",
+            help="interval between frames in milli seconds.",
+            type=custom_type.positive_int,
+            default=INTERVAL,
+        )
 
 
 class EOCParser(ArgumentParser):

@@ -35,6 +35,8 @@ class AnimateCommand(Command):
         else:
             self._animator = ScalarFunctionAnimator(self._benchmark)
 
+        self._animator.interval = self._args.animate.interval
+
     def _build_grid(self):
         self._animator.set_grid(self._benchmark.domain, PLOT_MESH_SIZE)
 

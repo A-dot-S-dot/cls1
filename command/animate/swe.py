@@ -130,7 +130,7 @@ class SWEFunctionAnimator(SolutionAnimator[np.ndarray]):
         self._animation = animation.FuncAnimation(
             self._figure,
             self._animate,
-            interval=10000 / len(self.temporal_grid),
+            interval=self.interval,
             blit=True,
             frames=len(self.temporal_grid),
         )

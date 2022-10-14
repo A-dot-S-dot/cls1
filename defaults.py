@@ -17,6 +17,9 @@ FLUX_APPROXIMATION = True
 # eoc
 REFINE_NUMBER = 4
 
+# animation
+INTERVAL = 20
+
 # benchmark parameters
 GRAVITATIONAL_ACCELERATION = 9.81
 
