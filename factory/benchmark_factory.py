@@ -16,16 +16,19 @@ class BenchmarkFactory:
     _default_benchmark = {
         "advection": {
             "plot": AdvectionPlot2Benchmark,
+            "animate": AdvectionPlot2Benchmark,
             "eoc": AdvectionEOCBenchmark1,
             "calculation": AdvectionPlot2Benchmark,
         },
         "burgers": {
             "plot": BurgersPlotBenchmark,
+            "animate": BurgersPlotBenchmark,
             "eoc": BurgersEOCBenchmark,
             "calculation": BurgersPlotBenchmark,
         },
         "swe": {
             "plot": SWEBumpSteadyStateBenchmark,
+            "animate": SWEOscillationNoTopographyBenchmark,
             "calculation": SWEBumpSteadyStateBenchmark,
             "save": SWEOscillationNoTopographyBenchmark,
         },

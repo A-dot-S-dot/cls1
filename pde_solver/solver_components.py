@@ -36,6 +36,8 @@ class SolverComponents:
     def _get_command(self) -> str:
         if hasattr(self._args, "plot") and self._args.plot:
             return "plot"
+        elif hasattr(self._args, "animate") and self._args.animate:
+            return "animate"
         elif hasattr(self._args, "eoc") and self._args.eoc:
             return "eoc"
         elif hasattr(self._args, "calculation") and self._args.calculation:
@@ -90,7 +92,7 @@ class SolverComponents:
             return self._args.mesh_size
         else:
             command = self._get_command()
-            if command in ["plot", "calculation", "save"]:
+            if command in ["plot", "animate", "calculation", "save"]:
                 return PLOT_MESH_SIZE
             elif command in ["eoc"]:
                 return EOC_MESH_SIZE

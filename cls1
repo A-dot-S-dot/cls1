@@ -27,6 +27,8 @@ def main():
         command = cmd.HelpCommand(args)
     elif hasattr(args, "plot") and args.plot:
         command = cmd.PlotCommand(args)
+    elif hasattr(args, "animate") and args.animate:
+        command = cmd.AnimateCommand(args)
     elif hasattr(args, "eoc") and args.eoc:
         command = cmd.EOCCommand(args)
     elif hasattr(args, "calculation") and args.calculation:

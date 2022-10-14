@@ -24,6 +24,26 @@ class PlotParser(ArgumentParser):
         self.add_argument("++initial", help="plot initial data", action="store_true")
 
 
+class AnimateParser(ArgumentParser):
+    def __init__(self):
+        ArgumentParser.__init__(
+            self,
+            prog="animate",
+            description="Animate benchmarks and computed solutions.",
+            prefix_chars="+",
+            formatter_class=ArgumentDefaultsHelpFormatter,
+            add_help=False,
+        )
+
+        self._add_arguments()
+
+    def _add_arguments(self):
+        self._add_initial_data_argument()
+
+    def _add_initial_data_argument(self):
+        self.add_argument("++initial", help="plot initial data", action="store_true")
+
+
 class EOCParser(ArgumentParser):
     def __init__(self):
         ArgumentParser.__init__(

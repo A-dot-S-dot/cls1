@@ -9,7 +9,7 @@ from .solver_parser import SOLVER_PARSERS
 from .action import *
 
 AVAILABLE_HELP_ARGUMENTS = ", ".join(
-    [*SOLVER_PARSERS.keys(), "benchmark", "plot", "eoc", "save"]
+    [*SOLVER_PARSERS.keys(), "benchmark", "plot", "animate", "eoc", "save"]
 )
 
 
@@ -91,6 +91,7 @@ class ArgumentParserFEM1D:
         self,
         parser,
         plot=True,
+        animate=True,
         eoc=True,
         calculation=True,
         save_coarsen_solution_and_subgrid_fluxes=False,
@@ -99,6 +100,8 @@ class ArgumentParserFEM1D:
 
         if plot:
             self._add_plot_argument(task_group)
+        if animate:
+            self._add_animate_argument(task_group)
         if eoc:
             self._add_eoc_argument(task_group)
         if calculation:
@@ -114,6 +117,16 @@ class ArgumentParserFEM1D:
             nargs="*",
             action=PlotAction,
             metavar="PLOT_ARGS",
+        )
+
+    def _add_animate_argument(self, parser):
+        parser.add_argument(
+            "-a",
+            "--animate",
+            help="Animate discrete solution. For more information use 'help' program.",
+            nargs="*",
+            action=AnimateAction,
+            metavar="ANIMATE_ARGS",
         )
 
     def _add_eoc_argument(self, parser):

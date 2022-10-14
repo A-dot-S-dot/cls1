@@ -22,6 +22,9 @@ class HelpCommand(Command):
         elif page == "plot":
             parser = PlotParser()
             parser.print_help()
+        elif page == "animate":
+            parser = AnimateParser()
+            parser.print_help()
         elif page == "eoc":
             parser = EOCParser()
             parser.print_help()

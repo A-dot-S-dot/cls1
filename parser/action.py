@@ -2,18 +2,13 @@
 from argparse import Action, ArgumentParser, Namespace
 from typing import Dict, List, Optional, Sequence, Type
 
-from .command_parser import (
-    EOCParser,
-    PlotParser,
-    CalculationParser,
-    SaveCoarseSolutionAndSubgridFluxesParser,
-)
+from .benchmark_parser import *
+from .command_parser import *
 from .solver_parser import (
     ADVECTION_SOLVER_PARSERS,
     BURGERS_SOLVER_PARSERS,
     SWE_SOLVER_PARSERS,
 )
-from .benchmark_parser import *
 
 
 class PlotAction(Action):
@@ -30,6 +25,20 @@ class PlotAction(Action):
         arguments = plot_parser.parse_args(values)
 
         setattr(namespace, "plot", arguments)
+
+
+class AnimateAction(Action):
+    def __call__(
+        self,
+        parser: ArgumentParser,
+        namespace: Namespace,
+        values: List[str],
+        option_string: Optional[str] = ...,
+    ) -> None:
+        animation_parser = AnimateParser()
+        arguments = animation_parser.parse_args(values)
+
+        setattr(namespace, "animate", arguments)
 
 
 class EOCAction(Action):
