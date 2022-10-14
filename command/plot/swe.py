@@ -63,7 +63,7 @@ class SWEFunctionPlotter(SolutionPlotter[np.ndarray]):
         self._discharge_axes.plot(grid, discharge, label=label)
 
     def _setup(self):
-        self.add_topography()
+        self._add_topography()
 
         self._height_axes.set_xlabel("x")
         self._height_axes.set_ylabel("h+b")
@@ -73,6 +73,6 @@ class SWEFunctionPlotter(SolutionPlotter[np.ndarray]):
         self._discharge_axes.set_ylabel("discharge")
         self._discharge_axes.legend()
 
-    def add_topography(self):
+    def _add_topography(self):
         topography_values = np.array([self._benchmark.topography(x) for x in self.grid])
         self._height_axes.plot(self.grid, topography_values, label="$b$")

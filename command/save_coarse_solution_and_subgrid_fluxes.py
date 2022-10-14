@@ -166,5 +166,5 @@ class SaveCoarseSolutionAndSubgridFluxes(Command):
         return pd.concat([data_frame, new_data_frame])
 
     def _save_data_frame(self, data_frame: pd.DataFrame):
-        output_path = "/home/alexey/Projects/network-for-subgrid-fluxes/data.csv"
+        output_path = "../network-for-subgrid-fluxes/data/data.csv"
         data_frame.to_csv(output_path, mode="a", header=not os.path.exists(output_path))
