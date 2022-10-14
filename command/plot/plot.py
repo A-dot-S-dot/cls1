@@ -37,15 +37,6 @@ class PlotCommand(Command):
     def _build_grid(self):
         self._plotter.set_grid(self._benchmark.domain, PLOT_MESH_SIZE)
 
-    def _get_cell_resolution(self) -> int:
-        cell_resolution = 1
-        for solver_factory in self._components.solver_factories:
-            cell_resolution = max(
-                cell_resolution, solver_factory.cell_quadrature_degree
-            )
-
-        return cell_resolution
-
     def execute(self):
         self._add_plots()
         self._plotter.set_suptitle(
