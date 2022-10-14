@@ -132,7 +132,7 @@ class SWEFunctionAnimator(SolutionAnimator[np.ndarray]):
             self._animate,
             interval=self.interval,
             blit=True,
-            frames=len(self.temporal_grid),
+            frames=range(self.start_index, len(self.temporal_grid)),
         )
 
     def _add_axes_descriptions(self):

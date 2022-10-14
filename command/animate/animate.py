@@ -10,7 +10,7 @@ from pde_solver.discrete_solution import DiscreteSolution
 from pde_solver.solver_components import SolverComponents
 from tqdm import tqdm
 
-from .animator import NothingToPlotError, SolutionAnimator
+from .animator import NothingToAnimateError, SolutionAnimator
 from .scalar import ScalarFunctionAnimator
 from .swe import SWEFunctionAnimator
 
@@ -27,7 +27,6 @@ class AnimateCommand(Command):
         self._benchmark = self._components.benchmark
 
         self._build_animator()
-        self._build_grid()
 
     def _build_animator(self):
         if isinstance(self._benchmark, SWEBenchmark):
@@ -35,10 +34,11 @@ class AnimateCommand(Command):
         else:
             self._animator = ScalarFunctionAnimator(self._benchmark)
 
-        self._animator.interval = self._args.animate.interval
-
-    def _build_grid(self):
         self._animator.set_grid(self._benchmark.domain, PLOT_MESH_SIZE)
+        self._animator.interval = self._args.animate.interval
+        self._animator.start_time = self._args.animate.start_time
+        self._animator.save = self._args.animate.save
+        self._animator.frame_factor = self._args.animate.frame_factor
 
     def execute(self):
         self._add_animations()
@@ -46,7 +46,7 @@ class AnimateCommand(Command):
 
         try:
             self._animator.show()
-        except NothingToPlotError:
+        except NothingToAnimateError:
             tqdm.write("WARNING: Nothing to plot...")
 
     def _add_animations(self):

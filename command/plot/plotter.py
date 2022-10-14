@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Generic, TypeVar
+from typing import Callable, Generic, Optional, TypeVar
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,6 +14,7 @@ class NothingToPlotError(Exception):
 
 class SolutionPlotter(ABC, Generic[T]):
     grid: np.ndarray
+    save: Optional[str] = None
 
     _plot_available = False
 
@@ -45,7 +46,12 @@ class SolutionPlotter(ABC, Generic[T]):
     def show(self):
         if self._plot_available:
             self._setup()
-            plt.show()
+
+            if self.save:
+                plt.savefig(self.save)
+            else:
+                plt.show()
+
             plt.close()
 
         else:

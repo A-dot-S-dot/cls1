@@ -1,28 +1,44 @@
-# mesh
-PLOT_MESH_SIZE = 200
-EOC_MESH_SIZE = 8
+################################################################################
+# BENCHMARK
+################################################################################
+# swe
+GRAVITATIONAL_ACCELERATION = 9.81
 
-# ode solver
+################################################################################
+# SOLVER
+################################################################################
+# finite element based solver
+POLYNOMIAL_DEGREE = 1
 ODE_SOLVER = "heun"
 CFL_NUMBER = 0.1
 MCL_CFL_NUMBER = 1
-GODUNOV_CFL_NUMBER = 0.5
-
-# finite element space
-POLYNOMIAL_DEGREE = 1
-
-# solver
 FLUX_APPROXIMATION = True
 
-# eoc
-REFINE_NUMBER = 4
+# finite volume based solver
+GODUNOV_CFL_NUMBER = 0.5
 
-# animation
+
+################################################################################
+# PLOT
+################################################################################
+PLOT_TARGET = "/home/alexey/Documents/plot.png"
+PLOT_MESH_SIZE = 200
+
+################################################################################
+# ANIMATION
+################################################################################
 INTERVAL = 20
+ANIMATION_TARGET = "/home/alexey/Documents/animation.mp4"
+FRAME_FACTOR = 10  # indicates how many seconds one time unit lasts
 
-# benchmark parameters
-GRAVITATIONAL_ACCELERATION = 9.81
+################################################################################
+# EOC
+################################################################################
+REFINE_NUMBER = 4
+EOC_MESH_SIZE = 8
 
-# Others
+################################################################################
+# OTHERS
+################################################################################
 COARSENING_DEGREE = 10
 LOCAL_DEGREE = 1

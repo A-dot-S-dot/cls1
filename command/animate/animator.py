@@ -1,21 +1,28 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Generic, List, TypeVar
+from typing import Callable, Generic, Optional, TypeVar
 
+import defaults
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import animation
 from pde_solver.mesh import Interval
 
 T = TypeVar("T", float, np.ndarray)
 
 
-class NothingToPlotError(Exception):
+class NothingToAnimateError(Exception):
     ...
 
 
 class SolutionAnimator(ABC, Generic[T]):
     interval: int
     spatial_grid: np.ndarray
+    start_time: float
+    save: Optional[str] = None
+    frame_factor: float
+
     _temporal_grid: np.ndarray = np.array([])
+    _animation: animation.FuncAnimation
 
     _animation_available = False
 
@@ -34,6 +41,18 @@ class SolutionAnimator(ABC, Generic[T]):
             raise ValueError("If frames is once set it can't be changed.")
         else:
             self._temporal_grid = temporal_grid
+
+    @property
+    def start_index(self) -> int:
+        return np.where(self.temporal_grid >= self.start_time)[0][0]
+
+    @property
+    def frames_per_second(self) -> int:
+        return int(
+            (len(self._temporal_grid) - self.start_index)
+            / (self.temporal_grid[-1] - self.temporal_grid[self.start_index])
+            / self.frame_factor
+        )
 
     @abstractmethod
     def set_suptitle(self, suptitle: str):
@@ -64,11 +83,17 @@ class SolutionAnimator(ABC, Generic[T]):
     def show(self):
         if self._animation_available:
             self._setup()
-            plt.show()
-            plt.close()
 
+            if self.save:
+                self._animation.save(
+                    self.save, writer="ffmpeg", fps=self.frames_per_second
+                )
+            else:
+                plt.show()
+
+            plt.close()
         else:
-            raise NothingToPlotError
+            raise NothingToAnimateError
 
     @abstractmethod
     def _setup(self):

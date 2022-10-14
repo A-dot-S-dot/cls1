@@ -44,17 +44,22 @@ class ArgumentParserFEM1D:
         self._add_burgers_parser(program_parsers)
         self._add_shallow_water_parser(program_parsers)
 
-        return program_parsers
-
     def _add_test_parser(self, parsers):
         test_parser = parsers.add_parser(
             "test",
             help="run unit test",
             description="Task for running unit tests. If no argument is given run all tests.",
         )
-        test_parser.add_argument(
+        self._add_file_argument(test_parser)
+        self._add_args_argument(test_parser)
+
+    def _add_file_argument(self, parser):
+        parser.add_argument(
             "file", nargs="*", help="run unittest contained in FILE_test.py"
         )
+
+    def _add_args_argument(self, parser):
+        parser.add_argument("--args", action="store_true", help="print given arguments")
 
     def _add_help_parser(self, parsers):
         help_parser = parsers.add_parser(
@@ -63,12 +68,15 @@ class ArgumentParserFEM1D:
             description="Task for displaying different help messages for certain objects. Available arguments are: "
             + AVAILABLE_HELP_ARGUMENTS,
         )
+        self._add_page_argument(help_parser)
+        self._add_args_argument(help_parser)
 
-        help_parser.add_argument(
+    def _add_page_argument(self, parser):
+        parser.add_argument(
             "page",
             help="page which should be displayed in terminal",
         )
-        help_parser.add_argument(
+        parser.add_argument(
             "option", help="additional option for page if it is available. ", nargs="*"
         )
 
@@ -81,11 +89,12 @@ class ArgumentParserFEM1D:
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         self._add_command_arguments(advection_parser)
-        self._add_mesh_size_argument(advection_parser)
         self._add_benchmark_argument(advection_parser, AdvectionBenchmarkAction)
+        self._add_solver_argument(advection_parser, AdvectionSolverAction)
+        self._add_mesh_size_argument(advection_parser)
         self._add_end_time_argument(advection_parser)
         self._add_profile_argument(advection_parser)
-        self._add_solver_argument(advection_parser, AdvectionSolverAction)
+        self._add_args_argument(advection_parser)
 
     def _add_command_arguments(
         self,
@@ -171,7 +180,10 @@ class ArgumentParserFEM1D:
         parser.add_argument(
             "-b",
             "--benchmark",
-            help="Benchmark for conservation law. If not specified use the default one for the chosen task.",
+            help="""Benchmark for conservation law. If not specified use the
+            default one for the chosen task. Optional BENCHMARK arguments are
+            for further benchmark specific options. Use 'help' to get more
+            information.""",
             nargs="+",
             action=benchmark_action,
         )
@@ -213,11 +225,12 @@ class ArgumentParserFEM1D:
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         self._add_command_arguments(burgers_parser)
-        self._add_mesh_size_argument(burgers_parser)
+        self._add_solver_argument(burgers_parser, BurgersSolverAction)
         self._add_benchmark_argument(burgers_parser, BurgersBenchmarkAction)
+        self._add_mesh_size_argument(burgers_parser)
         self._add_end_time_argument(burgers_parser)
         self._add_profile_argument(burgers_parser)
-        self._add_solver_argument(burgers_parser, BurgersSolverAction)
+        self._add_args_argument(burgers_parser)
 
     def _add_shallow_water_parser(self, parsers):
         shallow_water_parser = parsers.add_parser(
@@ -232,11 +245,12 @@ class ArgumentParserFEM1D:
             eoc=False,
             save_coarsen_solution_and_subgrid_fluxes=True,
         )
-        self._add_mesh_size_argument(shallow_water_parser)
         self._add_benchmark_argument(shallow_water_parser, SWEBenchmarkAction)
+        self._add_solver_argument(shallow_water_parser, SWESolverAction)
+        self._add_mesh_size_argument(shallow_water_parser)
         self._add_end_time_argument(shallow_water_parser)
         self._add_profile_argument(shallow_water_parser)
-        self._add_solver_argument(shallow_water_parser, SWESolverAction)
+        self._add_args_argument(shallow_water_parser)
 
     def parse_args(self, *args) -> argparse.Namespace:
         return self._parser.parse_args(*args)

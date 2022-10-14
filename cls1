@@ -18,6 +18,9 @@ def main():
     parser = ArgumentParserFEM1D()
     args = parser.parse_args()
 
+    if args.args:
+        print(args)
+
     if hasattr(args, "profile"):
         profiler.PRINT_PROFILE = args.profile
 

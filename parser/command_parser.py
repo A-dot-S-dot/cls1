@@ -19,9 +19,19 @@ class PlotParser(ArgumentParser):
 
     def _add_arguments(self):
         self._add_initial_data_argument()
+        self._add_save_argument()
 
     def _add_initial_data_argument(self):
         self.add_argument("++initial", help="plot initial data", action="store_true")
+
+    def _add_save_argument(self):
+        self.add_argument(
+            "++save",
+            help="save file in specified direction",
+            nargs="?",
+            const=PLOT_TARGET,
+            metavar="FILE",
+        )
 
 
 class AnimateParser(ArgumentParser):
@@ -40,6 +50,9 @@ class AnimateParser(ArgumentParser):
     def _add_arguments(self):
         self._add_initial_data_argument()
         self._add_interval_argument()
+        self._add_start_time_argument()
+        self._add_save_argument()
+        self._add_frame_factor_argument()
 
     def _add_initial_data_argument(self):
         self.add_argument("++initial", help="plot initial data", action="store_true")
@@ -50,6 +63,34 @@ class AnimateParser(ArgumentParser):
             help="interval between frames in milli seconds.",
             type=custom_type.positive_int,
             default=INTERVAL,
+        )
+
+    def _add_start_time_argument(self):
+        self.add_argument(
+            "+t",
+            "++start-time",
+            help="set start time for animation",
+            type=custom_type.positive_float,
+            default=0,
+        )
+
+    def _add_save_argument(self):
+        self.add_argument(
+            "++save",
+            help="save file in specified direction",
+            nargs="?",
+            const=ANIMATION_TARGET,
+            metavar="FILE",
+        )
+
+    def _add_frame_factor_argument(self):
+        self.add_argument(
+            "++frame_factor",
+            help="""Specifies how many second one time unit should last. Has
+            only effect on save files, i.e. it can be only used with combination
+            of '++save' option.""",
+            type=custom_type.positive_float,
+            default=FRAME_FACTOR,
         )
 
 

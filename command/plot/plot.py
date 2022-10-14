@@ -26,7 +26,6 @@ class PlotCommand(Command):
         self._benchmark = self._components.benchmark
 
         self._build_plotter()
-        self._build_grid()
 
     def _build_plotter(self):
         if isinstance(self._benchmark, SWEBenchmark):
@@ -34,8 +33,8 @@ class PlotCommand(Command):
         else:
             self._plotter = ScalarFunctionPlotter(self._benchmark)
 
-    def _build_grid(self):
         self._plotter.set_grid(self._benchmark.domain, PLOT_MESH_SIZE)
+        self._plotter.save = self._args.plot.save
 
     def execute(self):
         self._add_plots()
