@@ -55,9 +55,6 @@ class SWEGodunovSolverFactory(PDESolverFactory[np.ndarray]):
         numerical_flux = sv.SWEGodunovNumericalFlux()
         numerical_flux.volume_space = self._volume_space
         numerical_flux.bottom_topography = self._bottom_topography
-        numerical_flux.gravitational_acceleration = (
-            self.benchmark.gravitational_acceleration
-        )
 
         self._solver.numerical_flux = numerical_flux
 

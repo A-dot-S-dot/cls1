@@ -1,8 +1,19 @@
 ################################################################################
 # BENCHMARK
 ################################################################################
-# swe
 GRAVITATIONAL_ACCELERATION = 9.81
+
+# No topography benchmark
+LENGTH = 100
+HEIGHT_AVERAGE = 2
+HEIGHT_AMPLITUDE = 0.1 * HEIGHT_AVERAGE
+HEIGHT_OSCILLATIONS = 2
+HEIGHT_PHASE = 0
+VELOCITY_AVERAGE = 2
+VELOCITY_AMPLITUDE = 0.1 * VELOCITY_AVERAGE
+VELOCITY_OSCILLATIONS = 2
+VELOCITY_PHASE = 0
+
 
 ################################################################################
 # SOLVER

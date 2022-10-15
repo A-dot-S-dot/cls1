@@ -36,8 +36,6 @@ def main():
         command = cmd.EOCCommand(args)
     elif hasattr(args, "calculation") and args.calculation:
         command = cmd.CalculationCommand(args)
-    elif hasattr(args, "save") and args.save:
-        command = cmd.SaveCoarseSolutionAndSubgridFluxes(args)
     else:
         raise ValueError("no action specified")
 

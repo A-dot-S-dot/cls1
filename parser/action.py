@@ -1,8 +1,7 @@
 """This module provides custom actions for ArgumentParser in parser.py."""
 from argparse import Action, ArgumentParser, Namespace
-from typing import Dict, List, Optional, Sequence, Type
+from typing import Dict, List, Optional, Sequence
 
-from .benchmark_parser import *
 from .command_parser import *
 from .solver_parser import (
     ADVECTION_SOLVER_PARSERS,
@@ -73,20 +72,6 @@ class CalculationAction(Action):
         setattr(namespace, "calculation", arguments)
 
 
-class SaveCoarseSolutionAndSubgridFluxesAction(Action):
-    def __call__(
-        self,
-        parser: ArgumentParser,
-        namespace: Namespace,
-        values: List[str],
-        option_string: Optional[str] = ...,
-    ) -> None:
-        save_parser = SaveCoarseSolutionAndSubgridFluxesParser()
-        arguments = save_parser.parse_args(values)
-
-        setattr(namespace, "save", arguments)
-
-
 class SolverAction(Action):
     """Create list of solver arguments"""
 
@@ -137,31 +122,3 @@ class BurgersSolverAction(SolverAction):
 
 class SWESolverAction(SolverAction):
     _solver_parsers = SWE_SOLVER_PARSERS
-
-
-class BenchmarkAction(Action):
-    _benchmark_parser_class: Type[BenchmarkParser]
-
-    def __call__(
-        self,
-        parser: ArgumentParser,
-        namespace: Namespace,
-        values: List[str],
-        option_string: Optional[str] = ...,
-    ) -> None:
-        benchmark_parser = self._benchmark_parser_class()
-        arguments = benchmark_parser.parse_args(values)
-
-        setattr(namespace, "benchmark", arguments)
-
-
-class AdvectionBenchmarkAction(BenchmarkAction):
-    _benchmark_parser_class = AdvectionBenchmarkParser
-
-
-class BurgersBenchmarkAction(BenchmarkAction):
-    _benchmark_parser_class = BurgersBenchmarkParser
-
-
-class SWEBenchmarkAction(BenchmarkAction):
-    _benchmark_parser_class = SWEBenchmarkParser

@@ -10,16 +10,14 @@ class SWEGodunovSolver(PDESolver):
     time_stepping: SWEGodunovTimeStepping
     numerical_flux: SWEGodunovNumericalFlux
     mesh: Mesh
-    numerical_fluxes = []
 
     def update(self):
         left_flux, right_flux = self.numerical_flux(self.solution.end_values)
-        self.numerical_fluxes.append((left_flux, right_flux))
 
         time_step = self.time_stepping.time_step
         updated_solution = (
             self.solution.end_values
-            - time_step * (left_flux - right_flux) / self.mesh.step_length
+            + time_step * (right_flux - left_flux) / self.mesh.step_length
         )
 
         self.solution.add_solution(time_step, updated_solution)

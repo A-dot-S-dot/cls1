@@ -28,9 +28,6 @@ class HelpCommand(Command):
         elif page == "eoc":
             parser = EOCParser()
             parser.print_help()
-        elif page == "save":
-            parser = SaveCoarseSolutionAndSubgridFluxesParser()
-            parser.print_help()
         else:
             raise NotImplementedError(
                 f"No help message for {page} available. Available arguments are: {AVAILABLE_HELP_ARGUMENTS}"

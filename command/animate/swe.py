@@ -68,7 +68,7 @@ class SWEFunctionAnimator(SolutionAnimator[np.ndarray]):
 
     def add_initial_data(self):
         self.add_function(
-            lambda x, t: self._benchmark.initial_data(x), "$h_0$", "$q_0$"
+            lambda x, t: self._benchmark.initial_data(x), "$h_0+b$", "$q_0$"
         )
 
     def add_exact_solution(self):
