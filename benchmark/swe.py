@@ -64,7 +64,7 @@ class SWEOscillationNoTopographyBenchmark(SWEBenchmark):
 
     domain = Interval(0, LENGTH)
     start_time = 0
-    end_time = 40
+    end_time = 2 * int(LENGTH / np.sqrt(GRAVITATIONAL_ACCELERATION * HEIGHT_AVERAGE))
     relative_amplitude = 0.05
 
     name = "Oscillatory initial data. (animate default)"
