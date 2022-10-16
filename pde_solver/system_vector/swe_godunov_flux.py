@@ -18,6 +18,7 @@ class SWEGodunovNumericalFlux(SystemVector):
 
     volume_space: FiniteVolumeSpace
     bottom_topography: np.ndarray
+    gravitational_acceleration = GRAVITATIONAL_ACCELERATION
     eps = 1e-12
 
     left_intermediate_velocity: np.ndarray
@@ -99,7 +100,7 @@ class SWEGodunovNumericalFlux(SystemVector):
                 [
                     discharge,
                     discharge**2 / height
-                    + GRAVITATIONAL_ACCELERATION * height**2 / 2,
+                    + self.gravitational_acceleration * height**2 / 2,
                 ]
             )
         else:
@@ -110,13 +111,13 @@ class SWEGodunovNumericalFlux(SystemVector):
         right_height, u_right = self._get_height_and_velocity(*self._right_swe_values)
 
         self._left_velocity = min(
-            u_left - np.sqrt(GRAVITATIONAL_ACCELERATION * left_height),
-            u_right - np.sqrt(GRAVITATIONAL_ACCELERATION * right_height),
+            u_left - np.sqrt(self.gravitational_acceleration * left_height),
+            u_right - np.sqrt(self.gravitational_acceleration * right_height),
             0,
         )
         self._right_velocity = max(
-            u_left + np.sqrt(GRAVITATIONAL_ACCELERATION * left_height),
-            u_right + np.sqrt(GRAVITATIONAL_ACCELERATION * right_height),
+            u_left + np.sqrt(self.gravitational_acceleration * left_height),
+            u_right + np.sqrt(self.gravitational_acceleration * right_height),
             0,
         )
 
@@ -218,7 +219,7 @@ class SWEGodunovNumericalFlux(SystemVector):
 
         return (
             discharge_HLL
-            - GRAVITATIONAL_ACCELERATION
+            - self.gravitational_acceleration
             * step_length
             * source_term
             / (self._right_velocity - self._left_velocity)
