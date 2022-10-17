@@ -3,7 +3,7 @@ from argparse import Namespace
 from typing import Sequence
 
 from benchmark import Benchmark
-from defaults import EOC_MESH_SIZE, PLOT_MESH_SIZE
+from defaults import CALCULATION_MESH_SIZE, EOC_MESH_SIZE, PLOT_MESH_SIZE
 from factory import BENCHMARK_FACTORY
 from factory.pde_solver_factory import (
     ContinuousGalerkinSolverFactory,
@@ -90,10 +90,12 @@ class SolverComponents:
             return self._args.mesh_size
         else:
             command = self._get_command()
-            if command in ["plot", "animate", "calculation", "save"]:
+            if command in ["plot", "animate"]:
                 return PLOT_MESH_SIZE
             elif command in ["eoc"]:
                 return EOC_MESH_SIZE
+            elif command in ["calculation"]:
+                return CALCULATION_MESH_SIZE
             else:
                 raise NotImplementedError(f"No mesh size for '{command}' implemented.")
 

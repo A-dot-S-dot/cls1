@@ -9,12 +9,12 @@ GRAVITATIONAL_ACCELERATION = 9.81
 LENGTH = 100
 HEIGHT_AVERAGE = 2
 HEIGHT_AMPLITUDE = 0.1 * HEIGHT_AVERAGE
-HEIGHT_OSCILLATIONS = 2
-HEIGHT_PHASE = 0
-VELOCITY_AVERAGE = 2
-VELOCITY_AMPLITUDE = 0.1 * VELOCITY_AVERAGE
-VELOCITY_OSCILLATIONS = 2
-VELOCITY_PHASE = 0
+HEIGHT_WAVE_NUMBER = 3
+HEIGHT_PHASE_SHIFT = 0
+VELOCITY_AVERAGE = 1
+VELOCITY_AMPLITUDE = 0.5
+VELOCITY_WAVE_NUMBER = 1
+VELOCITY_PHASE_SHIFT = pi / 2
 
 
 ################################################################################
@@ -49,6 +49,11 @@ FRAME_FACTOR = 10  # indicates how many seconds one time unit lasts
 ################################################################################
 REFINE_NUMBER = 4
 EOC_MESH_SIZE = 8
+
+################################################################################
+# Calculation
+################################################################################
+CALCULATION_MESH_SIZE = 256
 
 ################################################################################
 # OTHERS
