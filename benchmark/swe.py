@@ -63,9 +63,20 @@ class SWEOscillationNoTopographyBenchmark(SWEBenchmark):
     """
 
     domain = Interval(0, LENGTH)
+    gravitational_acceleration = GRAVITATIONAL_ACCELERATION
+    height_average = HEIGHT_AVERAGE
+    height_amplitude = HEIGHT_AMPLITUDE
+    height_phase_shift = HEIGHT_PHASE_SHIFT
+    height_wave_number = HEIGHT_WAVE_NUMBER
+    velocity_average = VELOCITY_AVERAGE
+    velocity_amplitude = VELOCITY_AMPLITUDE
+    velocity_phase_shift = VELOCITY_PHASE_SHIFT
+    velocity_wave_number = VELOCITY_WAVE_NUMBER
+
     start_time = 0
-    end_time = 2 * int(LENGTH / np.sqrt(GRAVITATIONAL_ACCELERATION * HEIGHT_AVERAGE))
-    relative_amplitude = 0.05
+    end_time = 2 * int(
+        domain.length / np.sqrt(gravitational_acceleration * height_average)
+    )
 
     name = "Oscillatory initial data. (animate default)"
     short_facts = f"I={domain}, periodic boundaries, T={end_time}, ANIMATE_DEFAULT "
@@ -75,11 +86,13 @@ class SWEOscillationNoTopographyBenchmark(SWEBenchmark):
         return 0
 
     def initial_data(self, x: float) -> np.ndarray:
-        height = HEIGHT_AVERAGE + HEIGHT_AMPLITUDE * np.sin(
-            HEIGHT_OSCILLATIONS * 2 * np.pi * x / LENGTH + HEIGHT_PHASE
+        height = self.height_average + self.height_amplitude * np.sin(
+            self.height_wave_number * 2 * np.pi * x / self.domain.length
+            + self.height_phase_shift
         )
-        velocity = VELOCITY_AVERAGE + VELOCITY_AMPLITUDE * np.sin(
-            VELOCITY_OSCILLATIONS * 2 * np.pi * x / LENGTH + VELOCITY_PHASE
+        velocity = self.velocity_average + self.velocity_amplitude * np.sin(
+            self.velocity_wave_number * 2 * np.pi * x / self.domain.length
+            + self.velocity_phase_shift
         )
 
         return np.array([height, height * velocity])
