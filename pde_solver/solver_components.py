@@ -19,6 +19,7 @@ class SolverComponents:
         "cg_low": LowOrderCGFactory,
         "mcl": MCLSolverFactory,
         "godunov": SWEGodunovSolverFactory,
+        "coarse": CoarseSolutionSolverFactory,
     }
     _mesh_sizes = {
         "plot": PLOT_MESH_SIZE,

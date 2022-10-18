@@ -120,6 +120,24 @@ class GodunovParser(SolverParser):
         )
 
 
+class CoarseParser(GodunovParser):
+    prog = "coarse"
+    description = "Coarse solver based on Godunov's finite volume scheme."
+
+    def _add_arguments(self):
+        super()._add_arguments()
+        self._add_coarsening_degree_argument()
+
+    def _add_coarsening_degree_argument(self):
+        self.add_argument(
+            "++coarsening-degree",
+            help="specify the coarsening degree",
+            type=custom_type.positive_int,
+            metavar="DEGREE",
+            default=COARSENING_DEGREE,
+        )
+
+
 ADVECTION_SOLVER_PARSERS = {
     "cg": CGParser(),
     "cg_low": LowCGParser(),
@@ -130,7 +148,7 @@ BURGERS_SOLVER_PARSERS = {
     "cg_low": LowCGParser(),
     "mcl": MCLParser(),
 }
-SWE_SOLVER_PARSERS = {"godunov": GodunovParser()}
+SWE_SOLVER_PARSERS = {"godunov": GodunovParser(), "coarse": CoarseParser()}
 
 SOLVER_PARSERS = {}
 SOLVER_PARSERS.update(ADVECTION_SOLVER_PARSERS)

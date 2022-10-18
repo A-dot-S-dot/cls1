@@ -126,3 +126,53 @@ class SWEGodunovSolverFactory(SWESolverFactory):
     @property
     def info(self) -> str:
         return f"Godunov (cfl={self.attributes.cfl_number})"
+
+
+class CoarseSolutionSolverFactory(SWEGodunovSolverFactory):
+    _plot_label = ["fine_flux", "fine_flux"]
+
+    def _build_solver(self):
+        self._solver = CoarseFiniteVolumeSolver()
+
+    def _build_numerical_flux(self):
+        self._build_intermediate_velocities()
+        fine_solver = self._build_fine_solver()
+
+        numerical_flux = sf.FlatBottomCoarseFlux()
+        numerical_flux.coarse_volume_space = self._solver_space
+        numerical_flux.coarsening_degree = self.attributes.coarsening_degree
+        numerical_flux.fine_solution = fine_solver.solution
+        numerical_flux.fine_numerical_flux = fine_solver.numerical_flux
+        numerical_flux.fine_step_length = (
+            self.mesh.step_length / self.attributes.coarsening_degree
+        )
+        numerical_flux.fine_time_stepping = fine_solver.time_stepping
+
+        self._solver.numerical_flux = numerical_flux
+
+    def _build_fine_solver(self) -> FiniteVolumeSolver:
+        solver_factory = SWEGodunovSolverFactory()
+        solver_factory.attributes = self.attributes
+        solver_factory.problem_name = self.problem_name
+        solver_factory.mesh = self.mesh.refine(self.attributes.coarsening_degree)
+        solver_factory.benchmark = self.benchmark
+
+        return solver_factory.solver
+
+    @property
+    def tqdm_kwargs(self) -> Dict:
+        tqdm_kwargs = {
+            "desc": "Coarse Solution Solver",
+            "leave": False,
+            "postfix": {
+                "cfl_number": self.attributes.cfl_number,
+                "DOFs": self.dimension,
+                "coarsening_degree": self.attributes.coarsening_degree,
+            },
+        }
+
+        return tqdm_kwargs
+
+    @property
+    def info(self) -> str:
+        return f"Coarse Solver (cfl={self.attributes.cfl_number}, coarsening_degree={self.attributes.coarsening_degree})"

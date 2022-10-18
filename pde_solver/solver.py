@@ -65,3 +65,8 @@ class FiniteVolumeSolver(PDESolver):
 
     def _build_fluxes(self):
         self.left_flux, self.right_flux = self.numerical_flux(self.solution.end_values)
+
+
+class CoarseFiniteVolumeSolver(FiniteVolumeSolver):
+    def _build_fluxes(self):
+        self.left_flux, self.right_flux = self.numerical_flux(self.time_step)
