@@ -1,9 +1,6 @@
 from typing import Optional
 
-from benchmark import Benchmark
-from benchmark.advection import *
-from benchmark.burgers import *
-from benchmark.swe import *
+from benchmark import *
 
 
 class BenchmarkFactory:

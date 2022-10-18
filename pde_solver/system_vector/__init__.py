@@ -8,5 +8,4 @@ from .local_vector import *
 from .low_order_cg import *
 from .lumped_mass import *
 from .mcl import *
-from .swe_godunov_flux import *
 from .system_vector import *

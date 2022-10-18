@@ -40,7 +40,7 @@ class MCLTimeStepping(TimeStepping):
         )
 
     def satisfy_cfl(self) -> bool:
-        return self._default_time_step < self.optimal_time_step + 1e-8
+        return self.desired_time_step < self.optimal_time_step + 1e-8
 
 
 class AdaptiveMCLTimeStepping(MCLTimeStepping, DiscreteSolutionObserver):

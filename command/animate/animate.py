@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from .animator import NothingToAnimateError, SolutionAnimator
 from .scalar import ScalarFunctionAnimator
-from .swe import SWEFunctionAnimator
+from .shallow_water import SWEFunctionAnimator
 
 
 class AnimateCommand(Command):

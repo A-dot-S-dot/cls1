@@ -1,14 +1,14 @@
-from typing import Dict, Iterable
+from typing import Dict
 
 import factory
 import numpy as np
 import pde_solver.system_matrix as sm
-import pde_solver.system_vector as sv
+import pde_solver.system_vector as sf
 from factory.pde_solver_factory import PDESolverFactory
-from pde_solver.discrete_solution import DiscreteSolution, DiscreteSolutionObservable
+from pde_solver import ScalarFiniteElementSolver
+from pde_solver.discrete_solution import DiscreteSolutionObservable
 from pde_solver.interpolate import NodeValuesInterpolator
 from pde_solver.ode_solver import ExplicitRungeKuttaMethod
-from pde_solver.solver.finite_element import ScalarFiniteElementSolver
 from pde_solver.solver_space import LagrangeFiniteElementSpace
 from pde_solver.time_stepping import CFLCheckedVector
 
@@ -17,7 +17,7 @@ class ScalarFiniteElementSolverFactory(PDESolverFactory[int]):
     """Superclass, some methods must be implemented by subclasses."""
 
     _solver: ScalarFiniteElementSolver
-    _element_space: LagrangeFiniteElementSpace
+    _solver_space: LagrangeFiniteElementSpace
 
     def _setup_solver(self):
         self._build_solver()
@@ -32,17 +32,17 @@ class ScalarFiniteElementSolverFactory(PDESolverFactory[int]):
         self._solver = ScalarFiniteElementSolver()
 
     def _build_space(self):
-        self._element_space = LagrangeFiniteElementSpace(
+        self._solver_space = LagrangeFiniteElementSpace(
             self.mesh, self.attributes.polynomial_degree
         )
+        self._solver.solver_space = self._solver_space
 
     def _build_solution(self):
-        interpolator = NodeValuesInterpolator(*self._element_space.basis_nodes)
-        discrete_solution = DiscreteSolution(
+        interpolator = NodeValuesInterpolator(*self._solver_space.basis_nodes)
+        self._solver.solution = DiscreteSolutionObservable(
             self.benchmark.start_time,
             interpolator.interpolate(self.benchmark.initial_data),
         )
-        self._solver.solution = DiscreteSolutionObservable(discrete_solution)
 
     def _build_tqdm_kwargs(self):
         self._solver.tqdm_kwargs = self.tqdm_kwargs
@@ -63,23 +63,16 @@ class ScalarFiniteElementSolverFactory(PDESolverFactory[int]):
 
     @property
     def grid(self) -> np.ndarray:
-        return self._element_space.basis_nodes
+        return self._solver_space.basis_nodes
 
     @property
     def cell_quadrature_degree(self) -> int:
         return self.attributes.polynomial_degree + 1
 
-    @property
-    def dimension(self) -> int:
-        return self._element_space.dimension
-
-    @property
-    def element_space(self) -> LagrangeFiniteElementSpace:
-        return self._element_space
-
 
 class ContinuousGalerkinSolverFactory(ScalarFiniteElementSolverFactory):
     _problem_name: str
+    _plot_label = ["cg"]
 
     @property
     def problem_name(self) -> str:
@@ -104,20 +97,20 @@ class ContinuousGalerkinSolverFactory(ScalarFiniteElementSolverFactory):
         mass = self._build_mass()
         flux_gradient = self._build_flux_gradient()
 
-        right_hand_side = sv.CGRightHandSide()
+        right_hand_side = sf.CGRightHandSide()
         right_hand_side.mass = mass
         right_hand_side.flux_gradient = flux_gradient
 
         self._solver.right_hand_side = right_hand_side
 
     def _build_mass(self) -> sm.SystemMatrix:
-        mass = sm.MassMatrix(self._element_space)
+        mass = sm.MassMatrix(self._solver_space)
         mass.build_inverse()
 
         return mass
 
-    def _build_flux_gradient(self) -> sv.SystemVector:
-        discrete_gradient = sm.DiscreteGradient(self._element_space)
+    def _build_flux_gradient(self) -> sf.SystemVector:
+        discrete_gradient = sm.DiscreteGradient(self._solver_space)
         factory.FLUX_FACTORY.exact_flux = self.attributes.exact_flux
         return factory.FLUX_FACTORY.get_flux_gradient(discrete_gradient)
 
@@ -128,13 +121,6 @@ class ContinuousGalerkinSolverFactory(ScalarFiniteElementSolverFactory):
         self._setup_ode_solver(ode_solver)
 
         self._solver.ode_solver = ode_solver
-
-    @property
-    def plot_label(self) -> Iterable[str]:
-        if self.attributes.label:
-            return [self.attributes.label]
-        else:
-            return ["cg"]
 
     @property
     def tqdm_kwargs(self) -> Dict:
@@ -152,19 +138,15 @@ class ContinuousGalerkinSolverFactory(ScalarFiniteElementSolverFactory):
         return tqdm_kwargs
 
     @property
-    def eoc_title(self) -> str:
-        title = self.info
-        return title + "\n" + "-" * len(title)
-
-    @property
     def info(self) -> str:
         return f"CG (p={self.attributes.polynomial_degree}, exact_flux={int(self.attributes.exact_flux)}, cfl={self.attributes.cfl_number})"
 
 
 class LowOrderCGFactory(ScalarFiniteElementSolverFactory):
-    _lumped_mass: sv.SystemVector
+    _lumped_mass: sf.SystemVector
     _artificial_diffusion: sm.SystemMatrix
     _problem_name: str
+    _plot_label = ["cg_low"]
 
     @property
     def problem_name(self) -> str:
@@ -192,11 +174,11 @@ class LowOrderCGFactory(ScalarFiniteElementSolverFactory):
 
         self._solver.time_stepping = time_stepping
 
-    def _build_lumped_mass(self) -> sv.SystemVector:
-        return sv.LumpedMassVector(self._element_space)
+    def _build_lumped_mass(self) -> sf.SystemVector:
+        return sf.LumpedMassVector(self._solver_space)
 
     def _build_diffusion(self) -> sm.SystemMatrix:
-        discrete_gradient = sm.DiscreteGradient(self._element_space)
+        discrete_gradient = sm.DiscreteGradient(self._solver_space)
         return factory.DIFFUSION_FACTORY.get_artificial_diffusion(
             discrete_gradient, self._solver.solution
         )
@@ -206,7 +188,7 @@ class LowOrderCGFactory(ScalarFiniteElementSolverFactory):
         discrete_gradient = self._build_discrete_gradient()
         flux_approximation = self._build_flux_approximation()
 
-        right_hand_side = sv.LowOrderCGRightHandSide()
+        right_hand_side = sf.LowOrderCGRightHandSide()
         right_hand_side.lumped_mass = self._lumped_mass
         right_hand_side.artificial_diffusion = self._artificial_diffusion
         right_hand_side.discrete_gradient = discrete_gradient
@@ -217,10 +199,10 @@ class LowOrderCGFactory(ScalarFiniteElementSolverFactory):
         )
 
     def _build_discrete_gradient(self) -> sm.SystemMatrix:
-        return sm.DiscreteGradient(self._element_space)
+        return sm.DiscreteGradient(self._solver_space)
 
-    def _build_flux_approximation(self) -> sv.SystemVector:
-        return sv.FluxApproximation(factory.FLUX_FACTORY.flux)
+    def _build_flux_approximation(self) -> sf.SystemVector:
+        return sf.FluxApproximation(factory.FLUX_FACTORY.flux)
 
     def _build_ode_solver(self):
         ode_solver = factory.ODE_SOLVER_FACTORY.get_ode_solver(
@@ -229,13 +211,6 @@ class LowOrderCGFactory(ScalarFiniteElementSolverFactory):
         self._setup_ode_solver(ode_solver)
 
         self._solver.ode_solver = ode_solver
-
-    @property
-    def plot_label(self) -> Iterable[str]:
-        if self.attributes.label:
-            return [self.attributes.label]
-        else:
-            return ["cg_low"]
 
     @property
     def tqdm_kwargs(self) -> Dict:
@@ -253,16 +228,13 @@ class LowOrderCGFactory(ScalarFiniteElementSolverFactory):
         return tqdm_kwargs
 
     @property
-    def eoc_title(self) -> str:
-        title = self.info
-        return title + "\n" + "-" * len(title)
-
-    @property
     def info(self) -> str:
         return f"Low CG (p={self.attributes.polynomial_degree}, cfl={self.attributes.cfl_number}, ode_solver={self.attributes.ode_solver})"
 
 
 class MCLSolverFactory(LowOrderCGFactory):
+    _plot_label = ["MCL"]
+
     def _build_right_hand_side(self):
         # must be created first such that this quantities updated first if DOF change
         mass = self._build_mass()
@@ -271,13 +243,13 @@ class MCLSolverFactory(LowOrderCGFactory):
         discrete_gradient = self._build_discrete_gradient()
         flux_approximation = self._build_flux_approximation()
 
-        low_cg = sv.LowOrderCGRightHandSide()
+        low_cg = sf.LowOrderCGRightHandSide()
         low_cg.lumped_mass = self._lumped_mass
         low_cg.artificial_diffusion = self._artificial_diffusion
         low_cg.discrete_gradient = discrete_gradient
         low_cg.flux_approximation = flux_approximation
 
-        right_hand_side = sv.MCLRightHandSide(self._element_space)
+        right_hand_side = sf.MCLRightHandSide(self._solver_space)
         right_hand_side.mass = mass
         right_hand_side.local_maximum = local_maximum
         right_hand_side.local_minimum = local_minimum
@@ -288,20 +260,13 @@ class MCLSolverFactory(LowOrderCGFactory):
         )
 
     def _build_mass(self) -> sm.SystemMatrix:
-        return sm.MassMatrix(self._element_space)
+        return sm.MassMatrix(self._solver_space)
 
-    def _build_local_maximum(self) -> sv.SystemVector:
-        return sv.LocalMaximum(self._element_space)
+    def _build_local_maximum(self) -> sf.SystemVector:
+        return sf.LocalMaximum(self._solver_space)
 
-    def _build_local_minimum(self) -> sv.SystemVector:
-        return sv.LocalMinimum(self._element_space)
-
-    @property
-    def plot_label(self) -> Iterable[str]:
-        if self.attributes.label:
-            return [self.attributes.label]
-        else:
-            return ["MCL"]
+    def _build_local_minimum(self) -> sf.SystemVector:
+        return sf.LocalMinimum(self._solver_space)
 
     @property
     def tqdm_kwargs(self) -> Dict:
@@ -309,11 +274,6 @@ class MCLSolverFactory(LowOrderCGFactory):
         tqdm_kwargs["desc"] = "MCL Limiter"
 
         return tqdm_kwargs
-
-    @property
-    def eoc_title(self) -> str:
-        title = self.info
-        return title + "\n" + "-" * len(title)
 
     @property
     def info(self) -> str:

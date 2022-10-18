@@ -59,8 +59,8 @@ class TestUniformMesh(TestCase):
             self.assertTrue(self.mesh != test_mesh)
 
     def test_refine(self):
-        refined_mesh = UniformMesh(self.domain, 2 * self.mesh_size)
-        self.assertEqual(self.mesh.refine(), refined_mesh)
+        refined_mesh = UniformMesh(self.domain, 3 * self.mesh_size)
+        self.assertEqual(self.mesh.refine(3), refined_mesh)
 
     def test_find_cells(self):
         for point, simplices in zip(self.points, self.expected_simplices):

@@ -7,6 +7,7 @@ class DiscreteSolution:
     """Class representing discrete solution."""
 
     time: List[float]
+    time_steps: List[float]
     values: np.ndarray
 
     def __init__(self, start_time: float, initial_data: np.ndarray):
@@ -15,6 +16,7 @@ class DiscreteSolution:
 
         """
         self.time = [start_time]
+        self.time_steps = []
         self.values = np.array([initial_data])
 
     @property
@@ -39,7 +41,9 @@ class DiscreteSolution:
 
     def add_solution(self, time_step: float, solution: np.ndarray):
         new_time = self.time[-1] + time_step
+
         self.time.append(new_time)
+        self.time_steps.append(time_step)
         self.values = np.append(self.values, np.array([solution]), axis=0)
 
     def __repr__(self) -> str:

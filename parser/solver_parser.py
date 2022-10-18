@@ -114,7 +114,7 @@ class GodunovParser(SolverParser):
             "++cfl",
             help="specify the cfl number for time stepping",
             type=custom_type.positive_float,
-            metavar="number",
+            metavar="NUMBER",
             dest="cfl_number",
             default=GODUNOV_CFL_NUMBER,
         )

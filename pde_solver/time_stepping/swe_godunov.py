@@ -1,7 +1,6 @@
 import numpy as np
 from pde_solver.mesh import Mesh
-from pde_solver.system_vector import SWEGodunovNumericalFlux
-
+from pde_solver.system_flux.swe_intermediate_velocities import SWEIntermediateVelocities
 
 from .time_stepping import TimeStepping
 
@@ -17,7 +16,7 @@ class SWEGodunovTimeStepping(TimeStepping):
     """
 
     mesh: Mesh
-    numerical_flux: SWEGodunovNumericalFlux
+    intermediate_velocities: SWEIntermediateVelocities
 
     @property
     def desired_time_step(self) -> float:
@@ -28,8 +27,8 @@ class SWEGodunovTimeStepping(TimeStepping):
                 2
                 * np.max(
                     [
-                        abs(self.numerical_flux.left_intermediate_velocity),
-                        self.numerical_flux.right_intermediate_velocity,
+                        abs(self.intermediate_velocities.left_velocities),
+                        self.intermediate_velocities.right_velocities,
                     ]
                 )
             )

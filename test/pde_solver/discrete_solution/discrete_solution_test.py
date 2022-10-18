@@ -13,8 +13,11 @@ class TestDiscreteSolution(TestCase):
         np.array([[1, 1], [1, 1], [1, 1]]),
     )
 
-    def time(self):
+    def test_time(self):
         self.assertListEqual(self.solution.time, [0, 1])
+
+    def test_time_steps(self):
+        self.assertListEqual(self.solution.time_steps, [1])
 
     def test_values(self):
         for i in range(2):

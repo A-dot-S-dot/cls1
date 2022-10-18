@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from .plotter import NothingToPlotError, SolutionPlotter
 from .scalar import ScalarFunctionPlotter
-from .swe import SWEFunctionPlotter
+from .shallow_water import SWEFunctionPlotter
 
 
 class PlotCommand(Command):

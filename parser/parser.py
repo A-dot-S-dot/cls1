@@ -12,7 +12,7 @@ AVAILABLE_HELP_ARGUMENTS = ", ".join(
 )
 
 
-class ArgumentParserFEM1D:
+class CustomArgumentParser:
     """Parser for command line arguments."""
 
     _parser = argparse.ArgumentParser(
@@ -234,5 +234,5 @@ class ArgumentParserFEM1D:
         self._add_profile_argument(shallow_water_parser)
         self._add_args_argument(shallow_water_parser)
 
-    def parse_args(self, *args) -> argparse.Namespace:
+    def parse_arguments(self, *args) -> argparse.Namespace:
         return self._parser.parse_args(*args)

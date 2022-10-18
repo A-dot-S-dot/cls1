@@ -1,5 +1,5 @@
-from sys import api_version
-import custom_type
+import random
+
 import numpy as np
 from defaults import *
 from pde_solver.mesh import Interval
@@ -74,9 +74,7 @@ class SWEOscillationNoTopographyBenchmark(SWEBenchmark):
     velocity_wave_number = VELOCITY_WAVE_NUMBER
 
     start_time = 0
-    end_time = 2 * int(
-        domain.length / np.sqrt(gravitational_acceleration * height_average)
-    )
+    end_time = 40
 
     name = "Oscillatory initial data. (animate default)"
     short_facts = f"I={domain}, periodic boundaries, T={end_time}, ANIMATE_DEFAULT "
@@ -96,3 +94,20 @@ class SWEOscillationNoTopographyBenchmark(SWEBenchmark):
         )
 
         return np.array([height, height * velocity])
+
+    def random_parameters(self):
+        self.height_amplitude = random.uniform(0.2, 0.6)
+        self.height_wave_number = random.randint(1, 5)
+        self.height_phase_shift = random.uniform(0, 2 * np.pi)
+        self.velocity_average = random.uniform(1, 2)
+        self.velocity_amplitude = random.uniform(0.2, 0.6)
+        self.velocity_wave_number = random.randint(1, 4)
+        self.velocity_phase_shift = random.uniform(0, 2 * np.pi)
+
+
+class RandomSWEOscillationNoTopographyBenchmark(SWEOscillationNoTopographyBenchmark):
+    def __init__(self):
+        self.name = "Oscillatory initial data with random parameters."
+        self.short_facts = f"I={self.domain}, periodic boundaries, T={self.end_time}"
+        self.description = "Oscillating initial data with random parameters."
+        self.random_parameters()

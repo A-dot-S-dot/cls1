@@ -1,1 +1,1 @@
-from .parser import ArgumentParserFEM1D
+from .parser import CustomArgumentParser

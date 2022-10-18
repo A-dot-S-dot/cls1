@@ -17,10 +17,9 @@ class Observer(DiscreteSolutionObserver):
 
 class TestDiscreteSolution(TestCase):
     initial_data = np.array([0, 0])
-    discrete_solution = DiscreteSolution(0, initial_data)
-    observable = DiscreteSolutionObservable(discrete_solution)
-    observer = Observer()
-    observable.register_observer(observer)
+    discrete_solution = DiscreteSolution
+    observable = DiscreteSolutionObservable(0, initial_data)
+    observer = Observer(observable)
 
     def test_update(self):
         self.observable.add_solution(1, np.array([1, 1]))

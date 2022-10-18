@@ -1,3 +1,3 @@
 from .plot import *
 from .scalar import *
-from .swe import *
+from .shallow_water import *

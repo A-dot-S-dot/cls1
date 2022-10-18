@@ -2,7 +2,7 @@ from test.test_helper import LINEAR_LAGRANGE_SPACE, QUADRATIC_LAGRANGE_SPACE
 from unittest import TestCase
 
 import numpy as np
-from pde_solver.discrete_solution import DiscreteSolution, DiscreteSolutionObservable
+from pde_solver.discrete_solution import DiscreteSolutionObservable
 from pde_solver.system_matrix import (
     BurgersArtificialDiffusion,
     DiscreteGradient,
@@ -58,8 +58,7 @@ class TestQuadraticLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
 class TestLinearBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
     lumped_mass = LumpedMassVector(LINEAR_LAGRANGE_SPACE)
     discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
-    raw_discrete_solution = DiscreteSolution(0, np.zeros(4))
-    discrete_solution = DiscreteSolutionObservable(raw_discrete_solution)
+    discrete_solution = DiscreteSolutionObservable(0, np.zeros(4))
     artificial_diffusion = BurgersArtificialDiffusion(
         discrete_gradient, discrete_solution
     )
@@ -71,8 +70,7 @@ class TestLinearBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide
 class TestQuadraticBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
     lumped_mass = LumpedMassVector(QUADRATIC_LAGRANGE_SPACE)
     discrete_gradient = DiscreteGradient(QUADRATIC_LAGRANGE_SPACE)
-    raw_discrete_solution = DiscreteSolution(0, np.zeros(4))
-    discrete_solution = DiscreteSolutionObservable(raw_discrete_solution)
+    discrete_solution = DiscreteSolutionObservable(0, np.zeros(4))
     artificial_diffusion = BurgersArtificialDiffusion(
         discrete_gradient, discrete_solution
     )

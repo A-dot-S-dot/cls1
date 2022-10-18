@@ -7,6 +7,12 @@ from .discrete_solution import DiscreteSolution
 
 
 class DiscreteSolutionObserver(ABC):
+    _discrete_solution: DiscreteSolution
+
+    def __init__(self, observable: "DiscreteSolutionObservable"):
+        observable.register_observer(self)
+        self._discrete_solution = observable
+
     @abstractmethod
     def update(self):
         ...
@@ -17,10 +23,8 @@ class DiscreteSolutionObservable(DiscreteSolution):
 
     _observers: List[DiscreteSolutionObserver]
 
-    def __init__(self, discrete_solution: DiscreteSolution):
-        self.values = discrete_solution.values
-        self.time = discrete_solution.time
-
+    def __init__(self, start_time: float, initial_data: np.ndarray):
+        super().__init__(start_time, initial_data)
         self._observers = []
 
     def register_observer(self, observer: DiscreteSolutionObserver):
