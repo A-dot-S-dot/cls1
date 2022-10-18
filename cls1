@@ -7,7 +7,7 @@ More information are available with "cls1 --help".
 
 """
 
-from parser import ArgumentParserFEM1D
+from parser import CustomArgumentParser
 
 import command as cmd
 import profiler
@@ -15,8 +15,8 @@ import profiler
 
 @profiler.profile
 def main():
-    parser = ArgumentParserFEM1D()
-    args = parser.parse_args()
+    parser = CustomArgumentParser()
+    args = parser.parse_arguments()
 
     if args.args:
         print(args)

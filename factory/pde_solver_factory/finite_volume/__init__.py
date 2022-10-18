@@ -1,1 +1,1 @@
-from .swe_godunov import *
+from .shallow_water import *

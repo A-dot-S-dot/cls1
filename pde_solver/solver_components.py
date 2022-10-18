@@ -1,26 +1,31 @@
 """This modules build solver components from arguments."""
 from argparse import Namespace
-from typing import Sequence
+from typing import Iterable
 
 from benchmark import Benchmark
 from defaults import CALCULATION_MESH_SIZE, EOC_MESH_SIZE, PLOT_MESH_SIZE
 from factory import BENCHMARK_FACTORY
-from factory.pde_solver_factory import (
-    ContinuousGalerkinSolverFactory,
-    LowOrderCGFactory,
-    MCLSolverFactory,
-    PDESolverFactory,
-    SWEGodunovSolverFactory,
-)
+from factory.pde_solver_factory import *
 
 from pde_solver.mesh import Mesh, UniformMesh
 
 
 class SolverComponents:
     _args: Namespace
-    _solver_factories: Sequence[PDESolverFactory]
+    _solver_factories: Iterable[PDESolverFactory]
     _benchmark: Benchmark
-    _mesh: UniformMesh
+    _solver_factory_classes = {
+        "cg": ContinuousGalerkinSolverFactory,
+        "cg_low": LowOrderCGFactory,
+        "mcl": MCLSolverFactory,
+        "godunov": SWEGodunovSolverFactory,
+    }
+    _mesh_sizes = {
+        "plot": PLOT_MESH_SIZE,
+        "animate": PLOT_MESH_SIZE,
+        "eoc": EOC_MESH_SIZE,
+        "calculation": CALCULATION_MESH_SIZE,
+    }
 
     def __init__(self, args: Namespace):
         self._args = args
@@ -63,18 +68,10 @@ class SolverComponents:
         return solver_factory
 
     def _get_solver_factory(self, solver_name: str) -> PDESolverFactory:
-        if solver_name == "cg":
-            solver_factory = ContinuousGalerkinSolverFactory()
-        elif solver_name == "cg_low":
-            solver_factory = LowOrderCGFactory()
-        elif solver_name == "mcl":
-            solver_factory = MCLSolverFactory()
-        elif solver_name == "godunov":
-            solver_factory = SWEGodunovSolverFactory()
-        else:
+        try:
+            return self._solver_factory_classes[solver_name]()
+        except KeyError:
             raise NotImplementedError(f"no solver '{solver_name}' implemented.")
-
-        return solver_factory
 
     @property
     def benchmark(self) -> Benchmark:
@@ -90,15 +87,12 @@ class SolverComponents:
             return self._args.mesh_size
         else:
             command = self._get_command()
-            if command in ["plot", "animate"]:
-                return PLOT_MESH_SIZE
-            elif command in ["eoc"]:
-                return EOC_MESH_SIZE
-            elif command in ["calculation"]:
-                return CALCULATION_MESH_SIZE
-            else:
+
+            try:
+                return self._mesh_sizes[command]
+            except KeyError:
                 raise NotImplementedError(f"No mesh size for '{command}' implemented.")
 
     @property
-    def solver_factories(self) -> Sequence[PDESolverFactory]:
+    def solver_factories(self) -> Iterable[PDESolverFactory]:
         return self._solver_factories

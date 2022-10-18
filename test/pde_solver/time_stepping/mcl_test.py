@@ -17,8 +17,7 @@ from pde_solver.time_stepping import *
 class TestMCLTimeStepping(TestCase):
     lumped_mass = LumpedMassVector(LINEAR_LAGRANGE_SPACE)
     discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
-    raw_discrete_solution = DiscreteSolution(0, np.zeros(4))
-    discrete_solution = DiscreteSolutionObservable(raw_discrete_solution)
+    discrete_solution = DiscreteSolutionObservable(0, np.zeros(4))
     adaptive_time_stepping = AdaptiveMCLTimeStepping(discrete_solution)
     adaptive_time_stepping.start_time = 0
     adaptive_time_stepping.end_time = 1

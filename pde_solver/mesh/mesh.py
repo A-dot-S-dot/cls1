@@ -53,7 +53,7 @@ class Mesh(ABC):
         return [self[index] for index in self.find_cell_indices(point)]
 
     @abstractmethod
-    def refine(self) -> "Mesh":
+    def refine(self, refine_degree: int = 2) -> "Mesh":
         ...
 
     @abstractmethod

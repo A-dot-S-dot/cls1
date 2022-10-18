@@ -45,10 +45,8 @@ class UniformMesh(Mesh):
     def __eq__(self, other) -> bool:
         return self.step_length == other.step_length and self.domain == other.domain
 
-    def refine(self) -> "UniformMesh":
-        new_mesh_size = 2 * len(self)
-
-        return UniformMesh(self.domain, new_mesh_size)
+    def refine(self, refine_degree: int = 2) -> "UniformMesh":
+        return UniformMesh(self.domain, refine_degree * len(self))
 
     def coarsen(self, coarsening_degree: int) -> "UniformMesh":
         assert (

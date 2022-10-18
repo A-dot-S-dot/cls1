@@ -57,9 +57,8 @@ class BurgersArtificialDiffusion(DiscreteUpwind, DiscreteSolutionObserver):
         discrete_solution: DiscreteSolutionObservable,
     ):
         SystemMatrix.__init__(self, discrete_gradient.dimension)
+        DiscreteSolutionObserver.__init__(self, discrete_solution)
         self._discrete_gradient = discrete_gradient
-        self._discrete_solution = discrete_solution
-        discrete_solution.register_observer(self)
 
     def update(self):
         self._update(self._discrete_solution.end_values)
