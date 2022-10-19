@@ -9,9 +9,11 @@ class TimeSteppingFactory:
     def mesh_time_stepping(self) -> SpatialMeshDependendetTimeStepping:
         return SpatialMeshDependendetTimeStepping()
 
-    @property
-    def godunov_time_stepping(self) -> SWEGodunovTimeStepping:
-        return SWEGodunovTimeStepping()
+    def get_godunov_time_stepping(self, adaptive=False) -> SWEGodunovTimeStepping:
+        if adaptive:
+            return SWEGodunovTimeStepping()
+        else:
+            return SWEGodunovConstantTimeStepping()
 
     def get_mcl_time_stepping(
         self, discrete_solution: DiscreteSolutionObservable

@@ -9,6 +9,7 @@ from pde_solver import FiniteVolumeSolver
 from pde_solver.discrete_solution import DiscreteSolutionObservable
 from pde_solver.interpolate import CellAverageInterpolator
 from pde_solver.solver_space import FiniteVolumeSpace
+from pde_solver.time_stepping import CFLCheckedFlux
 
 
 class SWESolverFactory(PDESolverFactory[np.ndarray]):
@@ -28,8 +29,8 @@ class SWESolverFactory(PDESolverFactory[np.ndarray]):
         self._build_space()
         self._interpolate()
         self._build_tqdm_kwargs()
-        self._build_numerical_flux()
         self._build_time_stepping()
+        self._build_numerical_flux()
 
     def _build_solver(self):
         self._solver = FiniteVolumeSolver()
@@ -53,10 +54,10 @@ class SWESolverFactory(PDESolverFactory[np.ndarray]):
     def _build_tqdm_kwargs(self):
         self._solver.tqdm_kwargs = self.tqdm_kwargs
 
-    def _build_numerical_flux(self):
+    def _build_time_stepping(self):
         raise NotImplementedError
 
-    def _build_time_stepping(self):
+    def _build_numerical_flux(self):
         raise NotImplementedError
 
     @property
@@ -72,8 +73,28 @@ class SWEGodunovSolverFactory(SWESolverFactory):
     _plot_label = ["godunov", "godunov"]
     _intermediate_velocities: sf.SWEIntermediateVelocities
 
-    def _build_numerical_flux(self):
+    def _build_time_stepping(self):
         self._build_intermediate_velocities()
+
+        time_stepping = factory.TIME_STEPPING_FACTORY.get_godunov_time_stepping(
+            self.attributes.adaptive
+        )
+        time_stepping.start_time = self.benchmark.start_time
+        time_stepping.end_time = self.benchmark.end_time
+        time_stepping.mesh = self.mesh
+        time_stepping.cfl_number = self.attributes.cfl_number
+        time_stepping.intermediate_velocities = self._intermediate_velocities
+
+        self._solver.time_stepping = time_stepping
+
+    def _build_intermediate_velocities(self):
+        self._intermediate_velocities = sf.SWEIntermediateVelocities(
+            self._solver.solution
+        )
+        self._intermediate_velocities.volume_space = self._solver_space
+        self._intermediate_velocities.update()
+
+    def _build_numerical_flux(self):
         cell_flux_calculator = sf.GodunovCellFluxesCalculator()
         cell_flux_calculator.bottom_topography = self._bottom_topography
         cell_flux_calculator.volume_space = self._solver_space
@@ -86,29 +107,14 @@ class SWEGodunovSolverFactory(SWESolverFactory):
         numerical_flux.volume_space = self._solver_space
         numerical_flux.cell_flux_calculator = cell_flux_calculator
 
-        self._solver.numerical_flux = numerical_flux
-
-    def _build_intermediate_velocities(self):
-        self._intermediate_velocities = sf.SWEIntermediateVelocities(
-            self._solver.solution
+        self._solver.numerical_flux = CFLCheckedFlux(
+            numerical_flux, self._solver.time_stepping
         )
-        self._intermediate_velocities.volume_space = self._solver_space
-        self._intermediate_velocities.update()
 
     def _build_source_term_discretization(self) -> sf.SourceTermDiscretization:
         discretization = sf.NaturalSourceTermDiscretization()
         discretization.step_length = self._solver_space.mesh.step_length
         return discretization
-
-    def _build_time_stepping(self):
-        time_stepping = factory.TIME_STEPPING_FACTORY.godunov_time_stepping
-        time_stepping.start_time = self.benchmark.start_time
-        time_stepping.end_time = self.benchmark.end_time
-        time_stepping.mesh = self.mesh
-        time_stepping.cfl_number = self.attributes.cfl_number
-        time_stepping.intermediate_velocities = self._intermediate_velocities
-
-        self._solver.time_stepping = time_stepping
 
     @property
     def tqdm_kwargs(self) -> Dict:
@@ -118,6 +124,7 @@ class SWEGodunovSolverFactory(SWESolverFactory):
             "postfix": {
                 "cfl_number": self.attributes.cfl_number,
                 "DOFs": self.dimension,
+                "adaptive": self.attributes.adaptive,
             },
         }
 
@@ -125,4 +132,4 @@ class SWEGodunovSolverFactory(SWESolverFactory):
 
     @property
     def info(self) -> str:
-        return f"Godunov (cfl={self.attributes.cfl_number})"
+        return f"Godunov (cfl={self.attributes.cfl_number}, adaptive={self.attributes.adaptive})"

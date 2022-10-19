@@ -108,6 +108,7 @@ class GodunovParser(SolverParser):
     def _add_arguments(self):
         self._add_label()
         self._add_cfl_number()
+        self._add_adaptive_time_stepping()
 
     def _add_cfl_number(self):
         self.add_argument(
@@ -117,6 +118,13 @@ class GodunovParser(SolverParser):
             metavar="NUMBER",
             dest="cfl_number",
             default=GODUNOV_CFL_NUMBER,
+        )
+
+    def _add_adaptive_time_stepping(self):
+        self.add_argument(
+            "++adaptive",
+            help="choose constant time stepping ",
+            action="store_true",
         )
 
 

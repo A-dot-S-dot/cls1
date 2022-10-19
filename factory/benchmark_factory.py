@@ -40,6 +40,7 @@ class BenchmarkFactory:
         "swe": [
             SWEBumpSteadyStateBenchmark,
             SWEOscillationNoTopographyBenchmark,
+            RandomSWEOscillationNoTopographyBenchmark,
         ],
     }
 
