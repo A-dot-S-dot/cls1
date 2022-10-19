@@ -84,6 +84,7 @@ class SWEGodunovSolverFactory(SWESolverFactory):
         time_stepping.mesh = self.mesh
         time_stepping.cfl_number = self.attributes.cfl_number
         time_stepping.intermediate_velocities = self._intermediate_velocities
+        time_stepping.update_time_step()
 
         self._solver.time_stepping = time_stepping
 
