@@ -18,19 +18,19 @@ class PlotParser(ArgumentParser):
         self._add_arguments()
 
     def _add_arguments(self):
-        self._add_initial_data_argument()
-        self._add_save_argument()
+        self._add_initial_data()
+        self._add_save()
 
-    def _add_initial_data_argument(self):
-        self.add_argument("++initial", help="plot initial data", action="store_true")
+    def _add_initial_data(self):
+        self.add_argument("++initial", help="Plot initial data.", action="store_true")
 
-    def _add_save_argument(self):
+    def _add_save(self):
         self.add_argument(
             "++save",
-            help="save file in specified direction",
+            help="Save file in specified direction.",
             nargs="?",
             const=PLOT_TARGET,
-            metavar="FILE",
+            metavar="<file>",
         )
 
 
@@ -48,42 +48,45 @@ class AnimateParser(ArgumentParser):
         self._add_arguments()
 
     def _add_arguments(self):
-        self._add_initial_data_argument()
-        self._add_interval_argument()
-        self._add_start_time_argument()
-        self._add_save_argument()
-        self._add_frame_factor_argument()
+        self._add_initial_data()
+        self._add_interval()
+        self._add_start_time()
+        self._add_save()
+        self._add_frame_factor()
 
-    def _add_initial_data_argument(self):
-        self.add_argument("++initial", help="plot initial data", action="store_true")
+    def _add_initial_data(self):
+        self.add_argument("++initial", help="Plot initial data.", action="store_true")
 
-    def _add_interval_argument(self):
+    def _add_interval(self):
         self.add_argument(
             "++interval",
-            help="interval between frames in milli seconds.",
+            help="Specify interval between frames in milli seconds.",
             type=custom_type.positive_int,
+            metavar="<interval>",
             default=INTERVAL,
         )
 
-    def _add_start_time_argument(self):
+    def _add_start_time(self):
         self.add_argument(
             "+t",
             "++start-time",
-            help="set start time for animation",
+            help="Set start time for animation.",
             type=custom_type.positive_float,
+            metavar="<time>",
             default=0,
         )
 
-    def _add_save_argument(self):
+    def _add_save(self):
         self.add_argument(
             "++save",
-            help="save file in specified direction",
+            help="""Save file in specified direction. If no specified show the
+            plot without saving it.""",
             nargs="?",
             const=ANIMATION_TARGET,
-            metavar="FILE",
+            metavar="<save>",
         )
 
-    def _add_frame_factor_argument(self):
+    def _add_frame_factor(self):
         self.add_argument(
             "++frame_factor",
             help="""Specifies how many second one time unit should last. Has
@@ -91,6 +94,7 @@ class AnimateParser(ArgumentParser):
             of '++save' option.""",
             type=custom_type.positive_float,
             default=FRAME_FACTOR,
+            metavar="<factor>",
         )
 
 
@@ -108,19 +112,20 @@ class EOCParser(ArgumentParser):
         self._add_arguments()
 
     def _add_arguments(self):
-        self._add_refine_argument()
+        self._add_refine()
 
-    def _add_refine_argument(self):
+    def _add_refine(self):
         self.add_argument(
             "+r",
             "++refine",
-            help="specify number of refinements",
+            help="Specify number of refinements.",
             type=custom_type.positive_int,
             default=REFINE_NUMBER,
+            metavar="<number>",
         )
 
 
-class CalculationParser(ArgumentParser):
+class CalculateParser(ArgumentParser):
     def __init__(self):
         ArgumentParser.__init__(
             self,

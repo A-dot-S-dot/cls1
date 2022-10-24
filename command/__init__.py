@@ -1,9 +1,9 @@
 """This module takes arguments from argparse and processes them."""
-from .command import *
-
 from .animate import *
-from .calculate import *
+from .calculate import CalculationCommand
 from .eoc import *
-from .help import *
+from .generate_data import GenerateData
+from .help import HelpCommand
 from .plot import *
-from .test import *
+from .test import TestCommand
+from .train_network import TrainNetwork

@@ -20,8 +20,6 @@ class Benchmark(ABC, Generic[T]):
     short_facts: str
     description: str
 
-    parser_arguments = {}
-
     @abstractmethod
     def initial_data(self, x: float) -> T:
         ...

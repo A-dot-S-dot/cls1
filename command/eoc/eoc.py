@@ -2,7 +2,7 @@ from argparse import Namespace
 from typing import Sequence
 
 from benchmark.abstract import NoExactSolutionError
-from command import Command
+from command.command import Command
 from factory.pde_solver_factory import PDESolverFactory
 from pde_solver.error import L1Norm, L2Norm, LInfinityNorm
 from pde_solver.solver_components import SolverComponents

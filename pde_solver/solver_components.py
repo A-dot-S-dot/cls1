@@ -1,6 +1,6 @@
 """This modules build solver components from arguments."""
 from argparse import Namespace
-from typing import Sequence
+from typing import Iterable
 
 from benchmark import Benchmark
 from defaults import CALCULATION_MESH_SIZE, EOC_MESH_SIZE, PLOT_MESH_SIZE
@@ -12,13 +12,15 @@ from pde_solver.mesh import Mesh, UniformMesh
 
 class SolverComponents:
     _args: Namespace
-    _solver_factories: Sequence[PDESolverFactory]
+    _solver_factories: Iterable[PDESolverFactory]
     _benchmark: Benchmark
     _solver_factory_classes = {
         "cg": ContinuousGalerkinSolverFactory,
         "cg_low": LowOrderCGFactory,
         "mcl": MCLSolverFactory,
         "godunov": SWEGodunovSolverFactory,
+        "coarse-exact": SWECoarseExactSolverFactory,
+        "coarse-network": SWECoarseNetworkSolverFactory,
     }
     _mesh_sizes = {
         "plot": PLOT_MESH_SIZE,
@@ -29,14 +31,16 @@ class SolverComponents:
 
     def __init__(self, args: Namespace):
         self._args = args
-        self._setup_benchmark_factory()
+        self._build_benchmark()
         self._build_solver_factories()
 
-    def _setup_benchmark_factory(self):
-        BENCHMARK_FACTORY.problem_name = self._args.program
+    def _build_benchmark(self):
+        BENCHMARK_FACTORY.problem_name = self._args.command
         BENCHMARK_FACTORY.benchmark_number = self._args.benchmark
         BENCHMARK_FACTORY.end_time = self._args.end_time
         BENCHMARK_FACTORY.command = self._get_command()
+
+        self._benchmark = BENCHMARK_FACTORY.benchmark
 
     def _get_command(self) -> str:
         if hasattr(self._args, "plot") and self._args.plot:
@@ -61,7 +65,7 @@ class SolverComponents:
         solver_factory = self._get_solver_factory(solver_args.solver)
 
         solver_factory.attributes = solver_args
-        solver_factory.problem_name = self._args.program
+        solver_factory.problem_name = self._args.command
         solver_factory.mesh = self.mesh
         solver_factory.benchmark = self.benchmark
 
@@ -75,7 +79,7 @@ class SolverComponents:
 
     @property
     def benchmark(self) -> Benchmark:
-        return BENCHMARK_FACTORY.benchmark
+        return self._benchmark
 
     @property
     def mesh(self) -> Mesh:
@@ -94,5 +98,5 @@ class SolverComponents:
                 raise NotImplementedError(f"No mesh size for '{command}' implemented.")
 
     @property
-    def solver_factories(self) -> Sequence[PDESolverFactory]:
+    def solver_factories(self) -> Iterable[PDESolverFactory]:
         return self._solver_factories

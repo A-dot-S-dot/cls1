@@ -26,7 +26,9 @@ class SolverParser(ArgumentParser, ABC):
         ...
 
     def _add_label(self):
-        self.add_argument("++label", type=str, help="label for ploting")
+        self.add_argument(
+            "++label", type=str, help="Set label for ploting.", metavar="<label>"
+        )
 
 
 class CGParser(SolverParser):
@@ -43,23 +45,23 @@ class CGParser(SolverParser):
         self.add_argument(
             "+p",
             "++polynomial-degree",
-            help="polynomial degree used for finite elements",
-            metavar="degree",
+            help="Set polynomial degree used for finite elements.",
+            metavar="<degree>",
             type=custom_type.positive_int,
             default=POLYNOMIAL_DEGREE,
         )
 
     def _add_exact_flux(self):
         self.add_argument(
-            "++exact-flux", action="store_true", help="calculate flux matrices exactly"
+            "++exact-flux", action="store_true", help="Calculate flux matrices exactly."
         )
 
     def _add_cfl_number(self):
         self.add_argument(
             "++cfl",
-            help="specify the cfl number for time stepping",
+            help="Specify the cfl number for time stepping.",
             type=custom_type.positive_float,
-            metavar="number",
+            metavar="<number>",
             dest="cfl_number",
             default=CFL_NUMBER,
         )
@@ -78,9 +80,9 @@ class LowCGParser(CGParser):
     def _add_cfl_number(self):
         self.add_argument(
             "++cfl",
-            help="specify the cfl number for time stepping",
+            help="Specify the cfl number for time stepping.",
             type=custom_type.positive_float,
-            metavar="number",
+            metavar="<number>",
             dest="cfl_number",
             default=MCL_CFL_NUMBER,
         )
@@ -88,9 +90,9 @@ class LowCGParser(CGParser):
     def _add_ode_solver(self):
         self.add_argument(
             "++ode",
-            help="specify ode solver",
+            help="Specify ode solver.",
             choices={"euler", "heun", "ssp3", "ssp4"},
-            metavar="solver",
+            metavar="<solver>",
             dest="ode_solver",
             default=ODE_SOLVER,
         )
@@ -113,9 +115,9 @@ class GodunovParser(SolverParser):
     def _add_cfl_number(self):
         self.add_argument(
             "++cfl",
-            help="specify the cfl number for time stepping",
+            help="Specify the cfl number for time stepping.",
             type=custom_type.positive_float,
-            metavar="NUMBER",
+            metavar="<number>",
             dest="cfl_number",
             default=GODUNOV_CFL_NUMBER,
         )
@@ -123,8 +125,47 @@ class GodunovParser(SolverParser):
     def _add_adaptive_time_stepping(self):
         self.add_argument(
             "++adaptive",
-            help="choose constant time stepping ",
+            help="Choose constant time stepping.",
             action="store_true",
+        )
+
+
+class CoarseExactParser(GodunovParser):
+    prog = "coarse-exact"
+    description = "Exact coarse solver based on Godunov's finite volume scheme."
+
+    def _add_arguments(self):
+        self._add_coarsening_degree()
+        self._add_cfl_number()
+        self._add_label()
+
+    def _add_coarsening_degree(self):
+        self.add_argument(
+            "++coarsening-degree",
+            help="Specify the coarsening degree.",
+            type=custom_type.positive_int,
+            metavar="<degree>",
+            default=COARSENING_DEGREE,
+        )
+
+
+class CoarseNetworkParser(CoarseExactParser):
+    prog = "coarse-network"
+    description = """Coarse solver based on Godunov's finite volume scheme.
+    Subgrid fluxes are calculated with a neural network."""
+
+    def _add_arguments(self):
+        self._add_coarsening_degree()
+        self._add_cfl_number()
+        self._add_label()
+        self._add_network_load_path()
+
+    def _add_network_load_path(self):
+        self.add_argument(
+            "++network-path",
+            help="Specify from where to load trained network.",
+            metavar="<file>",
+            default=NETWORK_PATH,
         )
 
 
@@ -138,7 +179,11 @@ BURGERS_SOLVER_PARSERS = {
     "cg_low": LowCGParser(),
     "mcl": MCLParser(),
 }
-SWE_SOLVER_PARSERS = {"godunov": GodunovParser()}
+SWE_SOLVER_PARSERS = {
+    "godunov": GodunovParser(),
+    "coarse-exact": CoarseExactParser(),
+    "coarse-network": CoarseNetworkParser(),
+}
 
 SOLVER_PARSERS = {}
 SOLVER_PARSERS.update(ADVECTION_SOLVER_PARSERS)

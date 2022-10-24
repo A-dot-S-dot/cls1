@@ -106,8 +106,11 @@ class SWEOscillationNoTopographyBenchmark(SWEBenchmark):
 
 
 class RandomSWEOscillationNoTopographyBenchmark(SWEOscillationNoTopographyBenchmark):
+    domain = Interval(0, LENGTH)
+    end_time = 40
+    name = "Oscillatory initial data with random parameters."
+    description = "Oscillating initial data with random parameters."
+    short_facts = f"I={domain}, periodic boundaries, T={end_time}"
+
     def __init__(self):
-        self.name = "Oscillatory initial data with random parameters."
-        self.short_facts = f"I={self.domain}, periodic boundaries, T={self.end_time}"
-        self.description = "Oscillating initial data with random parameters."
         self.random_parameters()

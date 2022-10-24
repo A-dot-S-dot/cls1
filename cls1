@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""This is the main script for PDE problems in one space dimension.
+"""This is the main script for Conservation law problems in one space dimension.
 
 For setting up parameters use the file `defauls.py` or options via command prompt.
 More information are available with "cls1 --help".
@@ -24,9 +24,9 @@ def main():
     if hasattr(args, "profile"):
         profiler.PRINT_PROFILE = args.profile
 
-    if args.program == "test":
+    if args.command == "test":
         command = cmd.TestCommand(args)
-    elif args.program == "help":
+    elif args.command == "help":
         command = cmd.HelpCommand(args)
     elif hasattr(args, "plot") and args.plot:
         command = cmd.PlotCommand(args)
@@ -34,10 +34,14 @@ def main():
         command = cmd.AnimateCommand(args)
     elif hasattr(args, "eoc") and args.eoc:
         command = cmd.EOCCommand(args)
-    elif hasattr(args, "calculation") and args.calculation:
+    elif hasattr(args, "calculate") and args.calculation:
         command = cmd.CalculationCommand(args)
+    elif args.command == "generate-data":
+        command = cmd.GenerateData(args)
+    elif args.command == "train-network":
+        command = cmd.TrainNetwork(args)
     else:
-        raise ValueError("no action specified")
+        raise ValueError("No Action specified.")
 
     command.execute()
 

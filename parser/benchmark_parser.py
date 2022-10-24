@@ -19,37 +19,27 @@ class BenchmarkParser:
             description=self._description,
             prefix_chars="+",
             formatter_class=ArgumentDefaultsHelpFormatter,
-            # add_help=False,
         )
 
     def _add_benchmarks(self):
         benchmark_parsers = self._parser.add_subparsers(
             title="Benchmarks",
             dest="benchmark",
-            metavar="BENCHMARK",
+            metavar="<benchmark>",
         )
         for i, benchmark in enumerate(BENCHMARK_FACTORY._benchmark[self._problem]):
             self._add_benchmark(benchmark_parsers, i, benchmark)
 
     def _add_benchmark(self, parsers, benchmark_index: int, benchmark: Benchmark):
-        benchmark_parser = parsers.add_parser(
+        parsers.add_parser(
             str(benchmark_index),
             help=benchmark.name,
             description=f"{benchmark.description} ({benchmark.short_facts})",
             prefix_chars="+",
         )
 
-        self._add_arguments(benchmark_parser, benchmark)
-
-    def _add_arguments(self, parser, benchmark: Benchmark):
-        for (args, kwargs) in benchmark.parser_arguments.values():
-            parser.add_argument(*args, **kwargs)
-
-    def parse_args(self, *args) -> Namespace:
+    def parse_arguments(self, *args) -> Namespace:
         return self._parser.parse_args(*args)
-
-    def print_help(self):
-        self._parser.print_help()
 
 
 class AdvectionBenchmarkParser(BenchmarkParser):
@@ -64,7 +54,7 @@ class BurgersBenchmarkParser(BenchmarkParser):
 
 class SWEBenchmarkParser(BenchmarkParser):
     _problem = "swe"
-    _description = "Benchmarks for Linear Advection."
+    _description = "Benchmarks for Shallow Water Equations."
 
 
 class BenchmarkParsers(ArgumentParser):
@@ -79,7 +69,7 @@ class BenchmarkParsers(ArgumentParser):
         )
         self.add_argument(
             "problem",
-            help="Available problems",
+            help="Specify conservative law.",
             choices=[*BENCHMARK_FACTORY._benchmark.keys()],
         )
 

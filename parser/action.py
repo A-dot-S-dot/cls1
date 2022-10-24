@@ -66,10 +66,10 @@ class CalculationAction(Action):
         values: List[str],
         option_string: Optional[str] = ...,
     ) -> None:
-        calculation_parser = CalculationParser()
+        calculation_parser = CalculateParser()
         arguments = calculation_parser.parse_args(values)
 
-        setattr(namespace, "calculation", arguments)
+        setattr(namespace, "calculate", arguments)
 
 
 class SolverAction(Action):

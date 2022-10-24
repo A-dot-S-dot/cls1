@@ -2,7 +2,7 @@ import time
 from argparse import Namespace
 
 from benchmark import Benchmark, NoExactSolutionError, SWEBenchmark
-from command import Command
+from command.command import Command
 from defaults import PLOT_MESH_SIZE
 from factory.pde_solver_factory import PDESolverFactory
 from pde_solver.discrete_solution import DiscreteSolution

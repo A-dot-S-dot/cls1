@@ -28,6 +28,9 @@ class HelpCommand(Command):
         elif page == "eoc":
             parser = EOCParser()
             parser.print_help()
+        elif page == "calculate":
+            parser = CalculateParser()
+            parser.print_help()
         else:
             raise NotImplementedError(
                 f"No help message for {page} available. Available arguments are: {AVAILABLE_HELP_ARGUMENTS}"
@@ -39,9 +42,8 @@ class HelpCommand(Command):
 
     def _print_benchmarks(self):
         if self._args.option:
-            BENCHMARK_PARSERS[self._args.option[0]].parse_args(
+            BENCHMARK_PARSERS[self._args.option[0]].parse_arguments(
                 [*self._args.option[1:], "+h"]
             )
-            self._args.option = None
         else:
             self.benchmarks_parser.print_help()
