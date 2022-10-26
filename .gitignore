@@ -2,3 +2,9 @@ __pycache__/
 
 todo.org
 test.py
+*.mp4
+*.png
+*.csv
+*.ipynb
+*.pth
+!data/subgrid_network.pth

@@ -1,6 +1,6 @@
 """Provides Discrete Gradient"""
 import numpy as np
-from pde_solver.solver_space.finite_element import LagrangeFiniteElementSpace
+from pde_solver.discretization.finite_element import LagrangeFiniteElementSpace
 
 from .entry_calculator import QuadratureBasedEntryCalculator
 from .local_matrix import LocallyAssembledSystemMatrix

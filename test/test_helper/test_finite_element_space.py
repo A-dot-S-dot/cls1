@@ -1,4 +1,4 @@
-from pde_solver.solver_space import LagrangeFiniteElementSpace
+from pde_solver.discretization.finite_element import LagrangeFiniteElementSpace
 from pde_solver.mesh import Interval, UniformMesh
 
 domain = Interval(0, 1)

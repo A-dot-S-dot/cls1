@@ -1,7 +1,7 @@
 from test.test_helper import LINEAR_LAGRANGE_SPACE
 from unittest import TestCase
 
-from pde_solver.system_matrix import SystemMatrixEntryCalculator
+from pde_solver.system_matrix.entry_calculator import SystemMatrixEntryCalculator
 from pde_solver.system_matrix.local_matrix import LocallyAssembledSystemMatrix
 
 

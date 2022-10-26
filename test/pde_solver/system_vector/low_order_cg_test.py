@@ -2,38 +2,23 @@ from test.test_helper import LINEAR_LAGRANGE_SPACE, QUADRATIC_LAGRANGE_SPACE
 from unittest import TestCase
 
 import numpy as np
-from pde_solver.discrete_solution import DiscreteSolutionObservable
-from pde_solver.system_matrix import (
-    BurgersArtificialDiffusion,
-    DiscreteGradient,
-    DiscreteUpwind,
-)
-from pde_solver.system_vector import (
-    FluxApproximation,
-    LowOrderCGRightHandSide,
-    LumpedMassVector,
-)
+import pde_solver.system_matrix as matrix
+import pde_solver.system_vector as vector
 
 
 class TestLinearLowOrderCGRightHandSide(TestCase):
-    lumped_mass = LumpedMassVector(LINEAR_LAGRANGE_SPACE)
-    discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
-    artificial_diffusion = DiscreteUpwind(discrete_gradient)
-    flux_approximation = FluxApproximation(lambda u: u)
+    element_space = LINEAR_LAGRANGE_SPACE
+    lumped_mass = vector.LumpedMassVector(element_space)
+    artificial_diffusion = matrix.DiscreteUpwind(element_space)
+    flux_gradient = vector.ApproximatedFluxGradient(element_space, lambda u: u)
+    right_hand_side = vector.LowOrderCGRightHandSide(
+        lumped_mass, artificial_diffusion, flux_gradient
+    )
     test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
     expected_right_hand_sides = [
         [-4, 4, 0, 0],
         [12, -4, -4, -4],
     ]
-    right_hand_side: LowOrderCGRightHandSide
-
-    def __init__(self, *args, **kwargs):
-        TestCase.__init__(self, *args, **kwargs)
-        self.right_hand_side = LowOrderCGRightHandSide()
-        self.right_hand_side.lumped_mass = self.lumped_mass
-        self.right_hand_side.discrete_gradient = self.discrete_gradient
-        self.right_hand_side.flux_approximation = self.flux_approximation
-        self.right_hand_side.artificial_diffusion = self.artificial_diffusion
 
     def test_low_cg(self):
         for dofs, expected_result in zip(
@@ -47,33 +32,40 @@ class TestLinearLowOrderCGRightHandSide(TestCase):
 
 
 class TestQuadraticLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
-    lumped_mass = LumpedMassVector(QUADRATIC_LAGRANGE_SPACE)
-    discrete_gradient = DiscreteGradient(QUADRATIC_LAGRANGE_SPACE)
-    artificial_diffusion = DiscreteUpwind(discrete_gradient)
-    flux_approximation = FluxApproximation(lambda u: u)
+    element_space = QUADRATIC_LAGRANGE_SPACE
+    lumped_mass = vector.LumpedMassVector(element_space)
+    artificial_diffusion = matrix.DiscreteUpwind(element_space)
+    flux_gradient = vector.ApproximatedFluxGradient(element_space, lambda u: u)
+    right_hand_side = vector.LowOrderCGRightHandSide(
+        lumped_mass, artificial_diffusion, flux_gradient
+    )
     test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
     expected_right_hand_sides = [[-8, 4, 0, 0], [24, -4, -8, -4]]
 
 
 class TestLinearBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
-    lumped_mass = LumpedMassVector(LINEAR_LAGRANGE_SPACE)
-    discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
-    discrete_solution = DiscreteSolutionObservable(0, np.zeros(4))
-    artificial_diffusion = BurgersArtificialDiffusion(
-        discrete_gradient, discrete_solution
+    element_space = LINEAR_LAGRANGE_SPACE
+    lumped_mass = vector.LumpedMassVector(element_space)
+    artificial_diffusion = matrix.BurgersArtificialDiffusion(element_space)
+    flux_gradient = vector.ApproximatedFluxGradient(
+        element_space, lambda u: 1 / 2 * u**2
     )
-    flux_approximation = FluxApproximation(lambda u: 1 / 2 * u**2)
+    right_hand_side = vector.LowOrderCGRightHandSide(
+        lumped_mass, artificial_diffusion, flux_gradient
+    )
     test_dofs = [np.array([1, 2, 3, 4])]
     expected_right_hand_sides = [[40, -6, -10, -24]]
 
 
 class TestQuadraticBurgersLowOrderCGRightHandSide(TestLinearLowOrderCGRightHandSide):
-    lumped_mass = LumpedMassVector(QUADRATIC_LAGRANGE_SPACE)
-    discrete_gradient = DiscreteGradient(QUADRATIC_LAGRANGE_SPACE)
-    discrete_solution = DiscreteSolutionObservable(0, np.zeros(4))
-    artificial_diffusion = BurgersArtificialDiffusion(
-        discrete_gradient, discrete_solution
+    element_space = QUADRATIC_LAGRANGE_SPACE
+    lumped_mass = vector.LumpedMassVector(element_space)
+    artificial_diffusion = matrix.BurgersArtificialDiffusion(element_space)
+    flux_gradient = vector.ApproximatedFluxGradient(
+        element_space, lambda u: 1 / 2 * u**2
     )
-    flux_approximation = FluxApproximation(lambda u: 1 / 2 * u**2)
+    right_hand_side = vector.LowOrderCGRightHandSide(
+        lumped_mass, artificial_diffusion, flux_gradient
+    )
     test_dofs = [np.array([1, 2, 3, 4])]
     expected_right_hand_sides = [[80, -6, -20, -24]]

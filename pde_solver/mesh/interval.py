@@ -25,6 +25,10 @@ class Interval:
     def length(self) -> float:
         return self._b - self._a
 
+    @property
+    def center(self) -> float:
+        return (self.b + self.a) / 2
+
     def __hash__(self) -> int:
         return hash((self._a, self._b))
 

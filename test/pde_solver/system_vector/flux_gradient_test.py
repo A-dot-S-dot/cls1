@@ -13,7 +13,7 @@ from pde_solver.system_vector import (
 class TestFluxGradient(TestCase):
     def test_advection_gradient(self):
         flux = lambda x: x
-        flux_gradient = FluxGradient(LINEAR_LAGRANGE_SPACE, 2, flux)
+        flux_gradient = FluxGradient(LINEAR_LAGRANGE_SPACE, flux)
         test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
         expected_gradient = (
             -1
@@ -32,7 +32,7 @@ class TestFluxGradient(TestCase):
         flux = lambda x: 1 / 2 * x**2
         test_dofs = np.array([1, 0, 0, 0])
         expected_burgers = [0, 1 / 6, 0, -1 / 6]
-        flux_gradient = FluxGradient(LINEAR_LAGRANGE_SPACE, 2, flux)
+        flux_gradient = FluxGradient(LINEAR_LAGRANGE_SPACE, flux)
 
         result = flux_gradient(test_dofs)
         for i in range(len(result)):
@@ -40,13 +40,11 @@ class TestFluxGradient(TestCase):
 
 
 class TestAdvectionFluxGradient(TestCase):
-    discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
-
     def test_flux_gradient(self):
-        flux_gradient = AdvectionFluxGradient(self.discrete_gradient)
+        flux_gradient = AdvectionFluxGradient(LINEAR_LAGRANGE_SPACE)
         test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
         expected_gradient = (
-            1
+            -1
             / 2
             * np.array([[0, 1, 0, -1], [-1, 0, 1, 0], [0, -1, 0, 1], [1, 0, -1, 0]])
         )
@@ -60,11 +58,9 @@ class TestAdvectionFluxGradient(TestCase):
 
 
 class TestApproximatedFluxGradient(TestCase):
-    discrete_gradient = DiscreteGradient(LINEAR_LAGRANGE_SPACE)
-
     def test_advection_gradient(self):
         flux = lambda x: x
-        flux_gradient = ApproximatedFluxGradient(self.discrete_gradient, flux)
+        flux_gradient = ApproximatedFluxGradient(LINEAR_LAGRANGE_SPACE, flux)
         test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
         expected_gradient = (
             -1
@@ -81,7 +77,7 @@ class TestApproximatedFluxGradient(TestCase):
 
     def test_burgers_gradient(self):
         flux = lambda x: 1 / 2 * x**2
-        flux_gradient = ApproximatedFluxGradient(self.discrete_gradient, flux)
+        flux_gradient = ApproximatedFluxGradient(LINEAR_LAGRANGE_SPACE, flux)
         test_dofs = [np.array([1, 0, 0, 0]), np.array([0, 1, 0, 0])]
         expected_approximations = [
             [0, 1 / 4, 0, -1 / 4],

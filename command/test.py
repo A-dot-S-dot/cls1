@@ -1,11 +1,14 @@
-"""This module provides a task for performing unit tests.
-
-"""
 import subprocess
+from typing import List
 
 from .command import Command
 
 
-class TestCommand(Command):
+class Test(Command):
+    _file: List[str]
+
+    def __init__(self, file=None):
+        self._file = file or []
+
     def execute(self):
-        subprocess.call(["test/test"] + self._args.file)
+        subprocess.call(["test/test"] + self._file)

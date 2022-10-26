@@ -14,11 +14,7 @@ class AdvectionBenchmark(Benchmark[float]):
         return self.initial_data(argument)
 
 
-class AdvectionPlot1Benchmark(AdvectionBenchmark):
-    name = "Three Hills (plot default)"
-    short_facts = "I=[0,1], periodic boundaries, T=1, PLOT_DEFAULT"
-    description = "Three diffrent hills, how the scheme handles different difficulties."
-
+class AdvectionThreeHillsBenchmark(AdvectionBenchmark):
     def initial_data(self, x: float) -> float:
         if x >= 0.025 and x < 0.275:
             return exp(-300 * (2 * x - 0.3) ** 2)
@@ -30,11 +26,7 @@ class AdvectionPlot1Benchmark(AdvectionBenchmark):
             return 0.0
 
 
-class AdvectionPlot2Benchmark(AdvectionBenchmark):
-    name = "Two Hills"
-    short_facts = "I=[0,1], periodic boundaries, T=1"
-    description = "Two diffrent hills, how the scheme handles different difficulties."
-
+class AdvectionTwoHillsBenchmark(AdvectionBenchmark):
     def initial_data(self, x: float) -> float:
         if x > 0.5 and x < 0.9:
             return exp(10) * exp(-1 / (x - 0.5)) * exp(1 / (x - 0.9))
@@ -44,11 +36,7 @@ class AdvectionPlot2Benchmark(AdvectionBenchmark):
             return 0.0
 
 
-class AdvectionPlot3Benchmark(AdvectionBenchmark):
-    name = "Moving Rectangle"
-    short_facts = "I=[0,1], periodic boundaries, T=1"
-    description = "Test for discontinuous initial data."
-
+class AdvectionOneHillBenchmark(AdvectionBenchmark):
     def initial_data(self, x: float) -> float:
         if x >= 0.1 and x <= 0.3:
             return 1.0
@@ -56,21 +44,11 @@ class AdvectionPlot3Benchmark(AdvectionBenchmark):
             return 0.0
 
 
-class AdvectionEOCBenchmark1(AdvectionBenchmark):
-    name = "Cosine Benchmark (eoc default)"
-    short_facts = (
-        "u(x)=cos(2*pi*(x-0.5)), I=[0,1], periodic boundaries, T=1, EOC_DEFAULT"
-    )
-    description = "Smooth initial data for testing convergence order."
-
+class AdvectionCosineBenchmark(AdvectionBenchmark):
     def initial_data(self, x: float) -> float:
         return cos(2 * pi * (x - 0.5))
 
 
-class AdvectionEOCBenchmark2(AdvectionBenchmark):
-    name = "Gaussian Bell"
-    short_facts = "u(x)=exp(-100*(x-0.5)^2), I=[0,1], periodic boundaries, T=1"
-    description = "Smooth initial data for testing convergence order."
-
+class AdvectionGaussianBellBenchmark(AdvectionBenchmark):
     def initial_data(self, x: float) -> float:
         return exp(-100 * (x - 0.5) ** 2)

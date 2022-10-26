@@ -1,31 +1,30 @@
-from argparse import Namespace
-import time
+from typing import Sequence
 
-from tqdm import tqdm
-from pde_solver.solver_components import SolverComponents
+from pde_solver.solver import Solver
+from tqdm.auto import tqdm
 
 from .command import Command
 
 
-class CalculationCommand(Command):
+class Calculate(Command):
     """Calculate discrete solution without doing with it something."""
 
-    def __init__(self, args: Namespace):
-        self._args = args
-        self._components = SolverComponents(args)
+    _solver: Solver | Sequence[Solver]
+    _leave_solution_progressbar: bool
+
+    def __init__(
+        self, solver: Solver | Sequence[Solver], leave_solution_progress_bar=True
+    ):
+        self._solver = solver
+        self._leave_solution_progressbar = leave_solution_progress_bar
 
     def execute(self):
-        for solver_factory in tqdm(
-            self._components.solver_factories,
-            desc="Calculate solutions",
-            unit="solver",
-            leave=False,
-        ):
-            solver = solver_factory.solver
-
-            start_time = time.time()
-            solver.solve()
-
-            tqdm.write(
-                f"Solved {solver_factory.info} with {solver_factory.dimension} DOFs and {solver.time_stepping.time_steps} time steps in {time.time()-start_time:.2f}s."
-            )
+        if isinstance(self._solver, Solver):
+            self._solver.solve(leave_progress_bar=self._leave_solution_progressbar)
+        elif len(self._solver) == 1:
+            self._solver[0].solve(leave_progress_bar=self._leave_solution_progressbar)
+        else:
+            for solver in tqdm(
+                self._solver, desc="Calculate", unit="solver", leave=False
+            ):
+                solver.solve(leave_progress_bar=self._leave_solution_progressbar)

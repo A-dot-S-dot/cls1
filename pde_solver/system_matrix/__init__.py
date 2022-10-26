@@ -1,5 +1,4 @@
-from .artificial_diffusion import *
-from .discrete_gradient import *
-from .entry_calculator import *
-from .mass import *
-from .system_matrix import *
+from .artificial_diffusion import BurgersArtificialDiffusion, DiscreteUpwind
+from .discrete_gradient import DiscreteGradient
+from .mass import MassMatrix
+from .system_matrix import SystemMatrix

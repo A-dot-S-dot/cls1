@@ -1,10 +1,11 @@
 """This module contains abstract classes."""
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Callable, List
 
 import numpy as np
-from custom_type import ScalarFunction
 from pde_solver.mesh import Interval
+
+ScalarFunction = Callable[[float], float]
 
 
 class Quadrature(ABC):

@@ -16,10 +16,6 @@ class Benchmark(ABC, Generic[T]):
     start_time: float
     end_time: float
 
-    name: str
-    short_facts: str
-    description: str
-
     @abstractmethod
     def initial_data(self, x: float) -> T:
         ...
@@ -29,3 +25,9 @@ class Benchmark(ABC, Generic[T]):
 
     def exact_solution_at_end_time(self, x: float) -> T:
         return self.exact_solution(x, self.end_time)
+
+    def __repr__(self) -> str:
+        return (
+            self.__class__.__name__
+            + f"(domain={self.domain}, start_time={self.start_time}, end_time={self.end_time})"
+        )

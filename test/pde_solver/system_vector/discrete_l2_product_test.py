@@ -1,12 +1,50 @@
+from test.test_helper import LINEAR_LAGRANGE_SPACE, QUADRATIC_LAGRANGE_SPACE
+from test.test_helper.lagrange_basis_elements import *
+from typing import Callable, Sequence
 from unittest import TestCase
 
 import numpy as np
-from pde_solver.discretization.finite_element import FastFunction
+from pde_solver.discretization import FastFunction
+from pde_solver.mesh import AffineTransformation, Mesh
 from pde_solver.quadrature import LocalElementQuadrature
 from pde_solver.system_vector import BasisGradientL2Product, BasisL2Product
 
-from test.test_helper import LINEAR_LAGRANGE_SPACE, QUADRATIC_LAGRANGE_SPACE
-from test.test_helper.lagrange_basis_elements import *
+ScalarFunction = Callable[[float], float]
+
+
+class FastMapping(FastFunction):
+    _function: ScalarFunction
+    _derivative: ScalarFunction
+    _mesh: Mesh
+    _local_points: Sequence[float]
+
+    _affine_transformation: AffineTransformation
+
+    def __init__(
+        self,
+        function: ScalarFunction,
+        derivative: ScalarFunction,
+        mesh: Mesh,
+        local_points: Sequence[float],
+    ):
+        self._function = function
+        self._derivative = derivative
+        self._mesh = mesh
+        self._local_points = local_points
+
+        self._affine_transformation = AffineTransformation()
+
+    def __call__(self, cell_index: int, local_index: int) -> float:
+        cell = self._mesh[cell_index]
+        local_point = self._local_points[local_index]
+
+        return self._function(self._affine_transformation(local_point, cell))
+
+    def derivative(self, simplex_index: int, local_index: int) -> float:
+        simplex = self._mesh[simplex_index]
+        local_point = self._local_points[local_index]
+
+        return self._derivative(self._affine_transformation(local_point, simplex))
 
 
 class TestLinearBasisL2Product(TestCase):
@@ -15,9 +53,9 @@ class TestLinearBasisL2Product(TestCase):
     quadrature = LocalElementQuadrature(quadrature_degree)
     test_functions = [lambda _: 1, lambda x: x, lambda x: x**2 - 2 * x]
     test_fast_functions = [
-        FastFunction(lambda _: 1, lambda _: 0, element_space.mesh, quadrature.nodes),
-        FastFunction(lambda x: x, lambda _: 1, element_space.mesh, quadrature.nodes),
-        FastFunction(
+        FastMapping(lambda _: 1, lambda _: 0, element_space.mesh, quadrature.nodes),
+        FastMapping(lambda x: x, lambda _: 1, element_space.mesh, quadrature.nodes),
+        FastMapping(
             lambda x: x**2 - 2 * x,
             lambda x: 2 * x - 2,
             element_space.mesh,
@@ -70,9 +108,9 @@ class TestQuadraticBasisL2Product(TestLinearBasisL2Product):
     quadrature_degree = 3
     quadrature = LocalElementQuadrature(quadrature_degree)
     test_fast_functions = [
-        FastFunction(lambda _: 1, lambda _: 0, element_space.mesh, quadrature.nodes),
-        FastFunction(lambda x: x, lambda _: 1, element_space.mesh, quadrature.nodes),
-        FastFunction(
+        FastMapping(lambda _: 1, lambda _: 0, element_space.mesh, quadrature.nodes),
+        FastMapping(lambda x: x, lambda _: 1, element_space.mesh, quadrature.nodes),
+        FastMapping(
             lambda x: x**2 - 2 * x,
             lambda x: 2 * x - 2,
             element_space.mesh,
@@ -92,9 +130,9 @@ class TestQuadraticBasisGradientL2Product(TestLinearBasisGradientL2Product):
     quadrature_degree = 3
     quadrature = LocalElementQuadrature(quadrature_degree)
     test_fast_functions = [
-        FastFunction(lambda _: 1, lambda _: 0, element_space.mesh, quadrature.nodes),
-        FastFunction(lambda x: x, lambda _: 1, element_space.mesh, quadrature.nodes),
-        FastFunction(
+        FastMapping(lambda _: 1, lambda _: 0, element_space.mesh, quadrature.nodes),
+        FastMapping(lambda x: x, lambda _: 1, element_space.mesh, quadrature.nodes),
+        FastMapping(
             lambda x: x**2 - 2 * x,
             lambda x: 2 * x - 2,
             element_space.mesh,

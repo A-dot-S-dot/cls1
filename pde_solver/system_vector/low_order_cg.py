@@ -2,6 +2,7 @@ import numpy as np
 from pde_solver.system_matrix import SystemMatrix
 
 from .system_vector import SystemVector
+from .flux_gradient import ApproximatedFluxGradient
 
 
 class LowOrderCGRightHandSide(SystemVector):
@@ -15,15 +16,23 @@ class LowOrderCGRightHandSide(SystemVector):
 
     """
 
-    lumped_mass: SystemVector
-    artificial_diffusion: SystemMatrix
-    discrete_gradient: SystemMatrix
-    flux_approximation: SystemVector
+    _lumped_mass: SystemVector
+    _artificial_diffusion: SystemMatrix
+    _flux_gradient: ApproximatedFluxGradient
+
+    def __init__(
+        self,
+        lumped_mass: SystemVector,
+        artificial_diffusion: SystemMatrix,
+        flux_gradient: ApproximatedFluxGradient,
+    ):
+        self._lumped_mass = lumped_mass
+        self._artificial_diffusion = artificial_diffusion
+        self._flux_gradient = flux_gradient
 
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
-        self.artificial_diffusion.assemble(dof_vector)
+        self._artificial_diffusion.assemble(dof_vector)
 
         return (
-            self.artificial_diffusion.dot(dof_vector)
-            - self.discrete_gradient.dot(self.flux_approximation(dof_vector))
-        ) / self.lumped_mass()
+            self._artificial_diffusion.dot(dof_vector) + self._flux_gradient(dof_vector)
+        ) / self._lumped_mass()
