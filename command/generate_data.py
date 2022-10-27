@@ -238,6 +238,6 @@ class GenerateData(Command):
             benchmark_saver.append(builder.benchmark)
 
         subgrid_saver.save(
-            self._args.train_path, self._args.validate_path, self._args.overwrite
+            self._args.train_path, self._args.validate_path, self._args.append
         )
-        benchmark_saver.save(self._args.benchmark_parameters_path, self._args.overwrite)
+        benchmark_saver.save(self._args.benchmark_parameters_path, self._args.append)
