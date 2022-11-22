@@ -7,10 +7,13 @@ from .abstract import Benchmark, NoExactSolutionError
 
 class BurgersBenchmark(Benchmark[float]):
     start_time = 0
-    end_time = 0.5
+    end_time: float
 
     _critical_time: float
     _warn = True
+
+    def __init__(self, end_time=None):
+        self.end_time = end_time or 0.5
 
     def initial_data_derivaitive(self, x: float) -> float:
         raise NotImplementedError

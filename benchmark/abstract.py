@@ -17,6 +17,10 @@ class Benchmark(ABC, Generic[T]):
     end_time: float
 
     @abstractmethod
+    def __init__(self, end_time=None, **benchmark_parameters):
+        ...
+
+    @abstractmethod
     def initial_data(self, x: float) -> T:
         ...
 

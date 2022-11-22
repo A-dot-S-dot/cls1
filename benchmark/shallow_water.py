@@ -43,9 +43,14 @@ class ShallowWaterBumpSteadyStateBenchmark(ShallowWaterBenchmark):
 
     domain = Interval(-2, 2)
     start_time = 0
-    end_time = 0.1
-    K1 = 1
-    K2 = 25
+    end_time: float
+    K1: float
+    K2: float
+
+    def __init__(self, end_time=None, K1=None, K2=None):
+        self.end_time = end_time or 0.1
+        self.K1 = K1 or 1.0
+        self.K2 = K2 or 25.0
 
     def topography(self, x: float) -> float:
         if x in Interval(-0.1, 0.1):
@@ -83,10 +88,10 @@ class ShallowWaterOscillationNoTopographyBenchmark(ShallowWaterBenchmark):
     velocity_wave_number: float
 
     start_time = 0
-    end_time = 40
 
     def __init__(
         self,
+        end_time=None,
         height_average=None,
         height_amplitude=None,
         height_phase_shift=None,
@@ -96,6 +101,7 @@ class ShallowWaterOscillationNoTopographyBenchmark(ShallowWaterBenchmark):
         velocity_phase_shift=None,
         velocity_wave_number=None,
     ):
+        self.end_time = end_time or 40
         self.height_average = height_average or HEIGHT_AVERAGE
         self.height_amplitude = height_amplitude or HEIGHT_AMPLITUDE
         self.height_phase_shift = height_phase_shift or HEIGHT_PHASE_SHIFT
@@ -129,7 +135,8 @@ class ShallowWaterRandomOscillationNoTopographyBenchmark(
 
     def __init__(
         self,
-        seed: int | str | float | bytes | bytearray | None = None,
+        end_time=None,
+        seed=None,
         height_average=None,
         height_amplitude=None,
         height_phase_shift=None,
@@ -149,4 +156,5 @@ class ShallowWaterRandomOscillationNoTopographyBenchmark(
             velocity_amplitude or random.uniform(0.2, 0.6),
             velocity_phase_shift or random.uniform(0, 2 * np.pi),
             velocity_wave_number or random.randint(1, 4),
+            end_time,
         )

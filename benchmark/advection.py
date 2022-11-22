@@ -7,7 +7,10 @@ from .abstract import Benchmark
 class AdvectionBenchmark(Benchmark[float]):
     domain = Interval(0, 1)
     start_time = 0
-    end_time = 1
+    end_time: float
+
+    def __init__(self, end_time=None):
+        self.end_time = end_time or 1.0
 
     def exact_solution(self, x: float, t: float) -> float:
         argument = (x - t) % self.domain.length
