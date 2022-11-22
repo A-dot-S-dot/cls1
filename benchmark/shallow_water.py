@@ -148,13 +148,13 @@ class ShallowWaterRandomOscillationNoTopographyBenchmark(
     ):
         random.seed(seed)
         super().__init__(
-            height_average or random.uniform(1.6, 2.4),
-            height_amplitude or random.uniform(0.2, 0.6),
-            height_phase_shift or random.uniform(0, 2 * np.pi),
-            height_wave_number or random.randint(1, 5),
-            velocity_average or random.uniform(1, 2),
-            velocity_amplitude or random.uniform(0.2, 0.6),
-            velocity_phase_shift or random.uniform(0, 2 * np.pi),
-            velocity_wave_number or random.randint(1, 4),
-            end_time,
+            end_time=end_time,
+            height_average=height_average or random.uniform(1.6, 2.4),
+            height_amplitude=height_amplitude or random.uniform(0.2, 0.6),
+            height_phase_shift=height_phase_shift or random.uniform(0, 2 * np.pi),
+            height_wave_number=height_wave_number or random.randint(1, 5),
+            velocity_average=velocity_average or random.uniform(1, 2),
+            velocity_amplitude=velocity_amplitude or random.uniform(0.2, 0.6),
+            velocity_phase_shift=velocity_phase_shift or random.uniform(0, 2 * np.pi),
+            velocity_wave_number=velocity_wave_number or random.randint(1, 4),
         )
