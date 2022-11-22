@@ -1,6 +1,6 @@
 import numpy as np
 from pde_solver.mesh import Mesh
-from pde_solver.solver_space import LagrangeFiniteElementSpace
+from pde_solver.discretization.finite_element import LagrangeFiniteElementSpace
 
 from .entry_calculator import QuadratureBasedEntryCalculator
 from .local_matrix import LocallyAssembledSystemMatrix

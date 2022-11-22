@@ -2,11 +2,8 @@
 calculate entries of system matrices."""
 from abc import ABC, abstractmethod
 
-from pde_solver.discretization.local_lagrange import (
-    LOCAL_LAGRANGE_BASIS,
-    LocalLagrangeBasis,
-)
 from pde_solver.quadrature.local import LocalElementQuadrature
+from pde_solver.discretization.finite_element import LocalLagrangeBasis
 
 
 class SystemMatrixEntryCalculator(ABC):
@@ -30,4 +27,4 @@ class QuadratureBasedEntryCalculator(SystemMatrixEntryCalculator):
 
     def __init__(self, polynomial_degree: int, quadrature_degree: int):
         self._local_quadrature = LocalElementQuadrature(quadrature_degree)
-        self._local_basis = LOCAL_LAGRANGE_BASIS[polynomial_degree]
+        self._local_basis = LocalLagrangeBasis(polynomial_degree)

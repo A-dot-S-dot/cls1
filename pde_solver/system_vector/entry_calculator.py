@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from pde_solver.solver_space import LagrangeFiniteElementSpace
+from pde_solver.discretization.finite_element import LagrangeFiniteElementSpace
 from pde_solver.quadrature import LocalElementQuadrature
 
 

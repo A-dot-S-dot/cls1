@@ -29,11 +29,7 @@ class BurgersBenchmark(Benchmark[float]):
             )
 
 
-class BurgersPlotBenchmark(BurgersBenchmark):
-    name = "Shock formation Benchmark (plot default)"
-    short_facts = "u(x)=sin(2*pi*x), I=[0,1], periodic boundaries, T=0.5, PLOT_DEFAULT"
-    description = "A shock occurs after 1/2pi (after approx. 0.159)). Benchmark is designed to test how a scheme handles it."
-
+class BurgersSchockBenchmark(BurgersBenchmark):
     domain = Interval(0, 1)
     _critical_time = 1 / (2 * pi)
 
@@ -44,11 +40,7 @@ class BurgersPlotBenchmark(BurgersBenchmark):
         return 2 * pi * cos(2 * pi * x)
 
 
-class BurgersEOCBenchmark(BurgersBenchmark):
-    name = "Convergence Order Benchmark (eoc default)"
-    short_facts = "u(x)=sin(x)+0.5, I=[0,1], periodic boundaries, T=0.5, EOC_DEFAULT"
-    description = "A similar benchmark to the PLOT_DEFAULT one. The shock occurs later such that the solution is smooth and can be used for calculation of order of convergence."
-
+class BurgersSmoothBenchmark(BurgersBenchmark):
     domain = Interval(0, 2 * pi)
     _critical_time = 1
 

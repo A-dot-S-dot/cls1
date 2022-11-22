@@ -1,21 +1,25 @@
+import argparse
 from abc import ABC, abstractmethod
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from typing import Type
 
-import custom_type
-from defaults import *
+import defaults
+import pde_solver.solver as solver
+
+from . import argument
 
 
-class SolverParser(ArgumentParser, ABC):
+class SolverParser(argparse.ArgumentParser, ABC):
     prog: str
-    description: str
+    name: str
+    solver: Type[solver.Solver]
 
     def __init__(self):
-        ArgumentParser.__init__(
+        argparse.ArgumentParser.__init__(
             self,
             prog=self.prog,
-            description=self.description,
+            description=self.name,
             prefix_chars="+",
-            formatter_class=ArgumentDefaultsHelpFormatter,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             add_help=False,
         )
 
@@ -25,167 +29,113 @@ class SolverParser(ArgumentParser, ABC):
     def _add_arguments(self):
         ...
 
-    def _add_label(self):
-        self.add_argument(
-            "++label", type=str, help="Set label for ploting.", metavar="<label>"
-        )
+    def parse_arguments(self, *arguments) -> argparse.Namespace:
+        arguments = self.parse_args(*arguments)
+        arguments.solver = self.solver
+
+        return arguments
 
 
 class CGParser(SolverParser):
     prog = "cg"
-    description = "Continuous Galerkin Solver."
+    name = "Continuous Galerkin"
+    solver = solver.ContinuousGalerkinSolver
 
     def _add_arguments(self):
-        self._add_label()
-        self._add_polynomial_degree()
-        self._add_exact_flux()
-        self._add_cfl_number()
-
-    def _add_polynomial_degree(self):
-        self.add_argument(
-            "+p",
-            "++polynomial-degree",
-            help="Set polynomial degree used for finite elements.",
-            metavar="<degree>",
-            type=custom_type.positive_int,
-            default=POLYNOMIAL_DEGREE,
-        )
-
-    def _add_exact_flux(self):
-        self.add_argument(
-            "++exact-flux", action="store_true", help="Calculate flux matrices exactly."
-        )
-
-    def _add_cfl_number(self):
-        self.add_argument(
-            "++cfl",
-            help="Specify the cfl number for time stepping.",
-            type=custom_type.positive_float,
-            metavar="<number>",
-            dest="cfl_number",
-            default=CFL_NUMBER,
-        )
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_polynomial_degree(self)
+        argument.add_exact_flux(self)
+        argument.add_cfl_number(self, defaults.CFL_NUMBER)
 
 
-class LowCGParser(CGParser):
+class LowCGParser(SolverParser):
     prog = "cg_low"
-    description = "Low order Continuous Galerkin Solver."
+    name = "Low order Continuous Galerkin"
+    solver = solver.LowOrderContinuousGalerkinSolver
 
     def _add_arguments(self):
-        self._add_label()
-        self._add_polynomial_degree()
-        self._add_cfl_number()
-        self._add_ode_solver()
-
-    def _add_cfl_number(self):
-        self.add_argument(
-            "++cfl",
-            help="Specify the cfl number for time stepping.",
-            type=custom_type.positive_float,
-            metavar="<number>",
-            dest="cfl_number",
-            default=MCL_CFL_NUMBER,
-        )
-
-    def _add_ode_solver(self):
-        self.add_argument(
-            "++ode",
-            help="Specify ode solver.",
-            choices={"euler", "heun", "ssp3", "ssp4"},
-            metavar="<solver>",
-            dest="ode_solver",
-            default=ODE_SOLVER,
-        )
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_polynomial_degree(self)
+        argument.add_cfl_number(self, defaults.MCL_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+        argument.add_ode_solver(self)
 
 
-class MCLParser(LowCGParser):
+class MCLParser(SolverParser):
     prog = "mcl"
-    description = "MCL Limiter."
+    name = "MCL Solver"
+    solver = solver.MCLSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, "MCL Solver")
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_polynomial_degree(self)
+        argument.add_cfl_number(self, defaults.MCL_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+        argument.add_ode_solver(self)
 
 
 class GodunovParser(SolverParser):
     prog = "godunov"
-    description = "Godunov's finite volume scheme."
+    name = "Godunov's finite volume scheme"
+    solver = solver.GodunovSolver
 
     def _add_arguments(self):
-        self._add_label()
-        self._add_cfl_number()
-        self._add_adaptive_time_stepping()
-
-    def _add_cfl_number(self):
-        self.add_argument(
-            "++cfl",
-            help="Specify the cfl number for time stepping.",
-            type=custom_type.positive_float,
-            metavar="<number>",
-            dest="cfl_number",
-            default=GODUNOV_CFL_NUMBER,
-        )
-
-    def _add_adaptive_time_stepping(self):
-        self.add_argument(
-            "++adaptive",
-            help="Choose constant time stepping.",
-            action="store_true",
-        )
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
 
 
-class CoarseExactParser(GodunovParser):
-    prog = "coarse-exact"
-    description = "Exact coarse solver based on Godunov's finite volume scheme."
+class ReducedExactSolverParser(SolverParser):
+    prog = "reduced-exact"
+    name = "Reduced Exact Solved (Godunov)"
+    solver = solver.ReducedExactSolver
 
     def _add_arguments(self):
-        self._add_coarsening_degree()
-        self._add_cfl_number()
-        self._add_label()
-
-    def _add_coarsening_degree(self):
-        self.add_argument(
-            "++coarsening-degree",
-            help="Specify the coarsening degree.",
-            type=custom_type.positive_int,
-            metavar="<degree>",
-            default=COARSENING_DEGREE,
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(
+            self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
         )
+        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+        argument.add_coarsening_degree(self)
 
 
-class CoarseNetworkParser(CoarseExactParser):
-    prog = "coarse-network"
-    description = """Coarse solver based on Godunov's finite volume scheme.
-    Subgrid fluxes are calculated with a neural network."""
+class ReducedNetworkParser(SolverParser):
+    prog = "reduced-network"
+    name = """Reduced Solver with Neural Network (Godunov)"""
+    solver = solver.ReducedNetworkSolver
 
     def _add_arguments(self):
-        self._add_coarsening_degree()
-        self._add_cfl_number()
-        self._add_label()
-        self._add_network_load_path()
-
-    def _add_network_load_path(self):
-        self.add_argument(
-            "++network-path",
-            help="Specify from where to load trained network.",
-            metavar="<file>",
-            default=NETWORK_PATH,
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(
+            self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
         )
+        argument.add_coarsening_degree(self)
+        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_network_load_path(self)
 
 
-ADVECTION_SOLVER_PARSERS = {
+SCALAR_SOLVER_PARSERS = {
     "cg": CGParser(),
     "cg_low": LowCGParser(),
     "mcl": MCLParser(),
 }
-BURGERS_SOLVER_PARSERS = {
-    "cg": CGParser(),
-    "cg_low": LowCGParser(),
-    "mcl": MCLParser(),
-}
-SWE_SOLVER_PARSERS = {
+SHALLOW_WATER_SOLVER_PARSERS = {
     "godunov": GodunovParser(),
-    "coarse-exact": CoarseExactParser(),
-    "coarse-network": CoarseNetworkParser(),
+    "reduced-exact": ReducedExactSolverParser(),
+    "reduced-network": ReducedNetworkParser(),
 }
 
 SOLVER_PARSERS = {}
-SOLVER_PARSERS.update(ADVECTION_SOLVER_PARSERS)
-SOLVER_PARSERS.update(BURGERS_SOLVER_PARSERS)
-SOLVER_PARSERS.update(SWE_SOLVER_PARSERS)
+SOLVER_PARSERS.update(SCALAR_SOLVER_PARSERS)
+SOLVER_PARSERS.update(SHALLOW_WATER_SOLVER_PARSERS)

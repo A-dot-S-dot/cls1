@@ -1,13 +1,14 @@
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 
 import numpy as np
-from custom_type import ScalarFunction
 from pde_solver.mesh import Interval
 
 from .abstracts import Quadrature
 
+ScalarFunction = Callable[[float], float]
 
-class GaussianQuadrature(Quadrature):
+
+class SpecificGaussianQuadrature(Quadrature):
     """Gaussian quadrature on the interval [-1,1]."""
 
     _domain = Interval(-1, 1)
@@ -54,14 +55,14 @@ class GaussianQuadrature(Quadrature):
         return np.dot(self.weights, quadrature_nodes_values)
 
 
-class GaussianQuadratureGeneralized(GaussianQuadrature):
+class GaussianQuadrature(SpecificGaussianQuadrature):
     """Gaussian quadrature for an arbitrary given interval."""
 
     _factor: float
     _shift: float
 
     def __init__(self, quadrature_degree: int, interval: Interval):
-        GaussianQuadrature.__init__(self, quadrature_degree)
+        SpecificGaussianQuadrature.__init__(self, quadrature_degree)
 
         if self.domain != interval:
             self._domain = interval

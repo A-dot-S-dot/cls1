@@ -54,3 +54,8 @@ class UniformMesh(Mesh):
         ), f"Mesh of size {len(self)} cannot be coarsened with degree of {coarsening_degree}"
 
         return UniformMesh(self.domain, len(self) // coarsening_degree)
+
+    def __repr__(self) -> str:
+        return (
+            self.__class__.__name__ + f"(domain={self.domain}, mesh_size={len(self)})"
+        )

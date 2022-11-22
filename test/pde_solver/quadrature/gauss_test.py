@@ -4,15 +4,15 @@ from unittest import TestCase
 from numpy import sqrt
 from pde_solver.mesh import Interval
 from pde_solver.quadrature.gauss import (
+    SpecificGaussianQuadrature,
     GaussianQuadrature,
-    GaussianQuadratureGeneralized,
 )
 
 
 class TestGaussianQuadrature(TestCase):
     def test_value_error(self):
-        self.assertRaises(AssertionError, GaussianQuadrature, 0)
-        self.assertRaises(AssertionError, GaussianQuadrature, -2)
+        self.assertRaises(AssertionError, SpecificGaussianQuadrature, 0)
+        self.assertRaises(AssertionError, SpecificGaussianQuadrature, -2)
 
     def test_nodes_and_weights(self):
         self._test_nodes_and_weights(1, [0], [2])
@@ -24,7 +24,7 @@ class TestGaussianQuadrature(TestCase):
     def _test_nodes_and_weights(
         self, nodes_number: int, nodes: List[float], weights: List[float]
     ):
-        quadrature = GaussianQuadrature(nodes_number)
+        quadrature = SpecificGaussianQuadrature(nodes_number)
         for exact_node, exact_weight, node, weight in zip(
             nodes, weights, quadrature.nodes, quadrature.weights
         ):
@@ -32,11 +32,11 @@ class TestGaussianQuadrature(TestCase):
             self.assertAlmostEqual(exact_weight, weight)
 
     def test_domain(self):
-        quadrature = GaussianQuadrature(1)
+        quadrature = SpecificGaussianQuadrature(1)
         self.assertEqual(quadrature.domain, Interval(-1, 1))
 
     def test_integration(self):
-        quadrature = GaussianQuadrature(3)
+        quadrature = SpecificGaussianQuadrature(3)
         test_functions_integrals = [
             (lambda x: x**5, 0),
             (lambda x: x + 1, 2),
@@ -63,7 +63,7 @@ class TestGaussianQuadratureGeneralized(TestCase):
     def _test_nodes_and_weights(
         self, nodes_number: int, nodes: List[float], weights: List[float]
     ):
-        quadrature = GaussianQuadratureGeneralized(nodes_number, self.interval)
+        quadrature = GaussianQuadrature(nodes_number, self.interval)
         for exact_node, exact_weight, node, weight in zip(
             nodes, weights, quadrature.nodes, quadrature.weights
         ):
@@ -71,7 +71,7 @@ class TestGaussianQuadratureGeneralized(TestCase):
             self.assertAlmostEqual(exact_weight, weight)
 
     def test_integration(self):
-        quadrature = GaussianQuadratureGeneralized(3, self.interval)
+        quadrature = GaussianQuadrature(3, self.interval)
         test_functions_integrals = [
             (lambda x: x**5, 1 / 6),
             (lambda x: x + 1, 3 / 2),

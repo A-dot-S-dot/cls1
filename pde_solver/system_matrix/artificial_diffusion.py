@@ -1,10 +1,7 @@
 import numpy as np
-from pde_solver.discrete_solution import (
-    DiscreteSolution,
-    DiscreteSolutionObservable,
-    DiscreteSolutionObserver,
-)
+from pde_solver.discretization.finite_element import LagrangeFiniteElementSpace
 
+from .discrete_gradient import DiscreteGradient
 from .system_matrix import SystemMatrix
 
 
@@ -21,9 +18,9 @@ class DiscreteUpwind(SystemMatrix):
 
     _discrete_gradient: SystemMatrix
 
-    def __init__(self, discrete_gradient: SystemMatrix):
-        SystemMatrix.__init__(self, discrete_gradient.dimension)
-        self._discrete_gradient = discrete_gradient
+    def __init__(self, element_space: LagrangeFiniteElementSpace):
+        self._discrete_gradient = DiscreteGradient(element_space)
+        SystemMatrix.__init__(self, self._discrete_gradient.dimension)
         self._build_values()
 
     def _build_values(self):
@@ -35,7 +32,7 @@ class DiscreteUpwind(SystemMatrix):
         self.update_csr_values()
 
 
-class BurgersArtificialDiffusion(DiscreteUpwind, DiscreteSolutionObserver):
+class BurgersArtificialDiffusion(DiscreteUpwind):
     """Artificial diffusion operator for burgers with Rusanov Approximation.
 
     Exact definition is
@@ -49,23 +46,14 @@ class BurgersArtificialDiffusion(DiscreteUpwind, DiscreteSolutionObserver):
     """
 
     _discrete_gradient: SystemMatrix
-    _discrete_solution: DiscreteSolution
 
-    def __init__(
-        self,
-        discrete_gradient: SystemMatrix,
-        discrete_solution: DiscreteSolutionObservable,
-    ):
-        SystemMatrix.__init__(self, discrete_gradient.dimension)
-        DiscreteSolutionObserver.__init__(self, discrete_solution)
-        self._discrete_gradient = discrete_gradient
+    def __init__(self, element_space: LagrangeFiniteElementSpace):
+        self._discrete_gradient = DiscreteGradient(element_space)
+        SystemMatrix.__init__(self, self._discrete_gradient.dimension)
 
-    def update(self):
-        self._update(self._discrete_solution.end_values)
-
-    def _update(self, discrete_solution: np.ndarray):
+    def assemble(self, dof_vector: np.ndarray):
         values = self._discrete_gradient()
-        values = values.multiply(discrete_solution)  # mulitply dof vector on each row
+        values = values.multiply(dof_vector)  # mulitply dof vector on each row
         values = abs(values)  # consider absolute values
         values = values.maximum(values.transpose())  # symmetrize
         diagonal = -values.sum(axis=1)  # calculate diagonal
@@ -73,7 +61,3 @@ class BurgersArtificialDiffusion(DiscreteUpwind, DiscreteSolutionObserver):
         self._lil_values.setdiag(diagonal)
 
         self.update_csr_values()
-
-    def assemble(self, dof_vector: np.ndarray):
-        if (dof_vector != self._discrete_solution.end_values).any():
-            self._update(dof_vector)

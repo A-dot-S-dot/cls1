@@ -1,86 +1,19 @@
 """This module provides custom actions for ArgumentParser in parser.py."""
-from argparse import Action, ArgumentParser, Namespace
+import argparse
 from typing import Dict, List, Optional, Sequence
 
-from .command_parser import *
-from .solver_parser import (
-    ADVECTION_SOLVER_PARSERS,
-    BURGERS_SOLVER_PARSERS,
-    SWE_SOLVER_PARSERS,
-)
+from .solver_parser import SCALAR_SOLVER_PARSERS, SHALLOW_WATER_SOLVER_PARSERS
 
 
-class PlotAction(Action):
-    "Create list of plot arguments."
-
-    def __call__(
-        self,
-        parser: ArgumentParser,
-        namespace: Namespace,
-        values: List[str],
-        option_string: Optional[str] = ...,
-    ) -> None:
-        plot_parser = PlotParser()
-        arguments = plot_parser.parse_args(values)
-
-        setattr(namespace, "plot", arguments)
-
-
-class AnimateAction(Action):
-    def __call__(
-        self,
-        parser: ArgumentParser,
-        namespace: Namespace,
-        values: List[str],
-        option_string: Optional[str] = ...,
-    ) -> None:
-        animation_parser = AnimateParser()
-        arguments = animation_parser.parse_args(values)
-
-        setattr(namespace, "animate", arguments)
-
-
-class EOCAction(Action):
-    "Create list of eoc arguments."
-
-    def __call__(
-        self,
-        parser: ArgumentParser,
-        namespace: Namespace,
-        values: List[str],
-        option_string: Optional[str] = ...,
-    ) -> None:
-        eoc_parser = EOCParser()
-        arguments = eoc_parser.parse_args(values)
-
-        setattr(namespace, "eoc", arguments)
-
-
-class CalculationAction(Action):
-    "Calculate solutions without doing anything with them."
-
-    def __call__(
-        self,
-        parser: ArgumentParser,
-        namespace: Namespace,
-        values: List[str],
-        option_string: Optional[str] = ...,
-    ) -> None:
-        calculation_parser = CalculateParser()
-        arguments = calculation_parser.parse_args(values)
-
-        setattr(namespace, "calculate", arguments)
-
-
-class SolverAction(Action):
+class SolverAction(argparse.Action):
     """Create list of solver arguments"""
 
     _solver_parsers: Dict
 
     def __call__(
         self,
-        parser: ArgumentParser,
-        namespace: Namespace,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
         values: List[str],
         option_string: Optional[str] = ...,
     ) -> None:
@@ -104,21 +37,28 @@ class SolverAction(Action):
 
         return solver_arguments
 
-    def _get_solver_namespace(self, raw_solver_arguments: Sequence[str]) -> Namespace:
+    def _get_solver_namespace(
+        self, raw_solver_arguments: Sequence[str]
+    ) -> argparse.Namespace:
         solver_key = raw_solver_arguments[0]
-        namespace = Namespace(solver=solver_key)
-        self._solver_parsers[solver_key].parse_args(raw_solver_arguments[1:], namespace)
+        namespace = argparse.Namespace()
+        try:
+            self._solver_parsers[solver_key].parse_arguments(
+                raw_solver_arguments[1:], namespace
+            )
+        except KeyError:
+            print(
+                "ERROR: Only the following solvers are available: "
+                + ", ".join(self._solver_parsers.keys())
+            )
+            quit()
 
         return namespace
 
 
-class AdvectionSolverAction(SolverAction):
-    _solver_parsers = ADVECTION_SOLVER_PARSERS
+class ScalarSolverAction(SolverAction):
+    _solver_parsers = SCALAR_SOLVER_PARSERS
 
 
-class BurgersSolverAction(SolverAction):
-    _solver_parsers = BURGERS_SOLVER_PARSERS
-
-
-class SWESolverAction(SolverAction):
-    _solver_parsers = SWE_SOLVER_PARSERS
+class ShallowWaterSolverAction(SolverAction):
+    _solver_parsers = SHALLOW_WATER_SOLVER_PARSERS

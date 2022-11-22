@@ -1,9 +1,10 @@
 from itertools import combinations
+
 import numpy as np
-from pde_solver.solver_space import LagrangeFiniteElementSpace
+import pde_solver.system_matrix as matrix
+from pde_solver.discretization.finite_element import LagrangeFiniteElementSpace
 
-from pde_solver.system_matrix import SystemMatrix
-
+from .local_bounds import LocalMaximum, LocalMinimum
 from .low_order_cg import LowOrderCGRightHandSide
 from .system_vector import SystemVector
 
@@ -29,38 +30,39 @@ class MCLRightHandSide(SystemVector):
 
     """
 
-    mass: SystemMatrix
-    local_minimum: SystemVector
-    local_maximum: SystemVector
-
     _element_space: LagrangeFiniteElementSpace
     _low_cg_right_hand_side: LowOrderCGRightHandSide
     _lumped_mass: SystemVector
-    _artificial_diffusion: SystemMatrix
-    _discrete_gradient: SystemMatrix
+    _artificial_diffusion: matrix.SystemMatrix
     _flux_approximation: SystemVector
+    _mass: matrix.SystemMatrix
+    _discrete_gradient: matrix.SystemMatrix
+    _local_maximum: SystemVector
+    _local_minimum: SystemVector
 
-    def __init__(self, element_space: LagrangeFiniteElementSpace):
+    def __init__(
+        self,
+        element_space: LagrangeFiniteElementSpace,
+        low_cg_right_hand_side: LowOrderCGRightHandSide,
+        flux_approximation: SystemVector,
+    ):
         self._element_space = element_space
 
-    @property
-    def low_cg_right_hand_side(self):
-        ...
-
-    @low_cg_right_hand_side.setter
-    def low_cg_right_hand_side(self, low_cg: LowOrderCGRightHandSide):
-        self._low_cg_right_hand_side = low_cg
-        self._lumped_mass = low_cg.lumped_mass
-        self._artificial_diffusion = low_cg.artificial_diffusion
-        self._discrete_gradient = low_cg.discrete_gradient
-        self._flux_approximation = low_cg.flux_approximation
+        self._low_cg_right_hand_side = low_cg_right_hand_side
+        self._lumped_mass = low_cg_right_hand_side._lumped_mass
+        self._artificial_diffusion = low_cg_right_hand_side._artificial_diffusion
+        self._flux_approximation = flux_approximation
+        self._mass = matrix.MassMatrix(element_space)
+        self._discrete_gradient = matrix.DiscreteGradient(element_space)
+        self._local_maximum = LocalMaximum(element_space)
+        self._local_minimum = LocalMinimum(element_space)
 
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         corrected_flux = np.zeros(len(dof_vector))
         flux_approximation = self._flux_approximation(dof_vector)
         right_hand_side = self._low_cg_right_hand_side(dof_vector)
-        local_maximum = self.local_maximum(dof_vector)
-        local_minimum = self.local_minimum(dof_vector)
+        local_maximum = self._local_maximum(dof_vector)
+        local_minimum = self._local_minimum(dof_vector)
 
         for element_index in range(len(self._element_space.mesh)):
             for (i_local, j_local) in combinations(
@@ -69,7 +71,7 @@ class MCLRightHandSide(SystemVector):
                 i = self._element_space.global_index(element_index, i_local)
                 j = self._element_space.global_index(element_index, j_local)
 
-                mij = self.mass[i, j]
+                mij = self._mass[i, j]
                 dij = self._artificial_diffusion[i, j]
                 cij = self._discrete_gradient[i, j]
 
@@ -95,3 +97,19 @@ class MCLRightHandSide(SystemVector):
                 corrected_flux[j] -= fstar_ij
 
         return right_hand_side + corrected_flux / self._lumped_mass()
+
+
+class OptimalMCLTimeStep:
+    _lumped_mass: SystemVector
+    _artificial_diffusion: matrix.SystemMatrix
+
+    def __init__(
+        self, lumped_mass: SystemVector, artificial_diffusion: matrix.SystemMatrix
+    ):
+        self._lumped_mass = lumped_mass
+        self._artificial_diffusion = artificial_diffusion
+
+    def __call__(self) -> float:
+        return min(
+            self._lumped_mass() / (2 * abs(self._artificial_diffusion().diagonal()))
+        )

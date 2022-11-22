@@ -9,41 +9,37 @@ More information are available with "cls1 --help".
 
 from parser import CustomArgumentParser
 
-import command as cmd
 import profiler
+
+
+def print_arguments(arguments):
+    if arguments.args:
+        print(arguments)
+
+    del arguments.args
+
+
+def print_profile(arguments):
+    if "profile" in arguments:
+        profiler.PRINT_PROFILE = arguments.profile
+        del arguments.profile
+
+
+def execute_command(arguments):
+    command = arguments.command
+    del arguments.command
+
+    command(**vars(arguments)).execute()
 
 
 @profiler.profile
 def main():
     parser = CustomArgumentParser()
-    args = parser.parse_arguments()
+    arguments = parser.parse_arguments()
 
-    if args.args:
-        print(args)
-
-    if hasattr(args, "profile"):
-        profiler.PRINT_PROFILE = args.profile
-
-    if args.command == "test":
-        command = cmd.TestCommand(args)
-    elif args.command == "help":
-        command = cmd.HelpCommand(args)
-    elif hasattr(args, "plot") and args.plot:
-        command = cmd.PlotCommand(args)
-    elif hasattr(args, "animate") and args.animate:
-        command = cmd.AnimateCommand(args)
-    elif hasattr(args, "eoc") and args.eoc:
-        command = cmd.EOCCommand(args)
-    elif hasattr(args, "calculate") and args.calculation:
-        command = cmd.CalculationCommand(args)
-    elif args.command == "generate-data":
-        command = cmd.GenerateData(args)
-    elif args.command == "train-network":
-        command = cmd.TrainNetwork(args)
-    else:
-        raise ValueError("No Action specified.")
-
-    command.execute()
+    print_arguments(arguments)
+    print_profile(arguments)
+    execute_command(arguments)
 
 
 if __name__ == "__main__":

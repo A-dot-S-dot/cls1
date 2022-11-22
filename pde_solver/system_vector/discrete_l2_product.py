@@ -3,13 +3,7 @@
 from typing import Sequence
 
 import numpy as np
-from pde_solver.discretization.finite_element import (
-    FastLocalElement,
-    FastMapping,
-    LocalLagrangeBasis,
-    QuadratureFastFiniteElement,
-)
-from pde_solver.solver_space import LagrangeFiniteElementSpace
+from pde_solver.discretization import FastFunction, finite_element
 from pde_solver.mesh import Mesh
 
 from .entry_calculator import QuadratureBasedEntryCalculator
@@ -17,13 +11,15 @@ from .local_vector import LocallyAssembledVector
 
 
 class BasisL2ProductEntryCalculator(QuadratureBasedEntryCalculator):
-    left_function: FastMapping
+    left_function: FastFunction
 
     _mesh: Mesh
-    _local_basis_elements: Sequence[FastLocalElement]
+    _local_basis_elements: Sequence[finite_element.FastLocalElement]
 
     def __init__(
-        self, element_space: LagrangeFiniteElementSpace, quadrature_degree: int
+        self,
+        element_space: finite_element.LagrangeFiniteElementSpace,
+        quadrature_degree: int,
     ):
         QuadratureBasedEntryCalculator.__init__(self, element_space, quadrature_degree)
         self._mesh = element_space.mesh
@@ -31,7 +27,7 @@ class BasisL2ProductEntryCalculator(QuadratureBasedEntryCalculator):
         self._build_local_basis_elements()
 
     def _build_local_basis_elements(self):
-        fast_element = QuadratureFastFiniteElement(
+        fast_element = finite_element.QuadratureFastElement(
             self._element_space, self._local_quadrature
         )
         fast_element.set_values()
@@ -54,15 +50,17 @@ class BasisL2ProductEntryCalculator(QuadratureBasedEntryCalculator):
 
 
 class BasisGradientL2ProductEntryCalculator(BasisL2ProductEntryCalculator):
-    _local_basis: LocalLagrangeBasis
+    _local_basis: finite_element.LocalLagrangeBasis
 
     def __init__(
-        self, element_space: LagrangeFiniteElementSpace, quadrature_degree: int
+        self,
+        element_space: finite_element.LagrangeFiniteElementSpace,
+        quadrature_degree: int,
     ):
         BasisL2ProductEntryCalculator.__init__(self, element_space, quadrature_degree)
 
     def _build_local_basis_elements(self):
-        fast_element = QuadratureFastFiniteElement(
+        fast_element = finite_element.QuadratureFastElement(
             self._element_space, self._local_quadrature
         )
         fast_element.set_derivatives()
@@ -96,8 +94,8 @@ class BasisL2Product(LocallyAssembledVector):
 
     def __init__(
         self,
-        left_function: FastMapping,
-        element_space: LagrangeFiniteElementSpace,
+        left_function: FastFunction,
+        element_space: finite_element.LagrangeFiniteElementSpace,
         quadrature_degree: int,
     ):
         entry_calculator = BasisL2ProductEntryCalculator(
@@ -118,8 +116,8 @@ class BasisGradientL2Product(LocallyAssembledVector):
 
     def __init__(
         self,
-        left_function: FastMapping,
-        element_space: LagrangeFiniteElementSpace,
+        left_function: FastFunction,
+        element_space: finite_element.LagrangeFiniteElementSpace,
         quadrature_degree: int,
     ):
         entry_calculator = BasisGradientL2ProductEntryCalculator(

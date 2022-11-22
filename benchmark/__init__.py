@@ -1,4 +1,16 @@
-from .abstract import *
-from .advection import *
-from .burgers import *
-from .shallow_water import *
+from .abstract import Benchmark, NoExactSolutionError
+from .advection import (
+    AdvectionBenchmark,
+    AdvectionCosineBenchmark,
+    AdvectionGaussianBellBenchmark,
+    AdvectionOneHillBenchmark,
+    AdvectionThreeHillsBenchmark,
+    AdvectionTwoHillsBenchmark,
+)
+from .burgers import BurgersBenchmark, BurgersSchockBenchmark, BurgersSmoothBenchmark
+from .shallow_water import (
+    ShallowWaterBenchmark,
+    ShallowWaterBumpSteadyStateBenchmark,
+    ShallowWaterOscillationNoTopographyBenchmark,
+    ShallowWaterRandomOscillationNoTopographyBenchmark,
+)
