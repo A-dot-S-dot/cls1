@@ -24,9 +24,9 @@ class ErrorCalculator:
     _solver_space: SolverSpace
     _norm: norm.Norm
 
-    def __init__(self, space: SolverSpace, error_norm: norm.Norm):
+    def __init__(self, space: SolverSpace, error_norm=None):
         self._space = space
-        self._norm = error_norm
+        self._norm = error_norm or norm.L2Norm(space.mesh)
 
     def __call__(
         self,
@@ -46,19 +46,15 @@ class ErrorCalculator:
         )
 
 
-class TimeEvolutionErrorCalculator:
+class ErrorEvolutionCalculator(ErrorCalculator):
     _solver_space: SolverSpace
     _norm: norm.Norm
 
-    def __init__(self, space: SolverSpace, error_norm: norm.Norm):
-        self._space = space
-        self._norm = error_norm
-
     def __call__(
         self,
-        exact_solution: DiscreteSolution | Callable[[float, float], T],
+        exact_solution: DiscreteSolution | Callable[[float, float], float | np.ndarray],
         discrete_solution: DiscreteSolution,
-    ):
+    ) -> Tuple[np.ndarray, np.ndarray]:
         if isinstance(exact_solution, DiscreteSolution):
             (
                 _time,
@@ -260,27 +256,28 @@ class EOCDataFrame:
 class PlotShallowWaterErrorEvolution(Command):
     _time: np.ndarray
     _error: np.ndarray
-    _error_norm: norm.Norm
+    _suptitle: str
+    _show: bool
     _save: Optional[str]
 
     def __init__(
         self,
-        space: SolverSpace,
-        exact_solution: DiscreteSolution,
-        discrete_solution: DiscreteSolution,
-        error_norm=None,
+        time: np.ndarray,
+        error: np.ndarray,
+        suptitle=None,
+        show=True,
         save=None,
     ):
-        self._error_norm = error_norm or norm.L2Norm(space.mesh, 2)
-        self._time, self._error = TimeEvolutionErrorCalculator(space, self._error_norm)(
-            exact_solution, discrete_solution
-        )
+        self._time = time
+        self._error = error
+        self._suptitle = suptitle or "Error between network and real solution"
+        self._show = show
         self._save = save or defaults.ERROR_EVOLUTION_PATH
 
     def execute(self):
         plt.plot(self._time, self._error[:, 0], label="height error")
         plt.plot(self._time, self._error[:, 1], label="discharge error")
-        plt.suptitle(f"{self._error_norm.name}-Error between network and real solution")
+        plt.suptitle(self._suptitle)
         plt.legend()
         plt.xlabel("time")
         plt.ylabel("error")
@@ -288,7 +285,7 @@ class PlotShallowWaterErrorEvolution(Command):
         if self._save:
             plt.savefig(self._save)
 
-        plt.show()
+        plt.show() if self._show else plt.close()
 
 
 class CalculateEOC(Command):

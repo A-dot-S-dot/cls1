@@ -2,7 +2,12 @@
 from .animate import Animate, ScalarAnimator, ShallowWaterAnimator
 from .calculate import Calculate
 from .command import Command
-from .error import CalculateEOC, PlotShallowWaterErrorEvolution
+from .error import (
+    CalculateEOC,
+    ErrorCalculator,
+    ErrorEvolutionCalculator,
+    PlotShallowWaterErrorEvolution,
+)
 from .generate_data import GenerateData
 from .help import Help
 from .plot import Plot, ScalarPlotter, ShallowWaterPlotter
