@@ -1,5 +1,4 @@
 from typing import List, Tuple
-from itertools import product
 
 import numpy as np
 
@@ -58,23 +57,6 @@ class DiscreteSolution:
             self.__class__.__name__
             + f"(grid={self.grid}, time={self.time}, values={self.values}, time_steps={self.time_steps})"
         )
-
-
-class TemporalInterpolation:
-    """Interpolate discrete solution values for diffrent times."""
-
-    def __call__(self, solution: DiscreteSolution, new_time: np.ndarray) -> np.ndarray:
-        interpolated_values = np.empty((len(new_time), *solution.initial_data.shape))
-
-        for index in product(*[range(dim) for dim in solution.initial_data.shape]):
-            # array[(slice(start, end))]=array[:]
-            interpolated_values[(slice(0, len(new_time)), *index)] = np.interp(
-                new_time,
-                solution.time,
-                solution.values[(slice(0, len(solution.time)), *index)],
-            )
-
-        return interpolated_values
 
 
 class CoarseSolution(DiscreteSolution):

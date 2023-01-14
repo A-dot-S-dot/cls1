@@ -6,8 +6,6 @@ from . import parser_type
 ################################################################################
 # GENERAL
 ################################################################################
-
-
 def add_profile(parser):
     parser.add_argument(
         "--profile",
@@ -39,8 +37,6 @@ def add_file(parser):
 ################################################################################
 # HELP
 ################################################################################
-
-
 def add_page(parser, solver_parsers):
     parser.add_argument(
         "parser",
@@ -53,8 +49,6 @@ def add_page(parser, solver_parsers):
 ################################################################################
 # CALCULATE, PLOT, ANIMATE, EOC
 ################################################################################
-
-
 def add_benchmark(parser, benchmarks, default):
     parser.add_argument(
         "-b",
@@ -172,8 +166,6 @@ def add_refine(parser):
 ################################################################################
 # SOLVER
 ################################################################################
-
-
 def add_name(parser, default):
     parser.add_argument(
         "+n",
@@ -227,8 +219,6 @@ def add_adaptive_time_stepping(parser):
 
 
 # FINITE ELEMENT
-
-
 def add_polynomial_degree(parser):
     parser.add_argument(
         "+p",
@@ -264,8 +254,6 @@ def add_ode_solver(parser):
 
 
 # COARSE SOLVER
-
-
 def add_coarsening_degree(parser):
     parser.add_argument(
         "+c",

@@ -4,34 +4,34 @@ from typing import Callable, Generic, List, TypeVar
 import numpy as np
 from numpy import sqrt
 
-RealD = TypeVar("RealD", float, np.ndarray)
+T = TypeVar("T", float, np.ndarray)
 
 
-class ExplicitRungeKuttaMethod(Generic[RealD]):
+class ExplicitRungeKuttaMethod(Generic[T]):
     """Class for explicit s staged Runge Kutta method for solving the ODE
     x'(t)=f(t,x(t)).
     """
 
     time: float = 0
-    right_hand_side: Callable[[RealD], RealD]
+    right_hand_side: Callable[[T], T]
 
     _runge_kutta_matrix: np.ndarray  # A in Runge-Kutta tableau
     _weights: np.ndarray  # b in Runge-Kutta tableau
-    _solution: RealD
+    _solution: T
 
     @property
     def start_value(self):
         ...
 
     @start_value.setter
-    def start_value(self, start_value: RealD):
+    def start_value(self, start_value: T):
         if isinstance(start_value, np.ndarray):
             self._solution = start_value.copy()
         else:
             self._solution = start_value
 
     @property
-    def solution(self) -> RealD:
+    def solution(self) -> T:
         return self._solution
 
     def execute(self, time_step: float):

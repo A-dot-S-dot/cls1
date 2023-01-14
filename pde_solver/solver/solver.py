@@ -29,6 +29,7 @@ class Solver(ABC):
     @right_hand_side.setter
     def right_hand_side(self, right_hand_side: SystemVector):
         self._right_hand_side = right_hand_side
+        self._right_hand_side.assemble(self.solution.initial_data)
         self._setup_ode_solver()
 
     def _setup_ode_solver(self):
@@ -52,6 +53,7 @@ class Solver(ABC):
     def update(self, time_step: float):
         self.ode_solver.execute(time_step)
         self.solution.add_solution(time_step, self.ode_solver.solution)
+        self.right_hand_side.assemble(self.solution.end_values)
 
     def __repr__(self) -> str:
         return f"{self.name}(short={self.short}, right_side={self.right_hand_side}, ode_solver={self.ode_solver}, time_stepping={self.time_stepping})"

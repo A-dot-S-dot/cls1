@@ -126,14 +126,14 @@ class ReducedNetworkParser(SolverParser):
 
 
 SCALAR_SOLVER_PARSERS = {
-    "cg": CGParser(),
-    "cg_low": LowCGParser(),
-    "mcl": MCLParser(),
+    "cg": CGParser,
+    "cg_low": LowCGParser,
+    "mcl": MCLParser,
 }
 SHALLOW_WATER_SOLVER_PARSERS = {
-    "godunov": GodunovParser(),
-    "reduced-exact": ReducedExactSolverParser(),
-    "reduced-network": ReducedNetworkParser(),
+    "godunov": GodunovParser,
+    "reduced-exact": ReducedExactSolverParser,
+    "reduced-network": ReducedNetworkParser,
 }
 
 SOLVER_PARSERS = {}

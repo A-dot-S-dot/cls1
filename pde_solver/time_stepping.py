@@ -16,13 +16,13 @@ class TimeStepGenerator:
         self,
         time_step_function: Callable[[], float],
         cfl_number: float,
-        adaptive: bool,
+        adaptive=False,
     ):
         self._adaptive = adaptive
         self._cfl_number = cfl_number
 
         if adaptive:
-            self._get_time_step = time_step_function
+            self._get_time_step = lambda: time_step_function() * self._cfl_number
         else:
             self._time_step = time_step_function()
             self._get_time_step = lambda: self._time_step * self._cfl_number
@@ -53,11 +53,11 @@ class TimeStepping:
 
     def __init__(
         self,
-        start_time: float,
         end_time: float,
         cfl_number: float,
         time_step_function: Callable[[], float],
         adaptive=False,
+        start_time=0,
     ):
         self._start_time = start_time
         self._end_time = end_time

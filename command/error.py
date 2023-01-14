@@ -1,20 +1,20 @@
-from typing import Callable, Optional, Sequence, Tuple, Type, TypeVar
+import os
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Type, TypeVar
 
 import benchmark
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pde_solver.norm as norm
 from benchmark.abstract import NoExactSolutionError
+from pde_solver import norm, solver
 from pde_solver.discretization import DiscreteSolution, SolverSpace
-from pde_solver.discretization.discrete_solution import TemporalInterpolation
-from pde_solver.discretization.finite_element import (
-    LagrangeFiniteElementSpace,
-)
-from pde_solver.solver import Solver
-from tqdm import tqdm
+from pde_solver.discretization.finite_element import LagrangeFiniteElementSpace
+from pde_solver.interpolate import TemporalInterpolator
+from scipy import stats
+from tqdm import tqdm, trange
 
+from .calculate import Calculate
 from .command import Command
 
 T = TypeVar("T", float, np.ndarray)
@@ -104,15 +104,15 @@ class ErrorEvolutionCalculator(ErrorCalculator):
         self, exact_solution: DiscreteSolution, discrete_solution: DiscreteSolution
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         if len(discrete_solution.time) > len(exact_solution.time):
-            exact_solution_values = TemporalInterpolation()(
-                exact_solution, discrete_solution.time
+            exact_solution_values = TemporalInterpolator()(
+                exact_solution.time, exact_solution.values, discrete_solution.time
             )
             discrete_solution_values = discrete_solution.values
             time = discrete_solution.time
         else:
             exact_solution_values = exact_solution.values
-            discrete_solution_values = TemporalInterpolation()(
-                discrete_solution, exact_solution.time
+            discrete_solution_values = TemporalInterpolator()(
+                discrete_solution.time, discrete_solution.values, exact_solution.time
             )
             time = exact_solution.time
 
@@ -131,7 +131,7 @@ class EOCCalculator:
 
     def __call__(
         self,
-        solvers: Sequence[Solver],
+        solvers: Sequence[solver.Solver],
         solver_spaces: Sequence[SolverSpace],
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         refine_number = len(solvers) - 1
@@ -290,13 +290,13 @@ class PlotShallowWaterErrorEvolution(Command):
 
 class CalculateEOC(Command):
     _benchmark: benchmark.Benchmark
-    _solvers: Sequence[Sequence[Solver]]
+    _solvers: Sequence[Sequence[solver.Solver]]
     _solver_spaces: Sequence[Sequence[SolverSpace]]
 
     def __init__(
         self,
         benchmark: benchmark.Benchmark,
-        solvers: Sequence[Sequence[Solver]],
+        solvers: Sequence[Sequence[solver.Solver]],
         solver_spaces: Sequence[Sequence[SolverSpace]],
     ):
         self._benchmark = benchmark
@@ -337,3 +337,135 @@ class CalculateEOC(Command):
             print(title)
             print(len(title) * "-")
             print(eoc)
+
+
+class GenerateShallowWaterErrorEvolutionSeries(Command):
+    """Plot Error Evolution for considered benchmark parameters."""
+
+    errors: List[np.ndarray]
+    times: List[np.ndarray]
+
+    _directory: str
+    _initial_conditions: int
+    _description: str
+    _save: Optional[str]
+    _benchmark_parameters: Dict
+
+    def __init__(
+        self,
+        times: List[np.ndarray],
+        errors: List[np.ndarray],
+        initial_conditions=20,
+        description=None,
+        save=None,
+        **benchmark_parameters,
+    ):
+        self.times = times
+        self.errors = errors
+
+        self._initial_conditions = initial_conditions
+        self._description = f"for {description}" or ""
+        self._save = save
+        self._benchmark_parameters = benchmark_parameters
+
+        if save:
+            os.makedirs(save, exist_ok=True)
+
+    def execute(self):
+        for i in trange(
+            self._initial_conditions, desc="Calculate Evolution Error", unit="benchmark"
+        ):
+            title = f"Generate Error {i}"
+            title += "\n" + len(title) * "-"
+            tqdm.write(title)
+
+            swe_benchmark = (
+                benchmark.ShallowWaterRandomOscillationNoTopographyBenchmark(
+                    seed=i, **self._benchmark_parameters
+                )
+            )
+            approximated_solver = solver.ReducedNetworkSolver("swe", swe_benchmark)
+            exact_solver = solver.ReducedExactSolver("swe", swe_benchmark)
+
+            Calculate([exact_solver, approximated_solver]).execute()
+            tqdm.write("")
+
+            _time, _error = ErrorEvolutionCalculator(exact_solver.space)(
+                exact_solver.solution, approximated_solver.solution
+            )
+            self.times.append(_time)
+            self.errors.append(_error)
+
+            if self._save:
+                PlotShallowWaterErrorEvolution(
+                    _time,
+                    _error,
+                    f"$L^2$-Error {self._description} (seed={i})",
+                    show=False,
+                    save=f"{self._save}/{i}.png",
+                ).execute()
+
+
+class PlotShallowWaterAverageErrorEvolution(Command):
+    _times: Sequence[np.ndarray]
+    _errors: Sequence[np.ndarray]
+    _suptitle: Optional[str]
+    _show: bool
+    _save: Optional[str]
+
+    def __init__(
+        self,
+        times: Sequence[np.ndarray],
+        errors: Sequence[np.ndarray],
+        suptitle=None,
+        show=True,
+        save=None,
+    ):
+        self._times = times
+        self._errors = errors
+        self._suptitle = suptitle or "$L^2$-Error between network and real solution"
+        self._show = show
+        self._save = save
+
+    def execute(self):
+        time, errors = self._adjust_errors()
+        mean = np.mean(errors, axis=0)
+        error_min = np.min(errors, axis=0)
+        error_max = np.max(errors, axis=0)
+
+        fig, (height_ax, discharge_ax) = plt.subplots(1, 2)
+
+        height_ax.plot(time, mean[:, 0], label="height error")
+        height_ax.fill_between(time, error_min[:, 0], error_max[:, 0], alpha=0.2)
+        height_ax.legend()
+        height_ax.set_xlabel("time")
+        height_ax.set_ylabel("error")
+
+        discharge_ax.plot(time, mean[:, 1], label="discharge error")
+        discharge_ax.fill_between(time, error_min[:, 1], error_max[:, 1], alpha=0.2)
+        discharge_ax.legend()
+        discharge_ax.set_xlabel("time")
+        discharge_ax.set_ylabel("error")
+
+        fig.suptitle(self._suptitle)
+
+        if self._save:
+            fig.savefig(self._save)
+
+        plt.show() if self._show else plt.close()
+
+    def _adjust_errors(self) -> Tuple[np.ndarray, np.ndarray]:
+        interpolator = TemporalInterpolator()
+        minimum_time = self._get_minimum_time()
+        adjusted_errors = np.array(
+            [
+                interpolator(time, error, minimum_time)
+                for time, error in zip(self._times, self._errors)
+            ]
+        )
+
+        return minimum_time, adjusted_errors
+
+    def _get_minimum_time(self) -> np.ndarray:
+        time_lengths = [len(time) for time in self._times]
+        return self._times[np.argmin(time_lengths)]

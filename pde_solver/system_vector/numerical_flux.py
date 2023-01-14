@@ -19,6 +19,8 @@ class NumericalFlux(ABC):
 
 
 class ObservedNumericalFlux(NumericalFlux):
+    """Saves numerical flux calculated once."""
+
     _numerical_flux: NumericalFlux
     _left_numerical_flux: np.ndarray
     _right_numerical_flux: np.ndarray
@@ -43,6 +45,8 @@ class ObservedNumericalFlux(NumericalFlux):
 
 
 class NumericalFluxContainer(SystemVector):
+    """Saves all numerical fluxes calculated in a row."""
+
     right_numerical_fluxes: List[np.ndarray]
     left_numerical_fluxes: List[np.ndarray]
 

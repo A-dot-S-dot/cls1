@@ -57,6 +57,13 @@ class MCLRightHandSide(SystemVector):
         self._local_maximum = LocalMaximum(element_space)
         self._local_minimum = LocalMinimum(element_space)
 
+    def assemble(self, dof_vector: np.ndarray):
+        super().assemble(dof_vector)
+
+    def _assemble(self, dof_vector: np.ndarray):
+        self._low_cg_right_hand_side.assemble(dof_vector)
+
+    @SystemVector.assemble_before_call
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         corrected_flux = np.zeros(len(dof_vector))
         flux_approximation = self._flux_approximation(dof_vector)

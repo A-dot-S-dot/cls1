@@ -30,9 +30,14 @@ class LowOrderCGRightHandSide(SystemVector):
         self._artificial_diffusion = artificial_diffusion
         self._flux_gradient = flux_gradient
 
-    def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
+    def assemble(self, dof_vector: np.ndarray):
+        super().assemble(dof_vector)
+
+    def _assemble(self, dof_vector: np.ndarray):
         self._artificial_diffusion.assemble(dof_vector)
 
+    @SystemVector.assemble_before_call
+    def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         return (
             self._artificial_diffusion.dot(dof_vector) + self._flux_gradient(dof_vector)
         ) / self._lumped_mass()

@@ -1,12 +1,7 @@
 from unittest import TestCase
 
 import numpy as np
-
-from pde_solver.discretization import (
-    CoarseSolution,
-    DiscreteSolution,
-    TemporalInterpolation,
-)
+from pde_solver.discretization import CoarseSolution, DiscreteSolution
 
 
 class TestDiscreteSolution(TestCase):
@@ -39,23 +34,6 @@ class TestDiscreteSolution(TestCase):
 
     def test_end_time(self):
         self.assertEqual(self.solution.end_time, 1)
-
-
-class TestTemporalInterpolation(TestCase):
-    def test_interpolator(self):
-        initial_data = np.array([[0, 0], [0, 0], [0, 0]])
-        solution = DiscreteSolution(0, initial_data, np.array([0, 0.5, 1]))
-        solution.add_solution(
-            1,
-            np.array([[1, 1], [1, 1], [1, 1]]),
-        )
-        interpolation_times = np.array([0.5])
-
-        interpolator = TemporalInterpolation()
-        interpolated_values = interpolator(solution, interpolation_times)
-
-        self.assertTupleEqual(interpolated_values.shape, (1, 3, 2))
-        self.assertListEqual(list(interpolated_values.flatten()), 6 * [0.5])
 
 
 class TestCoarsenedDiscreteSolution(TestCase):

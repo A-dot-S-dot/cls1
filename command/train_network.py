@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-from pde_solver.discretization import DiscreteSolution, TemporalInterpolation
 from pde_solver.network import NeuralNetwork
 from torch import nn
 from torch.optim import AdamW, Optimizer

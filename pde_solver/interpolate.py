@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Sequence, Callable
+from itertools import product
+from typing import Callable, Sequence
 
 import numpy as np
+
 from pde_solver.mesh import Mesh
 from pde_solver.quadrature import GaussianQuadrature
 
@@ -65,3 +67,22 @@ class NodeValuesInterpolator(Interpolator):
 
     def _interpolate_scalar(self, f: ScalarFunction) -> np.ndarray:
         return np.array([f(node) for node in self._nodes])
+
+
+class TemporalInterpolator:
+    """Interpolate discrete solution values for diffrent times."""
+
+    def __call__(
+        self, old_time: np.ndarray, values: np.ndarray, new_time: np.ndarray
+    ) -> np.ndarray:
+        interpolated_values = np.empty((len(new_time), *values[0].shape))
+
+        for index in product(*[range(dim) for dim in values[0].shape]):
+            # array[(slice(start, end))]=array[:]
+            interpolated_values[(slice(0, len(new_time)), *index)] = np.interp(
+                new_time,
+                old_time,
+                values[(slice(0, len(old_time)), *index)],
+            )
+
+        return interpolated_values

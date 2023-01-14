@@ -7,11 +7,9 @@ import defaults
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-from benchmark import Benchmark
 from matplotlib import animation
-from matplotlib.lines import Line2D
-from matplotlib.text import Text
-from pde_solver.discretization import DiscreteSolution, TemporalInterpolation
+from pde_solver.discretization import DiscreteSolution
+from pde_solver.interpolate import TemporalInterpolator
 from pde_solver.solver import Solver
 from tqdm.auto import tqdm
 
@@ -28,7 +26,6 @@ class Animator(ABC, Generic[T]):
     _benchmark: benchmark.Benchmark
     _spatial_grid: np.ndarray
     _temporal_grid: np.ndarray
-    _animation: animation.FuncAnimation
     _save: Optional[str] = None
     _start_time: float
     _duration: float
@@ -39,8 +36,8 @@ class Animator(ABC, Generic[T]):
     _temporal_grids: List[np.ndarray]
     _labels: List[Tuple[str, ...]]
 
-    _animation: animation.FuncAnimation
-    _figure: plt.Figure
+    _animation: ...
+    _figure: ...
 
     def __init__(
         self,
@@ -128,16 +125,20 @@ class Animator(ABC, Generic[T]):
     def _setup(self):
         self._temporal_grid = reduce(np.union1d, self._temporal_grids)
         self._adjust_values()
-        self._build_animation()
         self._adjust_axes()
+        self._build_animation()
 
     def _adjust_values(self):
         self._values = []
-        interpolator = TemporalInterpolation()
+        interpolator = TemporalInterpolator()
 
         for animatable in self._animatables:
             if isinstance(animatable, DiscreteSolution):
-                self._values.append(interpolator(animatable, self._temporal_grid))
+                self._values.append(
+                    interpolator(
+                        animatable.time, animatable.values, self._temporal_grid
+                    )
+                )
             else:
                 self._values.append(
                     np.array(
@@ -172,9 +173,9 @@ class Animator(ABC, Generic[T]):
 
 
 class ScalarAnimator(Animator[float]):
-    _lines: List[Line2D]
-    _axes: plt.Axes
-    _time_info: Text
+    _lines: ...
+    _axes: ...
+    _time_info: ...
 
     def __init__(
         self,
@@ -230,11 +231,11 @@ class ScalarAnimator(Animator[float]):
 class ShallowWaterAnimator(Animator[np.ndarray]):
     _benchmark: benchmark.ShallowWaterBenchmark
 
-    _height_lines: List[Line2D]
-    _discharge_lines: List[Line2D]
-    _height_axes: plt.Axes
-    _discharge_axes: plt.Axes
-    _time_info: Text
+    _height_lines: List
+    _discharge_lines: List
+    _height_axes: ...
+    _discharge_axes: ...
+    _time_info: ...
 
     def __init__(
         self,
@@ -340,7 +341,7 @@ class ShallowWaterAnimator(Animator[np.ndarray]):
 
 
 class Animate(Command):
-    _benchmark: Benchmark
+    _benchmark: benchmark.Benchmark
     _solver: Sequence[Solver]
     _animator: Animator
     _initial: bool

@@ -7,6 +7,8 @@ from .error import (
     ErrorCalculator,
     ErrorEvolutionCalculator,
     PlotShallowWaterErrorEvolution,
+    GenerateShallowWaterErrorEvolutionSeries,
+    PlotShallowWaterAverageErrorEvolution,
 )
 from .generate_data import GenerateData
 from .help import Help

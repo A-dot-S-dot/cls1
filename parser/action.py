@@ -43,7 +43,7 @@ class SolverAction(argparse.Action):
         solver_key = raw_solver_arguments[0]
         namespace = argparse.Namespace()
         try:
-            self._solver_parsers[solver_key].parse_arguments(
+            self._solver_parsers[solver_key]().parse_arguments(
                 raw_solver_arguments[1:], namespace
             )
         except KeyError:
