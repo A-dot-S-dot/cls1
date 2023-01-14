@@ -14,18 +14,45 @@ T = TypeVar("T", float, np.ndarray)
 class FiniteVolumeSpace(abstract.SolverSpace, Generic[T]):
     mesh: Mesh
     left_right_cell: LeftRightCellIndexMapping
-    left_right_edge: LeftRightNodeIndexMapping
+    left_right_node: LeftRightNodeIndexMapping
 
     _cell_centers: np.ndarray
+    _right_cell_indices: np.ndarray
+    _right_cell_indices: np.ndarray
 
     def __init__(self, mesh: Mesh):
         self.mesh = mesh
         self.left_right_cell = LeftRightCellIndexMapping(mesh)
-        self.left_right_edge = LeftRightNodeIndexMapping(mesh)
+        self.left_right_node = LeftRightNodeIndexMapping(mesh)
+
         self._build_cell_centers()
+        self._build_left_cell_indices()
+        self._build_right_cell_indices()
+        self._build_left_node_indices()
+        self._build_right_node_indices()
 
     def _build_cell_centers(self):
         self._cell_centers = np.array([(cell.a + cell.b) / 2 for cell in self.mesh])
+
+    def _build_left_cell_indices(self):
+        self._left_cell_indices = np.array(
+            [self.left_right_cell(i)[0] for i in range(self.left_right_cell.dimension)]
+        )
+
+    def _build_right_cell_indices(self):
+        self._right_cell_indices = np.array(
+            [self.left_right_cell(i)[1] for i in range(self.left_right_cell.dimension)]
+        )
+
+    def _build_left_node_indices(self):
+        self._left_node_indices = np.array(
+            [self.left_right_node(i)[0] for i in range(self.left_right_node.dimension)]
+        )
+
+    def _build_right_node_indices(self):
+        self._right_node_indices = np.array(
+            [self.left_right_node(i)[1] for i in range(self.left_right_node.dimension)]
+        )
 
     @property
     def dimension(self):
@@ -42,6 +69,22 @@ class FiniteVolumeSpace(abstract.SolverSpace, Generic[T]):
     @property
     def grid(self) -> np.ndarray:
         return self.cell_centers
+
+    @property
+    def left_cell_indices(self) -> np.ndarray:
+        return self._left_cell_indices
+
+    @property
+    def right_cell_indices(self) -> np.ndarray:
+        return self._right_cell_indices
+
+    @property
+    def left_node_indices(self) -> np.ndarray:
+        return self._left_node_indices
+
+    @property
+    def right_node_indices(self) -> np.ndarray:
+        return self._right_node_indices
 
     def element(self, dof_vector: np.ndarray) -> abstract.CellDependentFunction[T]:
         return FiniteVolumeElement(self, dof_vector)

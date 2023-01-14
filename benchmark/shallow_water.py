@@ -32,6 +32,27 @@ class ShallowWaterBenchmark(Benchmark[np.ndarray]):
         raise NotImplementedError
 
 
+class ShallowWaterSteadyStateBenchmark(ShallowWaterBenchmark):
+    """Steady state benchmark with no flow and constant topography."""
+
+    gravitational_acceleration = 1.0
+    domain = Interval(-2, 2)
+    start_time = 0
+    end_time: float
+
+    def __init__(self, end_time=None):
+        self.end_time = end_time or 1
+
+    def topography(self, x: float) -> float:
+        return 0
+
+    def initial_data(self, x: float) -> np.ndarray:
+        return np.array([2, 1])
+
+    def exact_solution(self, x: float, t: float) -> np.ndarray:
+        return self.initial_data(x)
+
+
 class ShallowWaterBumpSteadyStateBenchmark(ShallowWaterBenchmark):
     """A steady state must fullfill the following equations
 

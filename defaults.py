@@ -70,6 +70,7 @@ BURGERS_BENCHMARK_DEFAULTS = {
     "calculate": benchmark.BurgersSchockBenchmark,
 }
 SHALLOW_WATER_BENCHMARKS = [
+    benchmark.ShallowWaterSteadyStateBenchmark,
     benchmark.ShallowWaterBumpSteadyStateBenchmark,
     benchmark.ShallowWaterOscillationNoTopographyBenchmark,
     benchmark.ShallowWaterRandomOscillationNoTopographyBenchmark,

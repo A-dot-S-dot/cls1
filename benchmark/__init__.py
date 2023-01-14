@@ -10,6 +10,7 @@ from .advection import (
 from .burgers import BurgersBenchmark, BurgersSchockBenchmark, BurgersSmoothBenchmark
 from .shallow_water import (
     ShallowWaterBenchmark,
+    ShallowWaterSteadyStateBenchmark,
     ShallowWaterBumpSteadyStateBenchmark,
     ShallowWaterOscillationNoTopographyBenchmark,
     ShallowWaterRandomOscillationNoTopographyBenchmark,

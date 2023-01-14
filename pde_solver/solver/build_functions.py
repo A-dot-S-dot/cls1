@@ -1,11 +1,17 @@
-from pde_solver import network
 import pde_solver.interpolate as interpolate
 import pde_solver.ode_solver as ode_solver
-from pde_solver.discretization import finite_element, finite_volume
 import pde_solver.system_matrix as matrix
 import pde_solver.system_vector as vector
+import pde_solver.system_vector.shallow_water_godunov as shallow_water_godunov
+import problem.shallow_water as shallow_water
 import torch
-from pde_solver.discretization import CoarseSolution, DiscreteSolution
+from pde_solver import network
+from pde_solver.discretization import (
+    CoarseSolution,
+    DiscreteSolution,
+    finite_element,
+    finite_volume,
+)
 from pde_solver.mesh import UniformMesh
 from pde_solver.time_stepping import TimeStepping
 
@@ -57,10 +63,10 @@ def build_coarse_solution(solver):
 ################################################################################
 def build_mesh_dependent_constant_time_stepping(solver):
     solver.time_stepping = TimeStepping(
-        solver.benchmark.start_time,
         solver.benchmark.end_time,
         solver.cfl_number,
         lambda: solver.mesh.step_length,
+        start_time=solver.benchmark.start_time,
     )
 
 
@@ -175,7 +181,6 @@ def build_mcl_right_hand_side(solver):
 
 def build_mcl_time_stepping(solver):
     solver.time_stepping = TimeStepping(
-        solver.benchmark.start_time,
         solver.benchmark.end_time,
         solver.cfl_number,
         vector.OptimalMCLTimeStep(
@@ -183,6 +188,7 @@ def build_mcl_time_stepping(solver):
             solver.artificial_diffusion,
         ),
         adaptive=solver.adaptive,
+        start_time=solver.benchmark.start_time,
     )
 
 
@@ -195,30 +201,19 @@ def build_bottom_topography(solver):
     )
 
 
-def build_intermediate_velocities(solver):
-    solver.intermediate_velocities = vector.ShallowWaterIntermediateVelocities(
-        solver.space, solver.benchmark.gravitational_acceleration
-    )
-
-
-def build_godunov_cell_flux_calculator(solver):
-    build_bottom_topography(solver)
-    build_intermediate_velocities(solver)
-
-    solver.cell_flux_calculator = vector.ShallowWaterGodunovNodeFluxesCalculator(
-        solver.space,
-        solver.benchmark.gravitational_acceleration,
-        solver.bottom_topography,
-        solver.intermediate_velocities,
-        vector.calculate_natural_source_term_discretization,
-    )
+def build_source_term(solver):
+    solver.source_term = shallow_water.NaturalSouceTerm()
 
 
 def build_godunov_numerical_flux(solver):
-    build_godunov_cell_flux_calculator(solver)
+    build_bottom_topography(solver)
+    build_source_term(solver)
 
-    solver.numerical_flux = vector.ShallowWaterGodunovNumericalFlux(
-        solver.space, solver.cell_flux_calculator
+    solver.numerical_flux = shallow_water_godunov.GodunovNumericalFlux(
+        solver.space,
+        solver.benchmark.gravitational_acceleration,
+        solver.bottom_topography,
+        source_term=solver.source_term,
     )
 
 
@@ -230,17 +225,18 @@ def build_godunov_right_hand_side(solver):
     )
 
 
-def build_godunov_time_stepping(solver):
+def build_shallow_water_godunov_time_stepping(solver):
     solver.time_stepping = TimeStepping(
-        solver.benchmark.start_time,
         solver.benchmark.end_time,
         solver.cfl_number,
-        vector.OptimalGodunovTimeStep(
+        shallow_water_godunov.OptimalTimeStep(
             solver.solution,
-            solver.intermediate_velocities,
+            solver.space,
+            solver.benchmark.gravitational_acceleration,
             solver.mesh.step_length,
         ),
         adaptive=solver.adaptive,
+        start_time=solver.benchmark.start_time,
     )
 
 
@@ -284,7 +280,7 @@ def build_reduced_exact_right_hand_side(solver):
 ################################################################################
 def build_reduced_network_time_stepping(solver):
     solver.cfl_number = solver.cfl_number / solver.coarsening_degree
-    build_godunov_time_stepping(solver)
+    build_shallow_water_godunov_time_stepping(solver)
 
 
 def setup_network(solver):

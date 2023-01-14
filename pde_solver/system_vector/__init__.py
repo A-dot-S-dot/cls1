@@ -13,14 +13,6 @@ from .numerical_flux import (
     NumericalFluxDependentRightHandSide,
     ObservedNumericalFlux,
 )
-from .shallow_water_godunov import (
-    OptimalGodunovTimeStep,
-    ShallowWaterGodunovNodeFluxesCalculator,
-    ShallowWaterGodunovNumericalFlux,
-    ShallowWaterIntermediateVelocities,
-    calculate_natural_source_term_discretization,
-    calculate_wet_dry_preserving_source_term_discretization,
-)
 from .subgrid_flux import (
     CorrectedNumericalFlux,
     ExactSubgridFlux,

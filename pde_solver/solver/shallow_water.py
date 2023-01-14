@@ -2,6 +2,7 @@ import defaults
 import numpy as np
 import pde_solver.ode_solver as os
 import pde_solver.system_vector as vector
+import problem.shallow_water as shallow_water
 from benchmark import Benchmark
 from pde_solver.discretization.finite_volume import FiniteVolumeSpace
 from pde_solver.interpolate import Interpolator
@@ -22,8 +23,7 @@ class GodunovSolver(Solver):
     space: FiniteVolumeSpace
     interpolator: Interpolator
     bottom_topography: np.ndarray
-    intermediate_velocities: vector.ShallowWaterIntermediateVelocities
-    cell_flux_calculator: vector.ShallowWaterGodunovNodeFluxesCalculator
+    intermediate_velocities: shallow_water.WaveSpeed
     numerical_flux: vector.NumericalFlux
 
     def __init__(
@@ -50,7 +50,7 @@ class GodunovSolver(Solver):
         bf.build_cell_average_interpolator(self)
         bf.build_discrete_solution(self)
         bf.build_godunov_right_hand_side(self)
-        bf.build_godunov_time_stepping(self)
+        bf.build_shallow_water_godunov_time_stepping(self)
         bf.build_cfl_checker(self)
 
 
@@ -64,8 +64,7 @@ class ReducedExactSolver(Solver):
     space: FiniteVolumeSpace
     interpolator: Interpolator
     bottom_topography: np.ndarray
-    intermediate_velocities: vector.ShallowWaterIntermediateVelocities
-    cell_flux_calculator: vector.ShallowWaterGodunovNodeFluxesCalculator
+    intermediate_velocities: shallow_water.WaveSpeed
     numerical_flux: vector.NumericalFlux
     fine_solver: Solver
     fine_numerical_fluxes: vector.NumericalFluxContainer
@@ -124,8 +123,7 @@ class ReducedNetworkSolver(Solver):
     space: FiniteVolumeSpace
     interpolator: Interpolator
     bottom_topography: np.ndarray
-    intermediate_velocities: vector.ShallowWaterIntermediateVelocities
-    cell_flux_calculator: vector.ShallowWaterGodunovNodeFluxesCalculator
+    intermediate_velocities: shallow_water.WaveSpeed
     numerical_flux: vector.NumericalFlux
     subgrid_flux: vector.NumericalFlux
 

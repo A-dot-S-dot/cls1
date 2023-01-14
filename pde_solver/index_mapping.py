@@ -39,15 +39,15 @@ class FineGridIndicesMapping(IndexMapping):
 class LeftRightCellIndexMapping(IndexMapping):
     """Returns the left and right cell index of a node. Periodic boundaries assumed."""
 
-    _dimension: int
+    dimension: int
 
     def __init__(self, mesh: Mesh):
-        self._dimension = len(mesh)
+        self.dimension = len(mesh)
 
     def __call__(self, node_index: int) -> Tuple[int, int]:
         right_index = node_index
         if right_index == 0:
-            left_index = self._dimension - 1
+            left_index = self.dimension - 1
         else:
             left_index = node_index - 1
 
@@ -57,13 +57,15 @@ class LeftRightCellIndexMapping(IndexMapping):
 class LeftRightNodeIndexMapping(IndexMapping):
     """Returns the left and right node indices of a cell. Periodic boundaries assumed."""
 
+    dimension: int
+
     def __init__(self, mesh: Mesh):
-        self._dimension = len(mesh)
+        self.dimension = len(mesh)
 
     def __call__(self, cell_index: int) -> Tuple[int, int]:
         left_index = cell_index
 
-        if left_index == self._dimension - 1:
+        if left_index == self.dimension - 1:
             right_index = 0
         else:
             right_index = cell_index + 1

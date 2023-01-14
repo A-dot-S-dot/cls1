@@ -169,7 +169,7 @@ class GenerateData(Command):
 
     _solver: List[solver.ReducedExactSolver]
     _benchmarks: List[benchmark.ShallowWaterOscillationNoTopographyBenchmark]
-    _fine_numerical_fluxes: List[vector.ShallowWaterGodunovNumericalFlux]
+    _fine_numerical_fluxes: List
 
     def __init__(
         self,
