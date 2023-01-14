@@ -72,11 +72,6 @@ class ShallowWaterBumpSteadyStateBenchmark(ShallowWaterBenchmark):
 
 
 class ShallowWaterOscillationNoTopographyBenchmark(ShallowWaterBenchmark):
-    """H and u should oscillate about 5% their real height. Initial u and h are
-    equal therefore the discharge is h^2.
-
-    """
-
     domain = Interval(0, LENGTH)
     height_average: float
     height_amplitude: float
