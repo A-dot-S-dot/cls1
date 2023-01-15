@@ -11,14 +11,14 @@ class DiscreteSolution:
     grid: np.ndarray
     values: np.ndarray
 
-    def __init__(self, start_time: float, initial_data: np.ndarray, grid: np.ndarray):
+    def __init__(self, initial_data: np.ndarray, start_time=0.0, grid=None):
         """The first dimension should correspond to the number of time steps and
         the second to DOFs dimension.
 
         """
         self.time = np.array([start_time])
         self.time_steps = []
-        self.grid = grid
+        self.grid = grid if grid is not None else np.empty(0)
         self.values = np.array([initial_data])
 
     @property
@@ -89,12 +89,15 @@ class CoarseSolution(DiscreteSolution):
             )
 
     def _coarsen_grid(self, solution: DiscreteSolution):
-        coarse_grid = solution.grid[0 :: self.coarsening_degree].copy()
+        if len(solution.grid) > 0:
+            coarse_grid = solution.grid[0 :: self.coarsening_degree].copy()
 
-        for i in range(1, self.coarsening_degree):
-            coarse_grid += solution.grid[i :: self.coarsening_degree]
+            for i in range(1, self.coarsening_degree):
+                coarse_grid += solution.grid[i :: self.coarsening_degree]
 
-        return 1 / self.coarsening_degree * coarse_grid
+            return 1 / self.coarsening_degree * coarse_grid
+        else:
+            return np.empty(0)
 
     def _coarsen_solution(self, solution: DiscreteSolution) -> np.ndarray:
         coarse_values = solution.values[:, 0 :: self.coarsening_degree].copy()

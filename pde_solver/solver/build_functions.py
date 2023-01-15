@@ -46,9 +46,9 @@ def build_cell_average_interpolator(solver):
 
 def build_discrete_solution(solver):
     solver.solution = DiscreteSolution(
-        solver.benchmark.start_time,
         solver.interpolator.interpolate(solver.benchmark.initial_data),
-        solver.space.grid,
+        start_time=solver.benchmark.start_time,
+        grid=solver.space.grid,
     )
 
 
