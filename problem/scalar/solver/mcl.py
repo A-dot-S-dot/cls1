@@ -142,6 +142,7 @@ class MCLSolver(Solver):
         cfl_number=None,
         ode_solver_type=None,
         adaptive=False,
+        save_history=False,
     ):
         name = name or "MCL Solver"
         short = short or "mcl"
@@ -151,7 +152,7 @@ class MCLSolver(Solver):
         ode_solver_type = ode_solver_type or os.Heun
         adaptive = adaptive
         solution, element_space = factory.FINITE_ELEMENT_SOLUTION_FACTORY(
-            benchmark, mesh_size, polynomial_degree
+            benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
         right_hand_side = MCL_FACTORY(benchmark.problem, element_space)
         time_stepping = ADAPTIVE_TIME_STEPPING_FACTORY(

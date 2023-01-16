@@ -348,6 +348,7 @@ class GodunovSolver(Solver):
         mesh_size=None,
         cfl_number=None,
         adaptive=False,
+        save_history=False,
     ):
         name = name or "Godunov's finite volume scheme "
         short = short or "godunov"
@@ -357,7 +358,7 @@ class GodunovSolver(Solver):
         ode_solver_type = os.ForwardEuler
 
         solution, volume_space = factory.FINITE_VOLUME_SOLUTION_FACTORY(
-            benchmark, mesh_size
+            benchmark, mesh_size, save_history=save_history
         )
         right_hand_side = GODUNOV_FACTORY(benchmark, volume_space)
         time_stepping = ADAPTIVE_TIME_STEPPING_FACTORY(

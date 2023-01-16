@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -6,58 +6,96 @@ from .abstract import SolverSpace, EmptySpace
 
 
 class DiscreteSolution:
-    """Class representing discrete solution."""
+    """Class representing time dependent discrete solution."""
 
-    time: np.ndarray
-    time_steps: List[float]
-    values: np.ndarray
-    grid: np.ndarray
-    space: SolverSpace
+    _time: float
+    _value: np.ndarray
 
-    def __init__(self, initial_data: np.ndarray, start_time=0.0, grid=None, space=None):
-        """The first dimension should correspond to the number of time steps and
-        the second to DOFs dimension.
+    _grid: Optional[np.ndarray]
+    _space: Optional[SolverSpace]
 
-        """
-        self.time = np.array([start_time])
-        self.time_steps = []
-        self.grid = grid if grid is not None else np.empty(0)
-        self.values = np.array([initial_data])
-        self.space = space or EmptySpace()
+    _save_history: bool
+    _time_history: np.ndarray
+    _time_step_history: np.ndarray
+    _value_history: np.ndarray
+
+    def __init__(
+        self,
+        initial_value: np.ndarray,
+        start_time=0.0,
+        grid=None,
+        solver_space=None,
+        save_history=False,
+    ):
+        self._time = start_time
+        self._value = initial_value
+        self._grid = grid
+        self._space = solver_space
+        self._save_history = save_history
+
+        if save_history:
+            self._build_history_attributes()
+
+    def _build_history_attributes(self):
+        self._time_history = np.array([self.time])
+        self._time_step_history = np.array([])
+        self._value_history = np.array([self.value])
 
     @property
     def dimension(self) -> float | Tuple[float, ...]:
-        dimension = self.initial_data.shape
+        dimension = self.value.shape
         if len(dimension) == 1:
             return dimension[0]
         else:
             return dimension
 
     @property
-    def initial_data(self) -> np.ndarray:
-        return self.values[0].copy()
+    def time(self) -> float:
+        return self._time
 
     @property
-    def end_values(self) -> np.ndarray:
-        return self.values[-1].copy()
+    def time_history(self) -> np.ndarray:
+        return self._time_history
 
     @property
-    def start_time(self) -> float:
-        return self.time[0]
+    def time_step_history(self) -> np.ndarray:
+        return self._time_step_history
 
     @property
-    def end_time(self) -> float:
-        return self.time[-1]
+    def grid(self) -> np.ndarray:
+        if self._grid is not None:
+            return self._grid
+        else:
+            raise AttributeError("Grid attribute does not exist.")
 
-    def add_solution(self, time_step: float, solution: np.ndarray):
-        new_time = self.time[-1] + time_step
+    @property
+    def space(self) -> SolverSpace:
+        if self._space is not None:
+            return self._space
+        else:
+            raise AttributeError("Solver space attribute does not exist.")
 
-        self.time = np.append(self.time, new_time)
-        self.time_steps.append(time_step)
-        self.values = np.append(self.values, np.array([solution]), axis=0)
+    @property
+    def value(self) -> np.ndarray:
+        return self._value.copy()
+
+    @property
+    def value_history(self) -> np.ndarray:
+        return self._value_history
+
+    def update(self, time_step: float, solution: np.ndarray):
+        self._time += time_step
+        self._value = solution
+
+        if self._save_history:
+            self._time_history = np.append(self.time_history, self.time)
+            self._time_step_history = np.append(self.time_step_history, time_step)
+            self._value_history = np.append(
+                self.value_history, np.array([self.value]), axis=0
+            )
 
     def __repr__(self) -> str:
         return (
             self.__class__.__name__
-            + f"(grid={self.grid}, time={self.time}, values={self.values}, time_steps={self.time_steps})"
+            + f"(grid={self.grid}, time={self.time_history}, values={self.value}, time_steps={self.time_step_history})"
         )

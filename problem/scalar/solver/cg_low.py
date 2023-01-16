@@ -126,6 +126,7 @@ class LowOrderContinuousGalerkinSolver(Solver):
         cfl_number=None,
         ode_solver_type=None,
         adaptive=False,
+        save_history=False,
     ):
         name = name or "Low order Continuous Galerkin"
         short = short or "low_cg"
@@ -135,7 +136,7 @@ class LowOrderContinuousGalerkinSolver(Solver):
         ode_solver_type = ode_solver_type or os.Heun
 
         solution, element_space = factory.FINITE_ELEMENT_SOLUTION_FACTORY(
-            benchmark, mesh_size, polynomial_degree
+            benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
         right_hand_side = LOW_CG_FACTORY(benchmark.problem, element_space)
         time_stepping = ADAPTIVE_TIME_STEPPING_FACTORY(

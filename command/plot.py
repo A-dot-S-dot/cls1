@@ -229,5 +229,5 @@ class Plot(Command):
         for solver in self._solver:
             solution = solver._solution
             self._plotter.add_function_values(
-                solution.grid, solution.end_values, solver.short
+                solution.grid, solution.value, solver.short
             )

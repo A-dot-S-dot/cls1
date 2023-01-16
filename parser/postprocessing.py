@@ -101,6 +101,11 @@ def build_animator(arguments):
     del arguments.duration
 
 
+def add_save_history_argument(arguments):
+    for solver_arguments in arguments.solver:
+        solver_arguments.save_history = True
+
+
 ################################################################################
 # EOC
 ################################################################################

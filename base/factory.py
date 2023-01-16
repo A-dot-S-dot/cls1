@@ -5,13 +5,16 @@ from . import ode_solver as os
 from .benchmark import Benchmark
 from .discretization import DiscreteSolution, finite_element, finite_volume
 from .mesh import Mesh, UniformMesh
-from .system import SystemVector
 from .time_stepping import TimeStepping
 
 
 class FiniteElementSolutionFactory:
     def __call__(
-        self, benchmark: Benchmark, mesh_size: int, polynomial_degree: int
+        self,
+        benchmark: Benchmark,
+        mesh_size: int,
+        polynomial_degree: int,
+        save_history=False,
     ) -> Tuple[DiscreteSolution, finite_element.LagrangeSpace]:
         mesh = UniformMesh(benchmark.domain, mesh_size)
         space = finite_element.LagrangeSpace(mesh, polynomial_degree)
@@ -20,7 +23,8 @@ class FiniteElementSolutionFactory:
             interpolator.interpolate(benchmark.initial_data),
             start_time=benchmark.start_time,
             grid=space.grid,
-            space=space,
+            solver_space=space,
+            save_history=save_history,
         )
 
         return solution, space
@@ -28,7 +32,7 @@ class FiniteElementSolutionFactory:
 
 class FiniteVolumeSolutionFactory:
     def __call__(
-        self, benchmark: Benchmark, mesh_size: int
+        self, benchmark: Benchmark, mesh_size: int, save_history=False
     ) -> Tuple[DiscreteSolution, finite_volume.FiniteVolumeSpace]:
         mesh = UniformMesh(benchmark.domain, mesh_size)
         space = finite_volume.FiniteVolumeSpace(mesh)
@@ -37,7 +41,8 @@ class FiniteVolumeSolutionFactory:
             interpolator.interpolate(benchmark.initial_data),
             start_time=benchmark.start_time,
             grid=space.grid,
-            space=space,
+            solver_space=space,
+            save_history=save_history,
         )
 
         return solution, space

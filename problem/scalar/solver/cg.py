@@ -86,6 +86,7 @@ class ContinuousGalerkinSolver(Solver):
         polynomial_degree=None,
         cfl_number=None,
         exact_flux=False,
+        save_history=False,
     ):
         name = name or "Continuous Galerkin"
         short = short or "cg"
@@ -95,7 +96,7 @@ class ContinuousGalerkinSolver(Solver):
         exact_flux = exact_flux
 
         solution, element_space = factory.FINITE_ELEMENT_SOLUTION_FACTORY(
-            benchmark, mesh_size, polynomial_degree
+            benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
         right_hand_side = CG_FACTORY(
             benchmark.problem, element_space, exact_flux=exact_flux
