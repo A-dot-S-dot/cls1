@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Generic, Optional, Sequence, TypeVar
 
-import benchmark
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
-from pde_solver.solver import Solver
+from base.benchmark import Benchmark, NoExactSolutionError
+from base.solver import Solver
+from problem.shallow_water.benchmark import ShallowWaterBenchmark
 from tqdm.auto import tqdm
 
 from .command import Command
@@ -18,13 +19,13 @@ class NothingToPlotError(Exception):
 
 
 class Plotter(ABC, Generic[T]):
-    _benchmark: benchmark.Benchmark
+    _benchmark: Benchmark
     _figure: plt.Figure
     _grid: np.ndarray
     _save: Optional[str] = None
     _plot_available = False
 
-    def __init__(self, benchmark: benchmark.Benchmark, mesh_size=None, save=None):
+    def __init__(self, benchmark: Benchmark, mesh_size=None, save=None):
         self._benchmark = benchmark
         self._grid = np.linspace(
             self._benchmark.domain.a,
@@ -75,10 +76,10 @@ class Plotter(ABC, Generic[T]):
 
 
 class ScalarPlotter(Plotter[float]):
-    _benchmark: benchmark.Benchmark
+    _benchmark: Benchmark
     _axes: plt.Axes
 
-    def __init__(self, benchmark: benchmark.Benchmark, mesh_size=None, save=None):
+    def __init__(self, benchmark: Benchmark, mesh_size=None, save=None):
         super().__init__(benchmark, mesh_size, save)
         self._figure, self._axes = plt.subplots()
 
@@ -110,14 +111,12 @@ class ScalarPlotter(Plotter[float]):
 
 
 class ShallowWaterPlotter(Plotter[np.ndarray]):
-    _benchmark: benchmark.ShallowWaterBenchmark
+    _benchmark: ShallowWaterBenchmark
     _figure: plt.Figure
     _height_axes: plt.Axes
     _discharge_axes: plt.Axes
 
-    def __init__(
-        self, benchmark: benchmark.ShallowWaterBenchmark, mesh_size=None, save=None
-    ):
+    def __init__(self, benchmark: ShallowWaterBenchmark, mesh_size=None, save=None):
         Plotter.__init__(self, benchmark, mesh_size, save)
         self._figure, (self._height_axes, self._discharge_axes) = plt.subplots(1, 2)
 
@@ -183,14 +182,14 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
 
 
 class Plot(Command):
-    _benchmark: benchmark.Benchmark
+    _benchmark: Benchmark
     _solver: Sequence[Solver]
     _plotter: Plotter
     _initial: bool
 
     def __init__(
         self,
-        benchmark: benchmark.Benchmark,
+        benchmark: Benchmark,
         solver: Solver | Sequence[Solver],
         plotter: Plotter,
         initial=False,
@@ -223,12 +222,12 @@ class Plot(Command):
     def _add_exact_solution(self):
         try:
             self._plotter.add_exact_solution()
-        except benchmark.NoExactSolutionError as error:
+        except NoExactSolutionError as error:
             tqdm.write("WARNING: " + str(error))
 
     def _add_discrete_solutions(self):
         for solver in self._solver:
-            solution = solver.solution
+            solution = solver._solution
             self._plotter.add_function_values(
                 solution.grid, solution.end_values, solver.short
             )

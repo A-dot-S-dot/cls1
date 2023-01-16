@@ -3,7 +3,11 @@ from abc import ABC, abstractmethod
 from typing import Type
 
 import defaults
-import pde_solver.solver as solver
+from base.solver import Solver
+from problem.scalar.solver.cg import ContinuousGalerkinSolver
+from problem.scalar.solver.cg_low import LowOrderContinuousGalerkinSolver
+from problem.scalar.solver.mcl import MCLSolver
+from problem.shallow_water.solver.godunov import GodunovSolver
 
 from . import argument
 
@@ -11,7 +15,7 @@ from . import argument
 class SolverParser(argparse.ArgumentParser, ABC):
     prog: str
     name: str
-    solver: Type[solver.Solver]
+    solver: Type[Solver]
 
     def __init__(self):
         argparse.ArgumentParser.__init__(
@@ -39,7 +43,7 @@ class SolverParser(argparse.ArgumentParser, ABC):
 class CGParser(SolverParser):
     prog = "cg"
     name = "Continuous Galerkin"
-    solver = solver.ContinuousGalerkinSolver
+    solver = ContinuousGalerkinSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -53,7 +57,7 @@ class CGParser(SolverParser):
 class LowCGParser(SolverParser):
     prog = "cg_low"
     name = "Low order Continuous Galerkin"
-    solver = solver.LowOrderContinuousGalerkinSolver
+    solver = LowOrderContinuousGalerkinSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -68,7 +72,7 @@ class LowCGParser(SolverParser):
 class MCLParser(SolverParser):
     prog = "mcl"
     name = "MCL Solver"
-    solver = solver.MCLSolver
+    solver = MCLSolver
 
     def _add_arguments(self):
         argument.add_name(self, "MCL Solver")
@@ -83,7 +87,7 @@ class MCLParser(SolverParser):
 class GodunovParser(SolverParser):
     prog = "godunov"
     name = "Godunov's finite volume scheme"
-    solver = solver.GodunovSolver
+    solver = GodunovSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -93,38 +97,6 @@ class GodunovParser(SolverParser):
         argument.add_adaptive_time_stepping(self)
 
 
-class ReducedExactSolverParser(SolverParser):
-    prog = "reduced-exact"
-    name = "Reduced Exact Solved (Godunov)"
-    solver = solver.ReducedExactSolver
-
-    def _add_arguments(self):
-        argument.add_name(self, self.name)
-        argument.add_short(self, self.prog)
-        argument.add_mesh_size(
-            self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
-        )
-        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
-        argument.add_adaptive_time_stepping(self)
-        argument.add_coarsening_degree(self)
-
-
-class ReducedNetworkParser(SolverParser):
-    prog = "reduced-network"
-    name = """Reduced Solver with Neural Network (Godunov)"""
-    solver = solver.ReducedNetworkSolver
-
-    def _add_arguments(self):
-        argument.add_name(self, self.name)
-        argument.add_short(self, self.prog)
-        argument.add_mesh_size(
-            self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
-        )
-        argument.add_coarsening_degree(self)
-        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
-        argument.add_network_load_path(self)
-
-
 SCALAR_SOLVER_PARSERS = {
     "cg": CGParser,
     "cg_low": LowCGParser,
@@ -132,8 +104,6 @@ SCALAR_SOLVER_PARSERS = {
 }
 SHALLOW_WATER_SOLVER_PARSERS = {
     "godunov": GodunovParser,
-    "reduced-exact": ReducedExactSolverParser,
-    "reduced-network": ReducedNetworkParser,
 }
 
 SOLVER_PARSERS = {}

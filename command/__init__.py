@@ -7,11 +7,13 @@ from .error import (
     ErrorCalculator,
     ErrorEvolutionCalculator,
     PlotShallowWaterErrorEvolution,
-    GenerateShallowWaterErrorEvolutionSeries,
+    # GenerateShallowWaterErrorEvolutionSeries,
     PlotShallowWaterAverageErrorEvolution,
 )
-from .generate_data import GenerateData
+
+# from .generate_data import GenerateData
 from .help import Help
 from .plot import Plot, ScalarPlotter, ShallowWaterPlotter
 from .test import Test
-from .train_network import TrainNetwork
+
+# from .train_network import TrainNetwork

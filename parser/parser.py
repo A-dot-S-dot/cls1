@@ -3,6 +3,8 @@ import textwrap
 
 import command as cmd
 import defaults
+from problem.scalar.benchmark import advection, burgers
+from problem.shallow_water import benchmark as shallow_water
 
 from . import action, argument
 from . import postprocessing as ppr
@@ -127,8 +129,8 @@ class CustomArgumentParser:
         )
         argument.add_benchmark(
             parser,
-            defaults.ADVECTION_BENCHMARKS,
-            defaults.ADVECTION_BENCHMARK_DEFAULTS[command],
+            advection.BENCHMARKS,
+            advection.BENCHMARK_DEFAULTS[command],
         )
         argument.add_end_time(parser)
         argument.add_solver_argument(parser, action.ScalarSolverAction)
@@ -145,8 +147,8 @@ class CustomArgumentParser:
         )
         argument.add_benchmark(
             parser,
-            defaults.BURGERS_BENCHMARKS,
-            defaults.BURGERS_BENCHMARK_DEFAULTS[command],
+            burgers.BENCHMARKS,
+            burgers.BENCHMARK_DEFAULTS[command],
         )
         argument.add_end_time(parser)
         argument.add_solver_argument(parser, action.ScalarSolverAction)
@@ -163,8 +165,8 @@ class CustomArgumentParser:
         )
         argument.add_benchmark(
             parser,
-            defaults.SHALLOW_WATER_BENCHMARKS,
-            defaults.SHALLOW_WATER_BENCHMARK_DEFAULTS[command],
+            shallow_water.BENCHMARKS,
+            shallow_water.BENCHMARK_DEFAULTS[command],
         )
         argument.add_end_time(parser)
         argument.add_solver_argument(parser, action.ShallowWaterSolverAction)

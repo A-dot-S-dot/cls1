@@ -1,7 +1,8 @@
+import base.ode_solver as ode_solver
 import defaults
-import pde_solver.ode_solver as ode_solver
 
 from . import parser_type
+
 
 ################################################################################
 # GENERAL
@@ -247,9 +248,10 @@ def add_ode_solver(parser):
     parser.add_argument(
         "++ode-solver",
         help="Specify ode solver.",
-        type=lambda input: _ode_solver[input](),
+        type=lambda input: _ode_solver[input],
         metavar="<solver>",
-        default=_ode_solver[defaults.ODE_SOLVER](),
+        dest="ode_solver_type",
+        default=_ode_solver[defaults.ODE_SOLVER],
     )
 
 

@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import numpy as np
 from numpy import cos, exp, sin
-from pde_solver.mesh import Interval
+from base.mesh import Interval
 
 from .discrete_derivative import discrete_derivative
 from .piecewise_lagrange_interpolation import PiecewiseLagrangeInterpolation

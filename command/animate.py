@@ -2,15 +2,16 @@ from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Callable, Generic, List, Optional, Sequence, Tuple, TypeVar
 
-import benchmark
 import defaults
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
+from base.benchmark import Benchmark, NoExactSolutionError
+from base.discretization import DiscreteSolution
+from base.interpolate import TemporalInterpolator
+from base.solver import Solver
 from matplotlib import animation
-from pde_solver.discretization import DiscreteSolution
-from pde_solver.interpolate import TemporalInterpolator
-from pde_solver.solver import Solver
+from problem.shallow_water.benchmark import ShallowWaterBenchmark
 from tqdm.auto import tqdm
 
 from .command import Command
@@ -23,7 +24,7 @@ class NothingToAnimateError(Exception):
 
 
 class Animator(ABC, Generic[T]):
-    _benchmark: benchmark.Benchmark
+    _benchmark: Benchmark
     _spatial_grid: np.ndarray
     _temporal_grid: np.ndarray
     _save: Optional[str] = None
@@ -41,7 +42,7 @@ class Animator(ABC, Generic[T]):
 
     def __init__(
         self,
-        benchmark: benchmark.Benchmark,
+        benchmark: Benchmark,
         mesh_size=None,
         time_steps=None,
         save=None,
@@ -179,7 +180,7 @@ class ScalarAnimator(Animator[float]):
 
     def __init__(
         self,
-        benchmark: benchmark.Benchmark,
+        benchmark: Benchmark,
         mesh_size=None,
         time_steps=None,
         save=None,
@@ -229,7 +230,7 @@ class ScalarAnimator(Animator[float]):
 
 
 class ShallowWaterAnimator(Animator[np.ndarray]):
-    _benchmark: benchmark.ShallowWaterBenchmark
+    _benchmark: ShallowWaterBenchmark
 
     _height_lines: List
     _discharge_lines: List
@@ -239,7 +240,7 @@ class ShallowWaterAnimator(Animator[np.ndarray]):
 
     def __init__(
         self,
-        benchmark: benchmark.ShallowWaterBenchmark,
+        benchmark: ShallowWaterBenchmark,
         mesh_size=None,
         time_steps=None,
         save=None,
@@ -341,14 +342,14 @@ class ShallowWaterAnimator(Animator[np.ndarray]):
 
 
 class Animate(Command):
-    _benchmark: benchmark.Benchmark
+    _benchmark: Benchmark
     _solver: Sequence[Solver]
     _animator: Animator
     _initial: bool
 
     def __init__(
         self,
-        benchmark: benchmark.Benchmark,
+        benchmark: Benchmark,
         solver: Solver | Sequence[Solver],
         animator: Animator,
         initial=False,
@@ -381,9 +382,9 @@ class Animate(Command):
         try:
             self._benchmark.exact_solution(0, 0)
             self._animator.add_exact_solution()
-        except benchmark.NoExactSolutionError as error:
+        except NoExactSolutionError as error:
             tqdm.write("WARNING: " + str(error))
 
     def _add_discrete_solutions(self):
         for solver in self._solver:
-            self._animator.add_animatable(solver.solution, solver.short)
+            self._animator.add_animatable(solver._solution, solver.short)

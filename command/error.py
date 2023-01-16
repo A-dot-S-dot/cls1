@@ -1,17 +1,15 @@
 import os
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Type, TypeVar
 
-import benchmark
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from benchmark.abstract import NoExactSolutionError
-from pde_solver import norm, solver
-from pde_solver.discretization import DiscreteSolution, SolverSpace
-from pde_solver.discretization.finite_element import LagrangeFiniteElementSpace
-from pde_solver.interpolate import TemporalInterpolator
-from scipy import stats
+from base import norm, solver
+from base.benchmark import Benchmark, NoExactSolutionError
+from base.discretization import DiscreteSolution, SolverSpace
+from base.discretization.finite_element import LagrangeSpace
+from base.interpolate import TemporalInterpolator
 from tqdm import tqdm, trange
 
 from .calculate import Calculate
@@ -121,10 +119,10 @@ class ErrorEvolutionCalculator(ErrorCalculator):
 
 class EOCCalculator:
     norm_names: Sequence[str]
-    _benchmark: benchmark.Benchmark
+    _benchmark: Benchmark
     _norms: Sequence[Type[norm.Norm]]
 
-    def __init__(self, benchmark: benchmark.Benchmark, norms=None):
+    def __init__(self, benchmark: Benchmark, norms=None):
         self._benchmark = benchmark
         self._norms = norms or [norm.L1Norm, norm.L2Norm, norm.solver_spaces]
         self.norm_names = [norm.name for norm in self._norms]
@@ -140,8 +138,8 @@ class EOCCalculator:
         eocs = np.empty((3, refine_number + 1))
 
         for index, (solver, solver_space) in enumerate(zip(solvers, solver_spaces)):
-            dofs[index] = solver.solution.dimension
-            errors[:, index] = self._calculate_error(solver.solution, solver_space)
+            dofs[index] = solver._solution.dimension
+            errors[:, index] = self._calculate_error(solver._solution, solver_space)
             eocs[:, index] = self._calculate_eoc(errors, index)
 
         return dofs, errors, eocs
@@ -168,7 +166,7 @@ class EOCCalculator:
     def _build_norms(self, solver_space: SolverSpace) -> Sequence[norm.Norm]:
         norms = list()
 
-        if isinstance(solver_space, LagrangeFiniteElementSpace):
+        if isinstance(solver_space, LagrangeSpace):
             quadrature_degree = solver_space.polynomial_degree + 1
         else:
             quadrature_degree = None
@@ -289,13 +287,13 @@ class PlotShallowWaterErrorEvolution(Command):
 
 
 class CalculateEOC(Command):
-    _benchmark: benchmark.Benchmark
+    _benchmark: Benchmark
     _solvers: Sequence[Sequence[solver.Solver]]
     _solver_spaces: Sequence[Sequence[SolverSpace]]
 
     def __init__(
         self,
-        benchmark: benchmark.Benchmark,
+        benchmark: Benchmark,
         solvers: Sequence[Sequence[solver.Solver]],
         solver_spaces: Sequence[Sequence[SolverSpace]],
     ):
@@ -339,71 +337,71 @@ class CalculateEOC(Command):
             print(eoc)
 
 
-class GenerateShallowWaterErrorEvolutionSeries(Command):
-    """Plot Error Evolution for considered benchmark parameters."""
+# class GenerateShallowWaterErrorEvolutionSeries(Command):
+#     """Plot Error Evolution for considered benchmark parameters."""
 
-    errors: List[np.ndarray]
-    times: List[np.ndarray]
+#     errors: List[np.ndarray]
+#     times: List[np.ndarray]
 
-    _directory: str
-    _initial_conditions: int
-    _description: str
-    _save: Optional[str]
-    _benchmark_parameters: Dict
+#     _directory: str
+#     _initial_conditions: int
+#     _description: str
+#     _save: Optional[str]
+#     _benchmark_parameters: Dict
 
-    def __init__(
-        self,
-        times: List[np.ndarray],
-        errors: List[np.ndarray],
-        initial_conditions=20,
-        description=None,
-        save=None,
-        **benchmark_parameters,
-    ):
-        self.times = times
-        self.errors = errors
+#     def __init__(
+#         self,
+#         times: List[np.ndarray],
+#         errors: List[np.ndarray],
+#         initial_conditions=20,
+#         description=None,
+#         save=None,
+#         **benchmark_parameters,
+#     ):
+#         self.times = times
+#         self.errors = errors
 
-        self._initial_conditions = initial_conditions
-        self._description = f"for {description}" or ""
-        self._save = save
-        self._benchmark_parameters = benchmark_parameters
+#         self._initial_conditions = initial_conditions
+#         self._description = f"for {description}" or ""
+#         self._save = save
+#         self._benchmark_parameters = benchmark_parameters
 
-        if save:
-            os.makedirs(save, exist_ok=True)
+#         if save:
+#             os.makedirs(save, exist_ok=True)
 
-    def execute(self):
-        for i in trange(
-            self._initial_conditions, desc="Calculate Evolution Error", unit="benchmark"
-        ):
-            title = f"Generate Error {i}"
-            title += "\n" + len(title) * "-"
-            tqdm.write(title)
+#     def execute(self):
+#         for i in trange(
+#             self._initial_conditions, desc="Calculate Evolution Error", unit="benchmark"
+#         ):
+#             title = f"Generate Error {i}"
+#             title += "\n" + len(title) * "-"
+#             tqdm.write(title)
 
-            swe_benchmark = (
-                benchmark.ShallowWaterRandomOscillationNoTopographyBenchmark(
-                    seed=i, **self._benchmark_parameters
-                )
-            )
-            approximated_solver = solver.ReducedNetworkSolver("swe", swe_benchmark)
-            exact_solver = solver.ReducedExactSolver("swe", swe_benchmark)
+#             swe_benchmark = (
+#                 benchmark.ShallowWaterRandomOscillationNoTopographyBenchmark(
+#                     seed=i, **self._benchmark_parameters
+#                 )
+#             )
+#             approximated_solver = solver.ReducedNetworkSolver("swe", swe_benchmark)
+#             exact_solver = solver.ReducedExactSolver("swe", swe_benchmark)
 
-            Calculate([exact_solver, approximated_solver]).execute()
-            tqdm.write("")
+#             Calculate([exact_solver, approximated_solver]).execute()
+#             tqdm.write("")
 
-            _time, _error = ErrorEvolutionCalculator(exact_solver.space)(
-                exact_solver.solution, approximated_solver.solution
-            )
-            self.times.append(_time)
-            self.errors.append(_error)
+#             _time, _error = ErrorEvolutionCalculator(exact_solver.space)(
+#                 exact_solver._solution, approximated_solver._solution
+#             )
+#             self.times.append(_time)
+#             self.errors.append(_error)
 
-            if self._save:
-                PlotShallowWaterErrorEvolution(
-                    _time,
-                    _error,
-                    f"$L^2$-Error {self._description} (seed={i})",
-                    show=False,
-                    save=f"{self._save}/{i}.png",
-                ).execute()
+#             if self._save:
+#                 PlotShallowWaterErrorEvolution(
+#                     _time,
+#                     _error,
+#                     f"$L^2$-Error {self._description} (seed={i})",
+#                     show=False,
+#                     save=f"{self._save}/{i}.png",
+#                 ).execute()
 
 
 class PlotShallowWaterAverageErrorEvolution(Command):

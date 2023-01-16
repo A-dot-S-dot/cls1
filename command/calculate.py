@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from pde_solver.solver import Solver
+from base.solver import Solver
 from tqdm.auto import tqdm
 
 from .command import Command

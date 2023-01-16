@@ -46,9 +46,7 @@ def build_solver(arguments):
         solver = solver_arguments.solver
         del solver_arguments.solver
 
-        solver_list.append(
-            solver(arguments.problem, arguments.benchmark, **vars(solver_arguments))
-        )
+        solver_list.append(solver(arguments.benchmark, **vars(solver_arguments)))
 
     arguments.solver = solver_list
 
@@ -132,7 +130,7 @@ def build_eoc_solutions(arguments):
             )
             cmd.Calculate(solver, leave_solution_progress_bar=False).execute()
             solvers.append(solver)
-            solver_spaces.append(solver.space)
+            solver_spaces.append(solver.solution.space)
 
         arguments.solvers.append(solvers)
         arguments.solver_spaces.append(solver_spaces)

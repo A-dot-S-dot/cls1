@@ -1,5 +1,3 @@
-import benchmark
-
 ################################################################################
 # PLOT
 ################################################################################
@@ -42,45 +40,6 @@ GODUNOV_CFL_NUMBER = 0.5
 COARSENING_DEGREE = 8
 
 NETWORK_PATH = "network/subgrid_network.pth"
-
-################################################################################
-# Benchmark
-################################################################################
-ADVECTION_BENCHMARKS = [
-    benchmark.AdvectionThreeHillsBenchmark,
-    benchmark.AdvectionTwoHillsBenchmark,
-    benchmark.AdvectionOneHillBenchmark,
-    benchmark.AdvectionCosineBenchmark,
-    benchmark.AdvectionGaussianBellBenchmark,
-]
-ADVECTION_BENCHMARK_DEFAULTS = {
-    "plot": benchmark.AdvectionTwoHillsBenchmark,
-    "animate": benchmark.AdvectionTwoHillsBenchmark,
-    "eoc": benchmark.AdvectionCosineBenchmark,
-    "calculate": benchmark.AdvectionTwoHillsBenchmark,
-}
-BURGERS_BENCHMARKS = [
-    benchmark.BurgersSchockBenchmark,
-    benchmark.BurgersSmoothBenchmark,
-]
-BURGERS_BENCHMARK_DEFAULTS = {
-    "plot": benchmark.BurgersSchockBenchmark,
-    "animate": benchmark.BurgersSchockBenchmark,
-    "eoc": benchmark.BurgersSmoothBenchmark,
-    "calculate": benchmark.BurgersSchockBenchmark,
-}
-SHALLOW_WATER_BENCHMARKS = [
-    benchmark.ShallowWaterSteadyStateBenchmark,
-    benchmark.ShallowWaterBumpSteadyStateBenchmark,
-    benchmark.ShallowWaterOscillationNoTopographyBenchmark,
-    benchmark.ShallowWaterRandomOscillationNoTopographyBenchmark,
-]
-SHALLOW_WATER_BENCHMARK_DEFAULTS = {
-    "plot": benchmark.ShallowWaterBumpSteadyStateBenchmark,
-    "animate": benchmark.ShallowWaterOscillationNoTopographyBenchmark,
-    "calculate": benchmark.ShallowWaterOscillationNoTopographyBenchmark,
-}
-
 
 ################################################################################
 # GENERATE-DATA
