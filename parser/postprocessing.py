@@ -130,9 +130,7 @@ def build_eoc_solutions(arguments):
             arguments.refine, desc=solver_arguments.name, unit="refinement"
         ):
             solver_arguments.mesh_size = 2**i * arguments.mesh_size
-            solver = solver_type(
-                arguments.problem, arguments.benchmark, **vars(solver_arguments)
-            )
+            solver = solver_type(arguments.benchmark, **vars(solver_arguments))
             cmd.Calculate(solver, leave_solution_progress_bar=False).execute()
             solvers.append(solver)
             solver_spaces.append(solver.solution.space)
