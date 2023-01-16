@@ -183,3 +183,23 @@ class NaturalSouceTerm(SourceTermDiscretization):
 
     def __call__(self, height_left, height_right, topography_step, step_length) -> Any:
         return (height_left + height_right) / (2 * step_length) * topography_step
+
+
+# def calculate_wet_dry_preserving_source_term_discretization(
+#     left_height: np.ndarray,
+#     right_height: np.ndarray,
+#     topography_step: np.ndarray,
+#     step_length: np.ndarray,
+# ) -> np.ndarray:
+#     if topography_step >= 0:
+#         return (
+#             (left_height + right_height)
+#             / (2 * step_length)
+#             * min(left_height, topography_step)
+#         )
+#     else:
+#         return (
+#             (left_height + right_height)
+#             / (2 * step_length)
+#             * max(-right_height, topography_step)
+#         )

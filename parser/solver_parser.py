@@ -97,6 +97,38 @@ class GodunovParser(SolverParser):
         argument.add_adaptive_time_stepping(self)
 
 
+# class ReducedExactSolverParser(SolverParser):
+#     prog = "reduced-exact"
+#     name = "Reduced Exact Solved (Godunov)"
+#     solver = solver.ReducedExactSolver
+
+#     def _add_arguments(self):
+#         argument.add_name(self, self.name)
+#         argument.add_short(self, self.prog)
+#         argument.add_mesh_size(
+#             self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
+#         )
+#         argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+#         argument.add_adaptive_time_stepping(self)
+#         argument.add_coarsening_degree(self)
+
+
+# class ReducedNetworkParser(SolverParser):
+#     prog = "reduced-network"
+#     name = """Reduced Solver with Neural Network (Godunov)"""
+#     solver = solver.ReducedNetworkSolver
+
+#     def _add_arguments(self):
+#         argument.add_name(self, self.name)
+#         argument.add_short(self, self.prog)
+#         argument.add_mesh_size(
+#             self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
+#         )
+#         argument.add_coarsening_degree(self)
+#         argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+#         argument.add_network_load_path(self)
+
+
 SCALAR_SOLVER_PARSERS = {
     "cg": CGParser,
     "cg_low": LowCGParser,
@@ -104,6 +136,8 @@ SCALAR_SOLVER_PARSERS = {
 }
 SHALLOW_WATER_SOLVER_PARSERS = {
     "godunov": GodunovParser,
+    # "reduced-exact": ReducedExactSolverParser,
+    # "reduced-network": ReducedNetworkParser,
 }
 
 SOLVER_PARSERS = {}

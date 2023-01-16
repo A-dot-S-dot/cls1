@@ -83,3 +83,64 @@ FINITE_ELEMENT_SOLUTION_FACTORY = FiniteElementSolutionFactory()
 FINITE_VOLUME_SOLUTION_FACTORY = FiniteVolumeSolutionFactory()
 OPTIMAL_ODE_SOLVER_FACTORY = OptimalODESolverFactory()
 MESH_DEPENDENT_TIME_STEPPING = MeshDependentTimeSteppingFactory()
+
+
+# ################################################################################
+# # EXACT RESOLVED SOLVER (BASED ON GODUNOV)
+# ################################################################################
+# def build_fine_numerical_flux_container(solver):
+#     observed_numerical_flux = vector.ObservedNumericalFlux(
+#         solver.fine_solver.numerical_flux
+#     )
+#     solver.fine_numerical_fluxes = vector.NumericalFluxContainer(
+#         vector.NumericalFluxDependentRightHandSide(
+#             solver.fine_solver.space, observed_numerical_flux
+#         ),
+#         observed_numerical_flux,
+#     )
+#     solver.fine_solver.right_hand_side = solver.fine_numerical_fluxes
+#     solver.fine_solver.solve()
+
+
+# def build_reduced_exact_right_hand_side(solver):
+#     build_fine_numerical_flux_container(solver)
+#     build_godunov_numerical_flux(solver)
+#     solver.numerical_flux = vector.ObservedNumericalFlux(solver.numerical_flux)
+
+#     solver.subgrid_flux = vector.ExactSubgridFlux(
+#         solver.fine_numerical_fluxes,
+#         solver.solution,
+#         solver.numerical_flux,
+#         solver.coarsening_degree,
+#     )
+
+#     solver.right_hand_side = vector.NumericalFluxDependentRightHandSide(
+#         solver.space,
+#         vector.CorrectedNumericalFlux(solver.numerical_flux, solver.subgrid_flux),
+#     )
+
+
+# ################################################################################
+# # RESOLVED SOLVED WHICH SUBGRID FLUXES ARE CALCULATED BY A NETWORK
+# ################################################################################
+# def build_reduced_network_time_stepping(solver):
+#     solver.cfl_number = solver.cfl_number / solver.coarsening_degree
+#     build_shallow_water_godunov_time_stepping(solver)
+
+
+# def setup_network(solver):
+#     solver.network.load_state_dict(torch.load(solver.network_path))
+#     solver.network.eval()
+
+
+# def build_reduced_network_right_hand_side(solver):
+#     build_godunov_numerical_flux(solver)
+#     curvature = network.Curvature(solver.mesh.step_length)
+
+#     solver.subgrid_flux = vector.NetworkSubgridFlux(
+#         solver.network, curvature, solver.local_degree
+#     )
+#     solver.right_hand_side = vector.NumericalFluxDependentRightHandSide(
+#         solver.space,
+#         vector.CorrectedNumericalFlux(solver.numerical_flux, solver.subgrid_flux),
+#     )
