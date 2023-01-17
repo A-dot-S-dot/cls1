@@ -9,7 +9,7 @@ from base.solver import Solver
 from base.system import SystemMatrix, SystemVector
 from problem import scalar
 
-from .cg import CG_FACTORY
+from .cg import build_flux_gradient_approximation
 
 
 class OptimalTimeStep:
@@ -60,59 +60,44 @@ class LowOrderCGRightHandSide(SystemVector):
         ) / self._lumped_mass()
 
 
-class LowCGRightHandSideFactory:
-    def __call__(
-        self, problem: str, element_space: finite_element.LagrangeSpace
-    ) -> SystemVector:
-        lumped_mass = scalar.LumpedMassVector(element_space)
-        artificial_diffusion = self.build_artificial_diffusion(problem, element_space)
-        flux_gradient = CG_FACTORY.build_flux_gradient_approximation(
-            problem, element_space
-        )
-        return LowOrderCGRightHandSide(lumped_mass, artificial_diffusion, flux_gradient)
-
-    def build_artificial_diffusion(
-        self, problem: str, element_space: finite_element.LagrangeSpace
-    ) -> SystemMatrix:
-        diffusions = {
-            "advection": scalar.DiscreteUpwind,
-            "burgers": scalar.BurgersArtificialDiffusion,
-        }
-        return diffusions[problem](element_space)
+def build_artificial_diffusion(
+    problem: str, element_space: finite_element.LagrangeSpace
+) -> SystemMatrix:
+    diffusions = {
+        "advection": scalar.DiscreteUpwind,
+        "burgers": scalar.BurgersArtificialDiffusion,
+    }
+    return diffusions[problem](element_space)
 
 
-LOW_CG_FACTORY = LowCGRightHandSideFactory()
+def build_cg_low_right_hand_side(
+    problem: str, element_space: finite_element.LagrangeSpace
+) -> LowOrderCGRightHandSide:
+    lumped_mass = scalar.LumpedMassVector(element_space)
+    artificial_diffusion = build_artificial_diffusion(problem, element_space)
+    flux_gradient = build_flux_gradient_approximation(problem, element_space)
+    return LowOrderCGRightHandSide(lumped_mass, artificial_diffusion, flux_gradient)
 
 
-class AdaptiveTimeSteppingFactory:
-    def __call__(
-        self,
-        benchmark: Benchmark,
-        discrete_solution: DiscreteSolution,
-        cfl_number: float,
-        adaptive: bool,
-    ) -> ts.TimeStepping:
-        lumped_mass = scalar.LumpedMassVector(discrete_solution.space)
-        artificial_diffusion = LOW_CG_FACTORY.build_artificial_diffusion(
-            benchmark.problem, discrete_solution.space
-        )
+def build_adaptive_time_stepping(
+    benchmark: Benchmark, solution: DiscreteSolution, cfl_number: float, adaptive: bool
+) -> ts.TimeStepping:
+    lumped_mass = scalar.LumpedMassVector(solution.space)
+    artificial_diffusion = build_artificial_diffusion(benchmark.problem, solution.space)
 
-        return ts.TimeStepping(
-            benchmark.end_time,
-            cfl_number,
-            ts.DiscreteSolutionDependentTimeStep(
-                OptimalTimeStep(
-                    lumped_mass,
-                    artificial_diffusion,
-                ),
-                discrete_solution,
+    return ts.TimeStepping(
+        benchmark.end_time,
+        cfl_number,
+        ts.DiscreteSolutionDependentTimeStep(
+            OptimalTimeStep(
+                lumped_mass,
+                artificial_diffusion,
             ),
-            adaptive=adaptive,
-            start_time=benchmark.start_time,
-        )
-
-
-ADAPTIVE_TIME_STEPPING_FACTORY = AdaptiveTimeSteppingFactory()
+            solution,
+        ),
+        adaptive=adaptive,
+        start_time=benchmark.start_time,
+    )
 
 
 class LowOrderContinuousGalerkinSolver(Solver):
@@ -129,25 +114,25 @@ class LowOrderContinuousGalerkinSolver(Solver):
         save_history=False,
     ):
         name = name or "Low order Continuous Galerkin"
-        short = short or "low_cg"
+        short = short or "cg_low"
         mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE
         polynomial_degree = polynomial_degree or defaults.POLYNOMIAL_DEGREE
         cfl_number = cfl_number or defaults.MCL_CFL_NUMBER
         ode_solver_type = ode_solver_type or os.Heun
 
-        solution, element_space = factory.FINITE_ELEMENT_SOLUTION_FACTORY(
+        solution = factory.build_finite_element_solution(
             benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
-        right_hand_side = LOW_CG_FACTORY(benchmark.problem, element_space)
-        time_stepping = ADAPTIVE_TIME_STEPPING_FACTORY(
+        right_hand_side = build_cg_low_right_hand_side(
+            benchmark.problem, solution.space
+        )
+        time_stepping = build_adaptive_time_stepping(
             benchmark, solution, cfl_number, adaptive
         )
         cfl_checker = ts.CFLChecker(
             OptimalTimeStep(
-                scalar.LumpedMassVector(element_space),
-                LOW_CG_FACTORY.build_artificial_diffusion(
-                    benchmark.problem, element_space
-                ),
+                scalar.LumpedMassVector(solution.space),
+                build_artificial_diffusion(benchmark.problem, solution.space),
             )
         )
 

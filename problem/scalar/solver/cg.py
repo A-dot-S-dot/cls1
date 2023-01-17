@@ -29,51 +29,46 @@ class CGRightHandSide(SystemVector):
         return self.mass.inverse(self.flux_gradient(dof_vector))
 
 
-class CGRightHandSideFactory:
-    def __call__(
-        self,
-        problem: str,
-        element_space: finite_element.LagrangeSpace,
-        exact_flux=False,
-    ) -> SystemVector:
-        mass = scalar.MassMatrix(element_space)
-        flux_gradient = self.build_flux_gradient(problem, element_space, exact_flux)
-
-        return CGRightHandSide(mass, flux_gradient)
-
-    def build_flux_gradient(
-        self,
-        problem: str,
-        element_space: finite_element.LagrangeSpace,
-        exact_flux: bool,
-    ) -> SystemVector:
-        if exact_flux:
-            return self.build_exact_flux_gradient(problem, element_space)
-        else:
-            return self.build_flux_gradient_approximation(problem, element_space)
-
-    def build_exact_flux_gradient(
-        self, problem: str, element_space: finite_element.LagrangeSpace
-    ) -> SystemVector:
-        flux_gradients = {
-            "advection": scalar.AdvectionFluxGradient(element_space),
-            "burgers": scalar.FluxGradient(element_space, lambda u: 1 / 2 * u**2),
-        }
-        return flux_gradients[problem]
-
-    def build_flux_gradient_approximation(
-        self, problem: str, element_space: finite_element.LagrangeSpace
-    ) -> SystemVector:
-        flux_gradients = {
-            "advection": scalar.AdvectionFluxGradient(element_space),
-            "burgers": scalar.ApproximatedFluxGradient(
-                element_space, lambda u: 1 / 2 * u**2
-            ),
-        }
-        return flux_gradients[problem]
+def build_exact_flux_gradient(
+    problem: str, element_space: finite_element.LagrangeSpace
+) -> SystemVector:
+    flux_gradients = {
+        "advection": scalar.AdvectionFluxGradient(element_space),
+        "burgers": scalar.FluxGradient(element_space, lambda u: 1 / 2 * u**2),
+    }
+    return flux_gradients[problem]
 
 
-CG_FACTORY = CGRightHandSideFactory()
+def build_flux_gradient_approximation(
+    problem: str, element_space: finite_element.LagrangeSpace
+) -> SystemVector:
+    flux_gradients = {
+        "advection": scalar.AdvectionFluxGradient(element_space),
+        "burgers": scalar.ApproximatedFluxGradient(
+            element_space, lambda u: 1 / 2 * u**2
+        ),
+    }
+    return flux_gradients[problem]
+
+
+def build_flux_gradient(
+    problem: str, element_space: finite_element.LagrangeSpace, exact_flux: bool
+) -> SystemVector:
+    if exact_flux:
+        return build_exact_flux_gradient(problem, element_space)
+    else:
+        return build_flux_gradient_approximation(problem, element_space)
+
+
+def build_cg_right_hand_side(
+    problem: str,
+    element_space: finite_element.LagrangeSpace,
+    exact_flux=False,
+) -> SystemVector:
+    mass = scalar.MassMatrix(element_space)
+    flux_gradient = build_flux_gradient(problem, element_space, exact_flux)
+
+    return CGRightHandSide(mass, flux_gradient)
 
 
 class ContinuousGalerkinSolver(Solver):
@@ -95,15 +90,16 @@ class ContinuousGalerkinSolver(Solver):
         cfl_number = cfl_number or defaults.CFL_NUMBER
         exact_flux = exact_flux
 
-        solution, element_space = factory.FINITE_ELEMENT_SOLUTION_FACTORY(
+        solution = factory.build_finite_element_solution(
             benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
-        right_hand_side = CG_FACTORY(
-            benchmark.problem, element_space, exact_flux=exact_flux
+
+        right_hand_side = build_cg_right_hand_side(
+            benchmark.problem, solution.space, exact_flux=exact_flux
         )
-        ode_solver = factory.OPTIMAL_ODE_SOLVER_FACTORY(element_space)
-        time_stepping = factory.MESH_DEPENDENT_TIME_STEPPING(
-            benchmark, element_space.mesh, cfl_number
+        ode_solver = factory.build_optimal_ode_solver(solution.space)
+        time_stepping = factory.build_mesh_dependent_time_stepping(
+            benchmark, solution.space.mesh, cfl_number
         )
 
         Solver.__init__(

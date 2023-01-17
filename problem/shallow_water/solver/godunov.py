@@ -72,7 +72,7 @@ class GodunovNumericalFlux(NumericalFlux):
     ):
         if source_term is not None:
             self._source_term = source_term
-        elif (self._topography_step == self._topography_step[0]).all():
+        elif (self._topography_step == 0).all():
             self._source_term = shallow_water.VanishingSourceTerm()
         else:
             raise ValueError(
@@ -287,56 +287,46 @@ class OptimalTimeStep:
         )
 
 
-class GoudnovRightHandSideFactory:
-    def __call__(
-        self, benchmark: ShallowWaterBenchmark, volume_space: FiniteVolumeSpace
-    ) -> SystemVector:
-        topography = self.build_topography(benchmark, len(volume_space.mesh))
-        source_term = self.build_source_term()
-        numerical_flux = GodunovNumericalFlux(
-            volume_space,
-            benchmark.gravitational_acceleration,
-            topography,
-            source_term=source_term,
-        )
-        return NumericalFluxDependentRightHandSide(volume_space, numerical_flux)
-
-    def build_topography(
-        self, benchmark: ShallowWaterBenchmark, mesh_size: int
-    ) -> np.ndarray:
-        mesh = UniformMesh(benchmark.domain, mesh_size)
-        interpolator = CellAverageInterpolator(mesh, 2)
-        return interpolator.interpolate(benchmark.topography)
-
-    def build_source_term(self) -> shallow_water.SourceTermDiscretization:
-        return shallow_water.NaturalSouceTerm()
+def build_topography(benchmark: ShallowWaterBenchmark, mesh_size: int) -> np.ndarray:
+    mesh = UniformMesh(benchmark.domain, mesh_size)
+    interpolator = CellAverageInterpolator(mesh, 2)
+    return interpolator.interpolate(benchmark.topography)
 
 
-class AdaptiveTimeSteppingFactory:
-    def __call__(
-        self,
-        benchmark: ShallowWaterBenchmark,
-        solution: DiscreteSolution,
-        cfl_number: float,
-        adaptive: bool,
-    ) -> ts.TimeStepping:
-        return ts.TimeStepping(
-            benchmark.end_time,
-            cfl_number,
-            ts.DiscreteSolutionDependentTimeStep(
-                OptimalTimeStep(
-                    solution.space,
-                    benchmark.gravitational_acceleration,
-                ),
-                solution,
-            ),
-            adaptive=adaptive,
-            start_time=benchmark.start_time,
-        )
+def build_source_term() -> shallow_water.SourceTermDiscretization:
+    return shallow_water.NaturalSouceTerm()
 
 
-GODUNOV_FACTORY = GoudnovRightHandSideFactory()
-ADAPTIVE_TIME_STEPPING_FACTORY = AdaptiveTimeSteppingFactory()
+def build_godunov_right_hand_side(
+    benchmark: ShallowWaterBenchmark, volume_space: FiniteVolumeSpace
+) -> SystemVector:
+    topography = build_topography(benchmark, len(volume_space.mesh))
+    source_term = build_source_term()
+    numerical_flux = GodunovNumericalFlux(
+        volume_space,
+        benchmark.gravitational_acceleration,
+        topography,
+        source_term=source_term,
+    )
+    return NumericalFluxDependentRightHandSide(volume_space, numerical_flux)
+
+
+def build_adaptive_time_stepping(
+    benchmark: ShallowWaterBenchmark,
+    solution: DiscreteSolution,
+    cfl_number: float,
+    adaptive: bool,
+) -> ts.TimeStepping:
+    return ts.TimeStepping(
+        benchmark.end_time,
+        cfl_number,
+        ts.DiscreteSolutionDependentTimeStep(
+            OptimalTimeStep(solution.space, benchmark.gravitational_acceleration),
+            solution,
+        ),
+        adaptive=adaptive,
+        start_time=benchmark.start_time,
+    )
 
 
 class GodunovSolver(Solver):
@@ -357,15 +347,15 @@ class GodunovSolver(Solver):
         adaptive = adaptive
         ode_solver_type = os.ForwardEuler
 
-        solution, volume_space = factory.FINITE_VOLUME_SOLUTION_FACTORY(
+        solution = factory.build_finite_volume_solution(
             benchmark, mesh_size, save_history=save_history
         )
-        right_hand_side = GODUNOV_FACTORY(benchmark, volume_space)
-        time_stepping = ADAPTIVE_TIME_STEPPING_FACTORY(
+        right_hand_side = build_godunov_right_hand_side(benchmark, solution.space)
+        time_stepping = build_adaptive_time_stepping(
             benchmark, solution, cfl_number, adaptive
         )
         cfl_checker = ts.CFLChecker(
-            OptimalTimeStep(volume_space, benchmark.gravitational_acceleration)
+            OptimalTimeStep(solution.space, benchmark.gravitational_acceleration)
         )
 
         Solver.__init__(

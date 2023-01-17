@@ -13,12 +13,7 @@ from base.time_stepping import CFLChecker
 from problem import scalar
 from problem.scalar import FluxApproximation
 
-from .cg_low import (
-    ADAPTIVE_TIME_STEPPING_FACTORY,
-    LOW_CG_FACTORY,
-    LowOrderCGRightHandSide,
-    OptimalTimeStep,
-)
+from . import cg_low
 
 
 class MCLRightHandSide(SystemVector):
@@ -43,7 +38,7 @@ class MCLRightHandSide(SystemVector):
     """
 
     _element_space: LagrangeSpace
-    _low_cg_right_hand_side: LowOrderCGRightHandSide
+    _low_cg_right_hand_side: cg_low.LowOrderCGRightHandSide
     _lumped_mass: SystemVector
     _artificial_diffusion: SystemMatrix
     _flux_approximation: SystemVector
@@ -55,7 +50,7 @@ class MCLRightHandSide(SystemVector):
     def __init__(
         self,
         element_space: LagrangeSpace,
-        low_cg_right_hand_side: LowOrderCGRightHandSide,
+        low_cg_right_hand_side: cg_low.LowOrderCGRightHandSide,
         flux_approximation: SystemVector,
     ):
         self._element_space = element_space
@@ -111,24 +106,19 @@ class MCLRightHandSide(SystemVector):
         return right_hand_side + corrected_flux / self._lumped_mass()
 
 
-class MCLRightHandSideFactory:
-    def __call__(
-        self, problem: str, element_space: finite_element.LagrangeSpace
-    ) -> SystemVector:
-        flux_approximation = self.build_flux_approximation(problem)
-
-        low_cg_right_hand_side = LOW_CG_FACTORY(problem, element_space)
-
-        return MCLRightHandSide(
-            element_space, low_cg_right_hand_side, flux_approximation
-        )
-
-    def build_flux_approximation(self, problem: str) -> SystemVector:
-        fluxes = {"advection": lambda u: u, "burgers": lambda u: 1 / 2 * u**2}
-        return FluxApproximation(fluxes[problem])
+def build_flux_approximation(problem: str) -> SystemVector:
+    fluxes = {"advection": lambda u: u, "burgers": lambda u: 1 / 2 * u**2}
+    return FluxApproximation(fluxes[problem])
 
 
-MCL_FACTORY = MCLRightHandSideFactory()
+def build_mcl_right_hand_side(
+    problem: str, element_space: finite_element.LagrangeSpace
+) -> SystemVector:
+    flux_approximation = build_flux_approximation(problem)
+
+    low_cg_right_hand_side = cg_low.build_cg_low_right_hand_side(problem, element_space)
+
+    return MCLRightHandSide(element_space, low_cg_right_hand_side, flux_approximation)
 
 
 class MCLSolver(Solver):
@@ -151,19 +141,17 @@ class MCLSolver(Solver):
         cfl_number = cfl_number or defaults.MCL_CFL_NUMBER
         ode_solver_type = ode_solver_type or os.Heun
         adaptive = adaptive
-        solution, element_space = factory.FINITE_ELEMENT_SOLUTION_FACTORY(
+        solution = factory.build_finite_element_solution(
             benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
-        right_hand_side = MCL_FACTORY(benchmark.problem, element_space)
-        time_stepping = ADAPTIVE_TIME_STEPPING_FACTORY(
+        right_hand_side = build_mcl_right_hand_side(benchmark.problem, solution.space)
+        time_stepping = cg_low.build_adaptive_time_stepping(
             benchmark, solution, cfl_number, adaptive
         )
         cfl_checker = CFLChecker(
-            OptimalTimeStep(
-                scalar.LumpedMassVector(element_space),
-                LOW_CG_FACTORY.build_artificial_diffusion(
-                    benchmark.problem, element_space
-                ),
+            cg_low.OptimalTimeStep(
+                scalar.LumpedMassVector(solution.space),
+                cg_low.build_artificial_diffusion(benchmark.problem, solution.space),
             )
         )
 
