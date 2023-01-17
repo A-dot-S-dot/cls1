@@ -6,7 +6,7 @@ from problem.shallow_water.solver import godunov
 import problem.shallow_water as shallow_water
 
 
-class TestSWEGodunovFlux(TestCase):
+class TestGodunovFlux(TestCase):
     dof_vector = np.array([[1.0, 1.0], [0.0, 0.0], [1.0, -1.0], [2.0, 0.0]])
     numerical_flux = godunov.GodunovNumericalFlux(
         VOLUME_SPACE,
