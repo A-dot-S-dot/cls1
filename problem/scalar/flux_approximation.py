@@ -31,3 +31,8 @@ class FluxApproximation(SystemVector):
             self._last_dof_vector = dof_vector
 
         return self._flux_approximation
+
+
+def build_flux_approximation(problem: str) -> SystemVector:
+    fluxes = {"advection": lambda u: u, "burgers": lambda u: 1 / 2 * u**2}
+    return FluxApproximation(fluxes[problem])

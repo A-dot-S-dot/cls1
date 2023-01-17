@@ -61,3 +61,13 @@ class BurgersArtificialDiffusion(DiscreteUpwind):
         self._lil_values.setdiag(diagonal)
 
         self.update_csr_values()
+
+
+def build_artificial_diffusion(
+    problem: str, element_space: LagrangeSpace
+) -> SystemMatrix:
+    diffusions = {
+        "advection": DiscreteUpwind,
+        "burgers": BurgersArtificialDiffusion,
+    }
+    return diffusions[problem](element_space)

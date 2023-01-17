@@ -9,8 +9,6 @@ from base.solver import Solver
 from base.system import SystemMatrix, SystemVector
 from problem import scalar
 
-from .cg import build_flux_gradient_approximation
-
 
 class OptimalTimeStep:
     _lumped_mass: SystemVector
@@ -60,22 +58,12 @@ class LowOrderCGRightHandSide(SystemVector):
         ) / self._lumped_mass()
 
 
-def build_artificial_diffusion(
-    problem: str, element_space: finite_element.LagrangeSpace
-) -> SystemMatrix:
-    diffusions = {
-        "advection": scalar.DiscreteUpwind,
-        "burgers": scalar.BurgersArtificialDiffusion,
-    }
-    return diffusions[problem](element_space)
-
-
 def build_cg_low_right_hand_side(
     problem: str, element_space: finite_element.LagrangeSpace
 ) -> LowOrderCGRightHandSide:
     lumped_mass = scalar.LumpedMassVector(element_space)
-    artificial_diffusion = build_artificial_diffusion(problem, element_space)
-    flux_gradient = build_flux_gradient_approximation(problem, element_space)
+    artificial_diffusion = scalar.build_artificial_diffusion(problem, element_space)
+    flux_gradient = scalar.build_flux_gradient_approximation(problem, element_space)
     return LowOrderCGRightHandSide(lumped_mass, artificial_diffusion, flux_gradient)
 
 
@@ -83,7 +71,9 @@ def build_adaptive_time_stepping(
     benchmark: Benchmark, solution: DiscreteSolution, cfl_number: float, adaptive: bool
 ) -> ts.TimeStepping:
     lumped_mass = scalar.LumpedMassVector(solution.space)
-    artificial_diffusion = build_artificial_diffusion(benchmark.problem, solution.space)
+    artificial_diffusion = scalar.build_artificial_diffusion(
+        benchmark.problem, solution.space
+    )
 
     return ts.TimeStepping(
         benchmark.end_time,
@@ -132,7 +122,7 @@ class LowOrderContinuousGalerkinSolver(Solver):
         cfl_checker = ts.CFLChecker(
             OptimalTimeStep(
                 scalar.LumpedMassVector(solution.space),
-                build_artificial_diffusion(benchmark.problem, solution.space),
+                scalar.build_artificial_diffusion(benchmark.problem, solution.space),
             )
         )
 

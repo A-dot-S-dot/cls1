@@ -29,44 +29,13 @@ class CGRightHandSide(SystemVector):
         return self.mass.inverse(self.flux_gradient(dof_vector))
 
 
-def build_exact_flux_gradient(
-    problem: str, element_space: finite_element.LagrangeSpace
-) -> SystemVector:
-    flux_gradients = {
-        "advection": scalar.AdvectionFluxGradient(element_space),
-        "burgers": scalar.FluxGradient(element_space, lambda u: 1 / 2 * u**2),
-    }
-    return flux_gradients[problem]
-
-
-def build_flux_gradient_approximation(
-    problem: str, element_space: finite_element.LagrangeSpace
-) -> SystemVector:
-    flux_gradients = {
-        "advection": scalar.AdvectionFluxGradient(element_space),
-        "burgers": scalar.ApproximatedFluxGradient(
-            element_space, lambda u: 1 / 2 * u**2
-        ),
-    }
-    return flux_gradients[problem]
-
-
-def build_flux_gradient(
-    problem: str, element_space: finite_element.LagrangeSpace, exact_flux: bool
-) -> SystemVector:
-    if exact_flux:
-        return build_exact_flux_gradient(problem, element_space)
-    else:
-        return build_flux_gradient_approximation(problem, element_space)
-
-
 def build_cg_right_hand_side(
     problem: str,
     element_space: finite_element.LagrangeSpace,
     exact_flux=False,
 ) -> SystemVector:
     mass = scalar.MassMatrix(element_space)
-    flux_gradient = build_flux_gradient(problem, element_space, exact_flux)
+    flux_gradient = scalar.build_flux_gradient(problem, element_space, exact_flux)
 
     return CGRightHandSide(mass, flux_gradient)
 
