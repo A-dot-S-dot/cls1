@@ -37,6 +37,7 @@ FLUX_APPROXIMATION = True
 
 # finite volume based solver
 GODUNOV_CFL_NUMBER = 0.5
+LOCAL_LAX_FRIEDRICHS_CFL_NUMBER = 0.4
 COARSENING_DEGREE = 8
 
 NETWORK_PATH = "network/subgrid_network.pth"

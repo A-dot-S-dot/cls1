@@ -5,7 +5,6 @@ import defaults
 import numpy as np
 import problem.shallow_water as shallow_water
 from base import factory
-from base.discretization import DiscreteSolution
 from base.discretization.finite_volume import FiniteVolumeSpace
 from base.interpolate import CellAverageInterpolator
 from base.mesh import UniformMesh
@@ -72,7 +71,7 @@ class GodunovNumericalFlux(NumericalFlux):
     ):
         if source_term is not None:
             self._source_term = source_term
-        elif (self._topography_step == self._topography_step[0]).all():
+        elif (self._topography_step == 0).all():
             self._source_term = shallow_water.VanishingSourceTerm()
         else:
             raise ValueError(
@@ -84,12 +83,12 @@ class GodunovNumericalFlux(NumericalFlux):
         flux = self._flux(dof_vector)
         wave_speed_left, wave_speed_right = self._wave_speed(dof_vector)
 
-        left_values = dof_vector[self._volume_space.left_cell_indices]
-        right_values = dof_vector[self._volume_space.right_cell_indices]
-        height_left = left_values[:, 0]
-        height_right = right_values[:, 0]
-        discharge_left = left_values[:, 1]
-        discharge_right = right_values[:, 1]
+        value_left = dof_vector[self._volume_space.left_cell_indices]
+        value_right = dof_vector[self._volume_space.right_cell_indices]
+        height_left = value_left[:, 0]
+        height_right = value_right[:, 0]
+        discharge_left = value_left[:, 1]
+        discharge_right = value_right[:, 1]
         flux_left = flux[self._volume_space.left_cell_indices]
         flux_right = flux[self._volume_space.right_cell_indices]
         height_flux_left = flux_left[:, 0]
@@ -136,10 +135,10 @@ class GodunovNumericalFlux(NumericalFlux):
         )
 
         node_flux_left = self._calculate_node_flux_left(
-            modified_height_left, q_star, wave_speed_left, left_values, flux_left
+            modified_height_left, q_star, wave_speed_left, value_left, flux_left
         )
         node_flux_right = self._calculate_node_flux_right(
-            modified_height_right, q_star, wave_speed_right, right_values, flux_right
+            modified_height_right, q_star, wave_speed_right, value_right, flux_right
         )
 
         cell_flux_left = self._calculate_cell_flux_left(node_flux_right)
@@ -259,84 +258,20 @@ class GodunovNumericalFlux(NumericalFlux):
         return node_flux_left[self._volume_space.right_node_indices]
 
 
-class OptimalTimeStep:
-    _wave_speed: shallow_water.WaveSpeed
-    _step_length: float
-
-    def __init__(
-        self,
-        volume_space: FiniteVolumeSpace,
-        gravitational_acceleration: float,
-    ):
-        self._wave_speed = shallow_water.WaveSpeed(
-            volume_space, gravitational_acceleration
-        )
-
-        self._step_length = volume_space.mesh.step_length
-
-    def __call__(self, dof_vector: np.ndarray) -> float:
-        wave_speed_left, wave_speed_right = self._wave_speed(dof_vector)
-        return self._step_length / (
-            2
-            * np.max(
-                [
-                    abs(wave_speed_left),
-                    wave_speed_right,
-                ]
-            )
-        )
-
-
-class GoudnovRightHandSideFactory:
-    def __call__(
-        self, benchmark: ShallowWaterBenchmark, volume_space: FiniteVolumeSpace
-    ) -> SystemVector:
-        topography = self.build_topography(benchmark, len(volume_space.mesh))
-        source_term = self.build_source_term()
-        numerical_flux = GodunovNumericalFlux(
-            volume_space,
-            benchmark.gravitational_acceleration,
-            topography,
-            source_term=source_term,
-        )
-        return NumericalFluxDependentRightHandSide(volume_space, numerical_flux)
-
-    def build_topography(
-        self, benchmark: ShallowWaterBenchmark, mesh_size: int
-    ) -> np.ndarray:
-        mesh = UniformMesh(benchmark.domain, mesh_size)
-        interpolator = CellAverageInterpolator(mesh, 2)
-        return interpolator.interpolate(benchmark.topography)
-
-    def build_source_term(self) -> shallow_water.SourceTermDiscretization:
-        return shallow_water.NaturalSouceTerm()
-
-
-class AdaptiveTimeSteppingFactory:
-    def __call__(
-        self,
-        benchmark: ShallowWaterBenchmark,
-        solution: DiscreteSolution,
-        cfl_number: float,
-        adaptive: bool,
-    ) -> ts.TimeStepping:
-        return ts.TimeStepping(
-            benchmark.end_time,
-            cfl_number,
-            ts.DiscreteSolutionDependentTimeStep(
-                OptimalTimeStep(
-                    solution.space,
-                    benchmark.gravitational_acceleration,
-                ),
-                solution,
-            ),
-            adaptive=adaptive,
-            start_time=benchmark.start_time,
-        )
-
-
-GODUNOV_FACTORY = GoudnovRightHandSideFactory()
-ADAPTIVE_TIME_STEPPING_FACTORY = AdaptiveTimeSteppingFactory()
+def build_godunov_right_hand_side(
+    benchmark: ShallowWaterBenchmark, volume_space: FiniteVolumeSpace
+) -> SystemVector:
+    topography = shallow_water.build_topography_discretization(
+        benchmark, len(volume_space.mesh)
+    )
+    source_term = shallow_water.build_source_term()
+    numerical_flux = GodunovNumericalFlux(
+        volume_space,
+        benchmark.gravitational_acceleration,
+        topography,
+        source_term=source_term,
+    )
+    return NumericalFluxDependentRightHandSide(volume_space, numerical_flux)
 
 
 class GodunovSolver(Solver):
@@ -348,6 +283,7 @@ class GodunovSolver(Solver):
         mesh_size=None,
         cfl_number=None,
         adaptive=False,
+        save_history=False,
     ):
         name = name or "Godunov's finite volume scheme "
         short = short or "godunov"
@@ -356,15 +292,17 @@ class GodunovSolver(Solver):
         adaptive = adaptive
         ode_solver_type = os.ForwardEuler
 
-        solution, volume_space = factory.FINITE_VOLUME_SOLUTION_FACTORY(
-            benchmark, mesh_size
+        solution = factory.build_finite_volume_solution(
+            benchmark, mesh_size, save_history=save_history
         )
-        right_hand_side = GODUNOV_FACTORY(benchmark, volume_space)
-        time_stepping = ADAPTIVE_TIME_STEPPING_FACTORY(
+        right_hand_side = build_godunov_right_hand_side(benchmark, solution.space)
+        time_stepping = shallow_water.build_adaptive_time_stepping(
             benchmark, solution, cfl_number, adaptive
         )
         cfl_checker = ts.CFLChecker(
-            OptimalTimeStep(volume_space, benchmark.gravitational_acceleration)
+            shallow_water.OptimalTimeStep(
+                solution.space, benchmark.gravitational_acceleration
+            )
         )
 
         Solver.__init__(

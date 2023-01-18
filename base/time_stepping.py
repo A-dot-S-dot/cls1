@@ -26,7 +26,7 @@ class DiscreteSolutionDependentTimeStep:
         self._discrete_solution = discrete_solution
 
     def __call__(self) -> float:
-        return self._time_step(self._discrete_solution.end_values)
+        return self._time_step(self._discrete_solution.value)
 
 
 class CFLChecker:

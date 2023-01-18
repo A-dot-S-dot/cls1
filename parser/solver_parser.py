@@ -8,6 +8,7 @@ from problem.scalar.solver.cg import ContinuousGalerkinSolver
 from problem.scalar.solver.cg_low import LowOrderContinuousGalerkinSolver
 from problem.scalar.solver.mcl import MCLSolver
 from problem.shallow_water.solver.godunov import GodunovSolver
+from problem.shallow_water.solver.lax_friedrichs import LocalLaxFriedrichsSolver
 
 from . import argument
 
@@ -129,6 +130,19 @@ class GodunovParser(SolverParser):
 #         argument.add_network_load_path(self)
 
 
+class LocalLaxFriedrichsParser(SolverParser):
+    prog = "llf"
+    name = "Local Lax-Friedrichs finite volume scheme"
+    solver = LocalLaxFriedrichsSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+
+
 SCALAR_SOLVER_PARSERS = {
     "cg": CGParser,
     "cg_low": LowCGParser,
@@ -138,6 +152,7 @@ SHALLOW_WATER_SOLVER_PARSERS = {
     "godunov": GodunovParser,
     # "reduced-exact": ReducedExactSolverParser,
     # "reduced-network": ReducedNetworkParser,
+    "llf": LocalLaxFriedrichsParser,
 }
 
 SOLVER_PARSERS = {}

@@ -37,8 +37,8 @@ class Solver(ABC):
         self._cfl_checker = cfl_checker
         self._ode_solver = ode_solver_type(
             self._right_hand_side,
-            self._solution.initial_data,
-            start_time=self._solution.start_time,
+            self._solution.value,
+            start_time=self._solution.time,
         )
 
     @property
@@ -61,7 +61,7 @@ class Solver(ABC):
     def update(self, time_step: float):
         self._ode_solver.execute(time_step)
         self._check_cfl_condition(time_step)
-        self._solution.add_solution(time_step, self._ode_solver.solution)
+        self._solution.update(time_step, self._ode_solver.solution)
 
     def _check_cfl_condition(self, time_step: float):
         if self._cfl_checker:

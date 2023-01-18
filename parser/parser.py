@@ -33,6 +33,7 @@ class CustomArgumentParser:
         ],
         "animate": [
             ppr.adjust_end_time,
+            ppr.add_save_history_argument,
             ppr.build_solver,
             ppr.calculate_solutions,
             ppr.build_animator,

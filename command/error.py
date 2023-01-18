@@ -10,9 +10,8 @@ from base.benchmark import Benchmark, NoExactSolutionError
 from base.discretization import DiscreteSolution, SolverSpace
 from base.discretization.finite_element import LagrangeSpace
 from base.interpolate import TemporalInterpolator
-from tqdm import tqdm, trange
+from tqdm import tqdm
 
-from .calculate import Calculate
 from .command import Command
 
 T = TypeVar("T", float, np.ndarray)
@@ -31,14 +30,14 @@ class ErrorCalculator:
         exact_solution: DiscreteSolution | Callable[[float], T],
         discrete_solution: DiscreteSolution,
     ) -> Tuple[float, T]:
-        _discrete_solution = self._space.element(discrete_solution.end_values)
+        _discrete_solution = self._space.element(discrete_solution.value)
 
         if isinstance(exact_solution, DiscreteSolution):
-            _exact_solution = self._space.element(exact_solution.end_values)
+            _exact_solution = self._space.element(exact_solution.value)
         else:
             _exact_solution = lambda cell_index, x: exact_solution(x)
 
-        return discrete_solution.end_time, self._norm(
+        return discrete_solution.time, self._norm(
             lambda cell_index, x: _exact_solution(cell_index, x)
             - _discrete_solution(cell_index, x)
         )
@@ -61,15 +60,15 @@ class ErrorEvolutionCalculator(ErrorCalculator):
             ) = self._create_time_evolution_functions(exact_solution, discrete_solution)
         else:
             _exact_solution = lambda cell_index, x: np.array(
-                [exact_solution(x, t) for t in discrete_solution.time]
+                [exact_solution(x, t) for t in discrete_solution.time_history]
             )
             _discrete_solutions = [
-                self._space.element(values) for values in discrete_solution.values
+                self._space.element(values) for values in discrete_solution.value
             ]
             _discrete_solution = lambda cell_index, x: np.array(
                 [solution(cell_index, x) for solution in _discrete_solutions]
             )
-            _time = discrete_solution.time
+            _time = discrete_solution.time_history
 
         return _time, self._norm(
             lambda cell_index, x: _exact_solution(cell_index, x)
@@ -101,18 +100,22 @@ class ErrorEvolutionCalculator(ErrorCalculator):
     def _adjust_time(
         self, exact_solution: DiscreteSolution, discrete_solution: DiscreteSolution
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        if len(discrete_solution.time) > len(exact_solution.time):
+        if len(discrete_solution.time_history) > len(exact_solution.time_history):
             exact_solution_values = TemporalInterpolator()(
-                exact_solution.time, exact_solution.values, discrete_solution.time
+                exact_solution.time_history,
+                exact_solution.value,
+                discrete_solution.time_history,
             )
-            discrete_solution_values = discrete_solution.values
-            time = discrete_solution.time
+            discrete_solution_values = discrete_solution.value
+            time = discrete_solution.time_history
         else:
-            exact_solution_values = exact_solution.values
+            exact_solution_values = exact_solution.value
             discrete_solution_values = TemporalInterpolator()(
-                discrete_solution.time, discrete_solution.values, exact_solution.time
+                discrete_solution.time_history,
+                discrete_solution.value,
+                exact_solution.time_history,
             )
-            time = exact_solution.time
+            time = exact_solution.time_history
 
         return time, exact_solution_values, discrete_solution_values
 

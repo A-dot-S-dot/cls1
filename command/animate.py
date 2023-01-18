@@ -104,7 +104,7 @@ class Animator(ABC, Generic[T]):
 
         if isinstance(animatable, DiscreteSolution):
             self._spatial_grids.append(animatable.grid)
-            self._temporal_grids.append(np.array(animatable.time))
+            self._temporal_grids.append(np.array(animatable.time_history))
         else:
             self._spatial_grids.append(self._spatial_grid)
             self._temporal_grids.append(self._temporal_grid)
@@ -137,7 +137,9 @@ class Animator(ABC, Generic[T]):
             if isinstance(animatable, DiscreteSolution):
                 self._values.append(
                     interpolator(
-                        animatable.time, animatable.values, self._temporal_grid
+                        animatable.time_history,
+                        animatable.value_history,
+                        self._temporal_grid,
                     )
                 )
             else:

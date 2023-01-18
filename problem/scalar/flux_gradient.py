@@ -120,3 +120,32 @@ class ApproximatedFluxGradient(system.SystemVector):
 
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         return -self._discrete_gradient.dot(self._flux_approximation(dof_vector))
+
+
+def build_exact_flux_gradient(
+    problem: str, element_space: LagrangeSpace
+) -> system.SystemVector:
+    flux_gradients = {
+        "advection": AdvectionFluxGradient(element_space),
+        "burgers": FluxGradient(element_space, lambda u: 1 / 2 * u**2),
+    }
+    return flux_gradients[problem]
+
+
+def build_flux_gradient_approximation(
+    problem: str, element_space: LagrangeSpace
+) -> system.SystemVector:
+    flux_gradients = {
+        "advection": AdvectionFluxGradient(element_space),
+        "burgers": ApproximatedFluxGradient(element_space, lambda u: 1 / 2 * u**2),
+    }
+    return flux_gradients[problem]
+
+
+def build_flux_gradient(
+    problem: str, element_space: LagrangeSpace, exact_flux: bool
+) -> system.SystemVector:
+    if exact_flux:
+        return build_exact_flux_gradient(problem, element_space)
+    else:
+        return build_flux_gradient_approximation(problem, element_space)
