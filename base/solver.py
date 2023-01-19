@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Type
 
+import numpy as np
 from tqdm.auto import tqdm
 
+from base import time_stepping as ts
 from base.discretization import DiscreteSolution
 from base.ode_solver import ExplicitRungeKuttaMethod
 from base.system import SystemVector
-from base import time_stepping as ts
 
 
 class Solver(ABC):
@@ -14,7 +15,7 @@ class Solver(ABC):
     short: str
     _solution: DiscreteSolution
     _time_stepping: ts.TimeStepping
-    _ode_solver: ExplicitRungeKuttaMethod
+    _ode_solver: ExplicitRungeKuttaMethod[np.ndarray]
     _right_hand_side: SystemVector
     _cfl_checker: Optional[ts.CFLChecker]
 
@@ -23,7 +24,7 @@ class Solver(ABC):
         self,
         solution: DiscreteSolution,
         right_hand_side: SystemVector,
-        ode_solver_type: Type[ExplicitRungeKuttaMethod],
+        ode_solver_type: Type[ExplicitRungeKuttaMethod[np.ndarray]],
         time_stepping: ts.TimeStepping,
         name=None,
         short=None,

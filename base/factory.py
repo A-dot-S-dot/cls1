@@ -1,18 +1,22 @@
 from typing import Type
 
+import numpy as np
+
 from . import interpolate
 from . import ode_solver as os
 from .benchmark import Benchmark
-from .discretization import DiscreteSolution, finite_element, finite_volume
+from .discretization import DiscreteSolution
+from .discretization.finite_element import LagrangeSpace
+from .discretization.finite_volume import FiniteVolumeSpace
 from .mesh import Mesh, UniformMesh
 from .time_stepping import TimeStepping
 
 
 def build_finite_element_solution(
     benchmark: Benchmark, mesh_size: int, polynomial_degree: int, save_history=False
-) -> DiscreteSolution:
+) -> DiscreteSolution[LagrangeSpace]:
     mesh = UniformMesh(benchmark.domain, mesh_size)
-    space = finite_element.LagrangeSpace(mesh, polynomial_degree)
+    space = LagrangeSpace(mesh, polynomial_degree)
     interpolator = interpolate.NodeValuesInterpolator(*space.basis_nodes)
     solution = DiscreteSolution(
         interpolator.interpolate(benchmark.initial_data),
@@ -27,9 +31,9 @@ def build_finite_element_solution(
 
 def build_finite_volume_solution(
     benchmark: Benchmark, mesh_size: int, save_history=False
-) -> DiscreteSolution:
+) -> DiscreteSolution[FiniteVolumeSpace]:
     mesh = UniformMesh(benchmark.domain, mesh_size)
-    space = finite_volume.FiniteVolumeSpace(mesh)
+    space = FiniteVolumeSpace(mesh)
     interpolator = interpolate.CellAverageInterpolator(mesh, 2)
     solution = DiscreteSolution(
         interpolator.interpolate(benchmark.initial_data),
@@ -54,8 +58,8 @@ def build_mesh_dependent_time_stepping(
 
 
 def build_optimal_ode_solver(
-    element_space: finite_element.LagrangeSpace,
-) -> Type[os.ExplicitRungeKuttaMethod]:
+    element_space: LagrangeSpace,
+) -> Type[os.ExplicitRungeKuttaMethod[np.ndarray]]:
     degree = element_space.polynomial_degree
     optimal_solver = {
         1: os.Heun,
