@@ -5,7 +5,7 @@ import numpy as np
 from . import interpolate
 from . import ode_solver as os
 from .benchmark import Benchmark
-from .discretization import DiscreteSolution
+from .discretization import DiscreteSolution, DiscreteSolutionWithHistory
 from .discretization.finite_element import LagrangeSpace
 from .discretization.finite_volume import FiniteVolumeSpace
 from .mesh import Mesh, UniformMesh
@@ -18,15 +18,14 @@ def build_finite_element_solution(
     mesh = UniformMesh(benchmark.domain, mesh_size)
     space = LagrangeSpace(mesh, polynomial_degree)
     interpolator = interpolate.NodeValuesInterpolator(*space.basis_nodes)
-    solution = DiscreteSolution(
+    solution_type = DiscreteSolutionWithHistory if save_history else DiscreteSolution
+
+    return solution_type(
         interpolator.interpolate(benchmark.initial_data),
         start_time=benchmark.start_time,
         grid=space.grid,
         solver_space=space,
-        save_history=save_history,
     )
-
-    return solution
 
 
 def build_finite_volume_solution(
@@ -35,15 +34,14 @@ def build_finite_volume_solution(
     mesh = UniformMesh(benchmark.domain, mesh_size)
     space = FiniteVolumeSpace(mesh)
     interpolator = interpolate.CellAverageInterpolator(mesh, 2)
-    solution = DiscreteSolution(
+    solution_type = DiscreteSolutionWithHistory if save_history else DiscreteSolution
+
+    return solution_type(
         interpolator.interpolate(benchmark.initial_data),
         start_time=benchmark.start_time,
         grid=space.grid,
         solver_space=space,
-        save_history=save_history,
     )
-
-    return solution
 
 
 def build_mesh_dependent_time_stepping(

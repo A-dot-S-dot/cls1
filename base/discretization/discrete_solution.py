@@ -1,6 +1,7 @@
 from typing import Generic, Optional, Tuple, TypeVar
 
 import numpy as np
+from base.decorator import HistoryDecorator
 
 from .abstract import SolverSpace
 
@@ -16,32 +17,17 @@ class DiscreteSolution(Generic[T]):
     _grid: Optional[np.ndarray]
     _space: Optional[T]
 
-    _save_history: bool
-    _time_history: np.ndarray
-    _time_step_history: np.ndarray
-    _value_history: np.ndarray
-
     def __init__(
         self,
         initial_value: np.ndarray,
         start_time=0.0,
         grid=None,
         solver_space=None,
-        save_history=False,
     ):
         self._time = start_time
         self._value = initial_value
         self._grid = grid
         self._space = solver_space
-        self._save_history = save_history
-
-        if save_history:
-            self._build_history_attributes()
-
-    def _build_history_attributes(self):
-        self._time_history = np.array([self.time])
-        self._time_step_history = np.array([])
-        self._value_history = np.array([self.value])
 
     @property
     def dimension(self) -> float | Tuple[float, ...]:
@@ -54,14 +40,6 @@ class DiscreteSolution(Generic[T]):
     @property
     def time(self) -> float:
         return self._time
-
-    @property
-    def time_history(self) -> np.ndarray:
-        return self._time_history
-
-    @property
-    def time_step_history(self) -> np.ndarray:
-        return self._time_step_history
 
     @property
     def grid(self) -> np.ndarray:
@@ -81,25 +59,59 @@ class DiscreteSolution(Generic[T]):
     def value(self) -> np.ndarray:
         return self._value.copy()
 
+    def update(self, time_step: float, solution: np.ndarray):
+        self._time += time_step
+        self._value = solution
+
+    def __repr__(self) -> str:
+        return (
+            self.__class__.__name__
+            + f"(time={self.time}, value={self.value}, grid={self.grid}, space={self.space})"
+        )
+
+
+class DiscreteSolutionWithHistory(DiscreteSolution[T]):
+    _time_history: np.ndarray
+    _time_step_history: np.ndarray
+    _value_history: np.ndarray
+
+    def __init__(
+        self,
+        initial_value: np.ndarray,
+        start_time=0.0,
+        grid=None,
+        solver_space=None,
+    ):
+        DiscreteSolution.__init__(
+            self,
+            initial_value,
+            start_time=start_time,
+            grid=grid,
+            solver_space=solver_space,
+        )
+
+        self._time_history = np.array([self.time])
+        self._time_step_history = np.array([])
+        self._value_history = np.array([self.value])
+
+    @property
+    def time_history(self) -> np.ndarray:
+        return self._time_history
+
+    @property
+    def time_step_history(self) -> np.ndarray:
+        return self._time_step_history
+
     @property
     def value_history(self) -> np.ndarray:
         return self._value_history
 
     def update(self, time_step: float, solution: np.ndarray):
-        self._time += time_step
-        self._value = solution
-
-        if self._save_history:
-            self._time_history = np.append(self.time_history, self.time)
-            self._time_step_history = np.append(self.time_step_history, time_step)
-            self._value_history = np.append(
-                self.value_history, np.array([self.value]), axis=0
-            )
-
-    def __repr__(self) -> str:
-        return (
-            self.__class__.__name__
-            + f"(grid={self.grid}, time={self.time_history}, values={self.value}, time_steps={self.time_step_history})"
+        DiscreteSolution.update(self, time_step, solution)
+        self._time_history = np.append(self.time_history, self.time)
+        self._time_step_history = np.append(self.time_step_history, time_step)
+        self._value_history = np.append(
+            self.value_history, np.array([solution.copy()]), axis=0
         )
 
 
