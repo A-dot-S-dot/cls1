@@ -1,0 +1,195 @@
+from typing import Optional, Tuple
+
+import base.ode_solver as os
+import defaults
+import numpy as np
+import problem.shallow_water as shallow_water
+import torch
+from base import factory
+from base import numerical_flux as nf
+from base import ode_solver as os
+from base import time_stepping as ts
+from base.discretization.finite_volume import FiniteVolumeSpace
+from base.interpolate import CellAverageInterpolator
+from base.mesh import UniformMesh
+from base.solver import Solver
+from base.system import SystemVector
+from problem import shallow_water
+from problem.shallow_water.benchmark import ShallowWaterBenchmark
+from torch import nn
+from .godunov import build_godunov_numerical_flux
+
+from typing import Tuple
+
+import torch
+from torch import nn
+
+
+class Curvature:
+    step_length: float
+
+    def __init__(self, step_length: float):
+        self.step_length = step_length
+
+    def __call__(self, u0, u1, u2, u3):
+        return (
+            self._calculate_curvature(u0, u1, u2)
+            + self._calculate_curvature(u1, u2, u3)
+        ) / 2
+
+    def _calculate_curvature(self, u0, u1, u2):
+        return (
+            abs(u0 - 2 * u1 + u2)
+            * self.step_length
+            / (self.step_length**2 + 0.25 * (u0 - u2) ** 2) ** (3 / 2)
+        )
+
+
+class Normalization(nn.Module):
+    mean: torch.Tensor
+    std: torch.Tensor
+
+    def __init__(self, mean=None, std=None):
+        nn.Module.__init__(self)
+        self.mean = mean if mean is not None else torch.empty(0)
+        self.std = std if std is not None else torch.empty(0)
+
+    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
+        return (tensor - self.mean) / self.std
+
+    def get_extra_state(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        return self.mean, self.std
+
+    def set_extra_state(self, state):
+        self.mean, self.std = state
+
+    def extra_repr(self) -> str:
+        return f"mean={self.mean}, std={self.std}"
+
+
+class NeuralNetwork(nn.Module):
+    def __init__(self, mean=None, std=None):
+        nn.Module.__init__(self)
+
+        self.normalize = Normalization(mean, std)
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(10, 32),
+            nn.LeakyReLU(),
+            nn.Linear(32, 32),
+            nn.LeakyReLU(),
+            nn.Linear(32, 16),
+            nn.LeakyReLU(),
+            nn.Linear(16, 2),
+        )
+
+    def forward(self, x):
+        x = self.normalize(x)
+
+        return self.linear_relu_stack(x)
+
+
+class NetworkSubgridFlux(nf.NumericalFlux):
+    """Calculates subgrid flux for shallow water equations with flat bottom. To
+    calculate a subgrid flux of a certain edge the Network needs a certain
+    number of values of neighboured cells. Requires periodic boundaries."""
+
+    _network: nn.Module
+    _local_degree: int
+    _curvature: Curvature
+
+    def __init__(
+        self,
+        volume_space: FiniteVolumeSpace,
+        network: nn.Module,
+        network_path: str,
+        local_degree: int,
+    ):
+        self._local_degree = local_degree
+        self._curvature = Curvature(volume_space.mesh.step_length)
+        self._network = network
+        self._network.load_state_dict(torch.load(network_path))
+        self._network.eval()
+
+    def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        input = self._get_input(dof_vector)
+        left_subgrid_flux = self._network(input).detach().numpy()
+
+        return left_subgrid_flux, np.roll(left_subgrid_flux, -1, axis=0)
+
+    def _get_input(self, dof_vector: np.ndarray) -> torch.Tensor:
+        stencil_values = np.array(
+            [
+                np.roll(dof_vector, i, axis=0)
+                for i in range(self._local_degree, -self._local_degree, -1)
+            ]
+        )
+        curvature = self._curvature(*stencil_values)
+
+        return torch.Tensor(
+            np.concatenate(
+                [*stencil_values, curvature],
+                axis=1,
+            )
+        )
+
+
+class SubgridNetworkSolver(Solver):
+    def __init__(
+        self,
+        benchmark: ShallowWaterBenchmark,
+        name=None,
+        short=None,
+        mesh_size=None,
+        coarsening_degree=None,
+        local_degree=None,
+        cfl_number=None,
+        network=None,
+        network_path=None,
+        save_history=False,
+    ):
+        benchmark = benchmark
+        name = name or "Solver with neural network subgrid flux correction (Godunov)"
+        short = short or "subgrid-network"
+        coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
+        mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE // coarsening_degree
+        local_degree = local_degree or defaults.LOCAL_DEGREE
+        cfl_number = cfl_number or defaults.GODUNOV_CFL_NUMBER / coarsening_degree
+        network = network or NeuralNetwork()
+        network_path = network_path or defaults.NETWORK_PATH
+        ode_solver_type = os.ForwardEuler
+
+        solution = factory.build_finite_volume_solution(
+            benchmark, mesh_size, save_history=save_history
+        )
+        numerical_flux = build_godunov_numerical_flux(benchmark, solution.space)
+        subgrid_flux = NetworkSubgridFlux(
+            solution.space,
+            network,
+            network_path,
+            local_degree,
+        )
+        corrected_numerical_flux = nf.CorrectedNumericalFlux(
+            numerical_flux, subgrid_flux
+        )
+        right_hand_side = nf.NumericalFluxDependentRightHandSide(
+            solution.space, corrected_numerical_flux
+        )
+        time_stepping = shallow_water.build_adaptive_time_stepping(
+            benchmark, solution, cfl_number, adaptive=False
+        )
+        cfl_checker = ts.CFLChecker(
+            shallow_water.OptimalTimeStep(
+                solution.space, benchmark.gravitational_acceleration
+            )
+        )
+
+        Solver.__init__(
+            self,
+            solution,
+            right_hand_side,
+            ode_solver_type,
+            time_stepping,
+            name=name,
+            short=short,
+            cfl_checker=cfl_checker,
+        )

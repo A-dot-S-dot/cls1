@@ -50,6 +50,22 @@ class NumericalFluxWithHistory(NumericalFlux):
         return flux_left, flux_right
 
 
+class CorrectedNumericalFlux(NumericalFlux):
+    """Adds to a given flux a subgrid flux."""
+
+    _numerical_flux: NumericalFlux
+    _subgrid_flux: NumericalFlux
+
+    def __init__(self, numerical_flux: NumericalFlux, subgrid_flux: NumericalFlux):
+        self._numerical_flux = numerical_flux
+        self._subgrid_flux = subgrid_flux
+
+    def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        flux = self._numerical_flux(dof_vector)
+        subgrid_flux = self._subgrid_flux(dof_vector)
+        return flux[0] + subgrid_flux[0], flux[1] + subgrid_flux[1]
+
+
 class NumericalFluxDependentRightHandSide(SystemVector):
     _volume_space: FiniteVolumeSpace
     _numerical_flux: NumericalFlux

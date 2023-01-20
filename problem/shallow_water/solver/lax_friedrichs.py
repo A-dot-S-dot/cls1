@@ -1,18 +1,14 @@
-from typing import Optional, Tuple
+from typing import Tuple
 
 import base.ode_solver as os
 import defaults
 import numpy as np
 import problem.shallow_water as shallow_water
 from base import factory
-from base.discretization import DiscreteSolution
+from base import time_stepping as ts
 from base.discretization.finite_volume import FiniteVolumeSpace
-from base.interpolate import CellAverageInterpolator
-from base.mesh import UniformMesh
 from base.numerical_flux import NumericalFlux, NumericalFluxDependentRightHandSide
 from base.solver import Solver
-from base.system import SystemVector
-from base import time_stepping as ts
 from problem import shallow_water
 from problem.shallow_water.benchmark import ShallowWaterBenchmark
 
@@ -120,19 +116,16 @@ class LocalLaxFriedrichsFlux(NumericalFlux):
         return wave_speed[:, None] * (value_left - intermediate_state) + flux_left
 
 
-def build_local_lax_friedrichs_right_hand_side(
+def build_local_lax_friedrichs_flux(
     benchmark: ShallowWaterBenchmark, volume_space: FiniteVolumeSpace
-) -> SystemVector:
+) -> NumericalFlux:
     bottom = shallow_water.build_topography_discretization(
         benchmark, len(volume_space.mesh)
     )
     if not shallow_water.is_constant(bottom):
         raise ValueError("Bottom must be constant.")
 
-    numerical_flux = LocalLaxFriedrichsFlux(
-        volume_space, benchmark.gravitational_acceleration
-    )
-    return NumericalFluxDependentRightHandSide(volume_space, numerical_flux)
+    return LocalLaxFriedrichsFlux(volume_space, benchmark.gravitational_acceleration)
 
 
 class LocalLaxFriedrichsSolver(Solver):
@@ -156,8 +149,9 @@ class LocalLaxFriedrichsSolver(Solver):
         solution = factory.build_finite_volume_solution(
             benchmark, mesh_size, save_history=save_history
         )
-        right_hand_side = build_local_lax_friedrichs_right_hand_side(
-            benchmark, solution.space
+        numerical_flux = build_local_lax_friedrichs_flux(benchmark, solution.space)
+        right_hand_side = NumericalFluxDependentRightHandSide(
+            solution.space, numerical_flux
         )
         time_stepping = shallow_water.build_adaptive_time_stepping(
             benchmark, solution, cfl_number, adaptive

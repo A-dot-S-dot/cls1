@@ -6,11 +6,8 @@ import numpy as np
 import problem.shallow_water as shallow_water
 from base import factory
 from base.discretization.finite_volume import FiniteVolumeSpace
-from base.interpolate import CellAverageInterpolator
-from base.mesh import UniformMesh
 from base.numerical_flux import NumericalFlux, NumericalFluxDependentRightHandSide
 from base.solver import Solver
-from base.system import SystemVector
 from base import time_stepping as ts
 from problem import shallow_water
 from problem.shallow_water.benchmark import ShallowWaterBenchmark
@@ -258,20 +255,20 @@ class GodunovNumericalFlux(NumericalFlux):
         return node_flux_left[self._volume_space.right_node_indices]
 
 
-def build_godunov_right_hand_side(
+def build_godunov_numerical_flux(
     benchmark: ShallowWaterBenchmark, volume_space: FiniteVolumeSpace
-) -> SystemVector:
+) -> NumericalFlux:
     topography = shallow_water.build_topography_discretization(
         benchmark, len(volume_space.mesh)
     )
     source_term = shallow_water.build_source_term()
-    numerical_flux = GodunovNumericalFlux(
+
+    return GodunovNumericalFlux(
         volume_space,
         benchmark.gravitational_acceleration,
         topography,
         source_term=source_term,
     )
-    return NumericalFluxDependentRightHandSide(volume_space, numerical_flux)
 
 
 class GodunovSolver(Solver):
@@ -295,7 +292,10 @@ class GodunovSolver(Solver):
         solution = factory.build_finite_volume_solution(
             benchmark, mesh_size, save_history=save_history
         )
-        right_hand_side = build_godunov_right_hand_side(benchmark, solution.space)
+        numerical_flux = build_godunov_numerical_flux(benchmark, solution.space)
+        right_hand_side = NumericalFluxDependentRightHandSide(
+            solution.space, numerical_flux
+        )
         time_stepping = shallow_water.build_adaptive_time_stepping(
             benchmark, solution, cfl_number, adaptive
         )

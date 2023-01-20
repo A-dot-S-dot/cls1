@@ -9,6 +9,7 @@ from problem.scalar.solver.cg_low import LowOrderContinuousGalerkinSolver
 from problem.scalar.solver.mcl import MCLSolver
 from problem.shallow_water.solver.godunov import GodunovSolver
 from problem.shallow_water.solver.lax_friedrichs import LocalLaxFriedrichsSolver
+from problem.shallow_water.solver.subgrid_network import SubgridNetworkSolver
 
 from . import argument
 
@@ -98,36 +99,22 @@ class GodunovParser(SolverParser):
         argument.add_adaptive_time_stepping(self)
 
 
-# class ReducedExactSolverParser(SolverParser):
-#     prog = "reduced-exact"
-#     name = "Reduced Exact Solved (Godunov)"
-#     solver = solver.ReducedExactSolver
+class SubgridNetworkParser(SolverParser):
+    prog = "subgrid-network"
+    name = """Solver with NN corrected flux"""
+    solver = SubgridNetworkSolver
 
-#     def _add_arguments(self):
-#         argument.add_name(self, self.name)
-#         argument.add_short(self, self.prog)
-#         argument.add_mesh_size(
-#             self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
-#         )
-#         argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
-#         argument.add_adaptive_time_stepping(self)
-#         argument.add_coarsening_degree(self)
-
-
-# class ReducedNetworkParser(SolverParser):
-#     prog = "reduced-network"
-#     name = """Reduced Solver with Neural Network (Godunov)"""
-#     solver = solver.ReducedNetworkSolver
-
-#     def _add_arguments(self):
-#         argument.add_name(self, self.name)
-#         argument.add_short(self, self.prog)
-#         argument.add_mesh_size(
-#             self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
-#         )
-#         argument.add_coarsening_degree(self)
-#         argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
-#         argument.add_network_load_path(self)
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(
+            self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
+        )
+        argument.add_coarsening_degree(self)
+        argument.add_cfl_number(
+            self, defaults.GODUNOV_CFL_NUMBER / defaults.COARSENING_DEGREE
+        )
+        argument.add_network_load_path(self)
 
 
 class LocalLaxFriedrichsParser(SolverParser):
@@ -150,8 +137,7 @@ SCALAR_SOLVER_PARSERS = {
 }
 SHALLOW_WATER_SOLVER_PARSERS = {
     "godunov": GodunovParser,
-    # "reduced-exact": ReducedExactSolverParser,
-    # "reduced-network": ReducedNetworkParser,
+    "subgrid-network": SubgridNetworkParser,
     "llf": LocalLaxFriedrichsParser,
 }
 
