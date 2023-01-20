@@ -18,6 +18,38 @@ class NumericalFlux(ABC):
         return self.__class__.__name__
 
 
+class NumericalFluxWithHistory(NumericalFlux):
+    """Saves numerical flux calculated once in a history."""
+
+    _numerical_flux: NumericalFlux
+    _flux_left_history: np.ndarray
+    _flux_right_history: np.ndarray
+
+    def __init__(self, numerical_flux: NumericalFlux):
+        self._numerical_flux = numerical_flux
+        self._flux_left_history = np.array([])
+        self._flux_right_history = np.array([])
+
+    @property
+    def flux_left_history(self) -> np.ndarray:
+        return self._flux_left_history
+
+    @property
+    def flux_right_history(self) -> np.ndarray:
+        return self._flux_right_history
+
+    def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        flux_left, flux_right = self._numerical_flux(dof_vector)
+        self._flux_left_history = np.append(
+            self._flux_left_history, np.array([flux_left]), axis=0
+        )
+        self._flux_right_history = np.append(
+            self._flux_right_history, np.array([flux_right]), axis=0
+        )
+
+        return flux_left, flux_right
+
+
 class NumericalFluxDependentRightHandSide(SystemVector):
     _volume_space: FiniteVolumeSpace
     _numerical_flux: NumericalFlux
