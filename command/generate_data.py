@@ -9,6 +9,47 @@ from tqdm.auto import tqdm, trange
 from .calculate import Calculate
 from .command import Command
 
+# class ExactSubgridFlux(NumericalFlux):
+#     """Calculates exat subgrid flux for shallow water equations with flat
+#     bottom.
+
+#     """
+
+#     _fine_numerical_fluxes: NumericalFluxContainer
+#     _coarse_solution: DiscreteSolution
+#     _coarse_numerical_flux: ObservedNumericalFlux
+#     _coarsening_degree: int
+#     _time_index: int
+
+#     def __init__(
+#         self,
+#         fine_numerical_fluxes: NumericalFluxContainer,
+#         coarse_solution: DiscreteSolution,
+#         coarse_numerical_flux: ObservedNumericalFlux,
+#         coarsening_degree: int,
+#     ):
+#         self._fine_numerical_fluxes = fine_numerical_fluxes
+#         self._coarse_solution = coarse_solution
+#         self._coarse_numerical_flux = coarse_numerical_flux
+#         self._coarsening_degree = coarsening_degree
+#         self._time_index = 0
+
+#     def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+#         left_subgrid_flux = self._get_left_subgrid_flux()
+#         self._time_index += 1
+
+#         return left_subgrid_flux, np.roll(left_subgrid_flux, -1, axis=0)
+
+#     def _get_left_subgrid_flux(
+#         self,
+#     ) -> np.ndarray:
+#         left_coarse_flux = self._coarse_numerical_flux.left_numerical_flux
+#         left_fine_flux = self._fine_numerical_fluxes.left_numerical_fluxes[
+#             self._time_index
+#         ]
+
+#         return left_fine_flux[:: self._coarsening_degree] + -left_coarse_flux
+
 
 class DataBuilder:
     def __call__(
