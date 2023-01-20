@@ -91,7 +91,6 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
         )
 
         self._time_history = np.array([self.time])
-        self._time_step_history = np.array([])
         self._value_history = np.array([self.value])
 
     @property
@@ -100,7 +99,7 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
 
     @property
     def time_step_history(self) -> np.ndarray:
-        return self._time_step_history
+        return self.time_history[1:] - self.time_history[:-1]
 
     @property
     def value_history(self) -> np.ndarray:
@@ -109,7 +108,6 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
     def update(self, time_step: float, solution: np.ndarray):
         DiscreteSolution.update(self, time_step, solution)
         self._time_history = np.append(self.time_history, self.time)
-        self._time_step_history = np.append(self.time_step_history, time_step)
         self._value_history = np.append(
             self.value_history, np.array([solution.copy()]), axis=0
         )
