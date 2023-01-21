@@ -54,16 +54,16 @@ class CorrectedNumericalFlux(NumericalFlux):
     """Adds to a given flux a subgrid flux."""
 
     _numerical_flux: NumericalFlux
-    _subgrid_flux: NumericalFlux
+    _flux_correction: NumericalFlux
 
-    def __init__(self, numerical_flux: NumericalFlux, subgrid_flux: NumericalFlux):
+    def __init__(self, numerical_flux: NumericalFlux, flux_correction: NumericalFlux):
         self._numerical_flux = numerical_flux
-        self._subgrid_flux = subgrid_flux
+        self._flux_correction = flux_correction
 
     def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        flux = self._numerical_flux(dof_vector)
-        subgrid_flux = self._subgrid_flux(dof_vector)
-        return flux[0] + subgrid_flux[0], flux[1] + subgrid_flux[1]
+        flux_left, flux_right = self._numerical_flux(dof_vector)
+        flux_correction_left, flux_correction_right = self._flux_correction(dof_vector)
+        return flux_left + flux_correction_left, flux_right + flux_correction_right
 
 
 class NumericalFluxDependentRightHandSide(SystemVector):
