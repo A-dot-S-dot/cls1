@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from base.solver import Solver
+from core import Solver
 from tqdm.auto import tqdm
 
 from .command import Command

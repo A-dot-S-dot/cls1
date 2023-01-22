@@ -3,8 +3,8 @@ import textwrap
 
 import command as cmd
 import defaults
-from problem.scalar.benchmark import advection, burgers
-from problem.shallow_water import benchmark as shallow_water
+from scalar.benchmark import advection, burgers
+from shallow_water import benchmark as shallow_water
 
 from . import action, argument
 from . import postprocessing as ppr

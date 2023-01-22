@@ -3,13 +3,9 @@ from abc import ABC, abstractmethod
 from typing import Type
 
 import defaults
-from base.solver import Solver
-from problem.scalar.solver.cg import ContinuousGalerkinSolver
-from problem.scalar.solver.cg_low import LowOrderContinuousGalerkinSolver
-from problem.scalar.solver.mcl import MCLSolver
-from problem.shallow_water.solver.godunov import GodunovSolver
-from problem.shallow_water.solver.lax_friedrichs import LocalLaxFriedrichsSolver
-from problem.shallow_water.solver.subgrid_network import SubgridNetworkSolver
+from core.solver import Solver
+from scalar.solver import *
+from shallow_water.solver import *
 
 from . import argument
 

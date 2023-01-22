@@ -1,5 +1,4 @@
-from base.discretization.finite_element import LagrangeSpace
-from base.mesh import Interval, UniformMesh
+from core import LagrangeSpace, Interval, UniformMesh
 
 domain = Interval(0, 1)
 LINEAR_MESH = UniformMesh(domain, 4)

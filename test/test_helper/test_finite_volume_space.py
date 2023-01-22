@@ -1,5 +1,4 @@
-from base.discretization.finite_volume import FiniteVolumeSpace
-from base.mesh import Interval, UniformMesh
+from core import FiniteVolumeSpace, Interval, UniformMesh
 
 domain = Interval(0, 1)
 VOLUME_MESH = UniformMesh(domain, 4)

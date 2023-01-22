@@ -2,8 +2,8 @@ from typing import Callable
 from unittest import TestCase
 
 import numpy as np
+from core import Interval
 from numpy import cos, exp, sin
-from base.mesh import Interval
 
 from .discrete_derivative import discrete_derivative
 from .piecewise_lagrange_interpolation import PiecewiseLagrangeInterpolation

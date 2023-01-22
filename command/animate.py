@@ -6,12 +6,12 @@ import defaults
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-from base.benchmark import Benchmark, NoExactSolutionError
-from base.discretization import DiscreteSolution
-from base.interpolate import TemporalInterpolator
-from base.solver import Solver
+from core.benchmark import Benchmark, NoExactSolutionError
+from core.discretization import DiscreteSolution
+from core.interpolate import TemporalInterpolator
+from core.solver import Solver
 from matplotlib import animation
-from problem.shallow_water.benchmark import ShallowWaterBenchmark
+from shallow_water.benchmark import ShallowWaterBenchmark
 from tqdm.auto import tqdm
 
 from .command import Command

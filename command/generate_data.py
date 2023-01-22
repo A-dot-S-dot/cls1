@@ -3,7 +3,7 @@ from typing import Callable, List, Tuple
 import defaults
 import numpy as np
 import pandas as pd
-from base.discretization import DiscreteSolution
+from core.discretization import DiscreteSolution
 from tqdm.auto import tqdm, trange
 
 from .calculate import Calculate

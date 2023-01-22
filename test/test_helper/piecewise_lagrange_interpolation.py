@@ -1,6 +1,6 @@
 from typing import Dict, Sequence
 
-from base.mesh import Interval
+from core import Interval
 from numpy import nan, poly1d
 from scipy.interpolate import lagrange
 

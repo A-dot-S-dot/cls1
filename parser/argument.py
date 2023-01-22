@@ -1,5 +1,5 @@
-import base.ode_solver as ode_solver
 import defaults
+from core import ode_solver
 
 from . import parser_type
 

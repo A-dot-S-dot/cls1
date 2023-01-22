@@ -4,9 +4,9 @@ from typing import Callable, Generic, Optional, Sequence, TypeVar
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
-from base.benchmark import Benchmark, NoExactSolutionError
-from base.solver import Solver
-from problem.shallow_water.benchmark import ShallowWaterBenchmark
+from core.benchmark import Benchmark, NoExactSolutionError
+from core.solver import Solver
+from shallow_water.benchmark import ShallowWaterBenchmark
 from tqdm.auto import tqdm
 
 from .command import Command

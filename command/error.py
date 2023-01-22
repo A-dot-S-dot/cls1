@@ -1,15 +1,14 @@
-import os
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Type, TypeVar
+from typing import Callable, Optional, Sequence, Tuple, Type, TypeVar
 
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from base import norm, solver
-from base.benchmark import Benchmark, NoExactSolutionError
-from base.discretization import DiscreteSolution, SolverSpace
-from base.discretization.finite_element import LagrangeSpace
-from base.interpolate import TemporalInterpolator
+from core import norm, solver
+from core.benchmark import Benchmark, NoExactSolutionError
+from core.discretization import DiscreteSolution, SolverSpace
+from core.discretization.finite_element import LagrangeSpace
+from core.interpolate import TemporalInterpolator
 from tqdm import tqdm
 
 from .command import Command
