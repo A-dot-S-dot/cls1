@@ -220,7 +220,7 @@ class TestGodunovFlux(TestCase):
                 )
 
     def test_calucalte_cell_flux_right(self):
-        expected_cell_flux_right = np.array(
+        expected_cell_flux_right = -np.array(
             [
                 [1.0, 1.5],
                 [-1.0, 1.0],
@@ -244,7 +244,7 @@ class TestGodunovFlux(TestCase):
                 [-1.24264069, 0.96446609],
             ]
         )
-        expected_flux_right = np.array(
+        expected_flux_right = -np.array(
             [
                 [1.0, 1.5],
                 [-1.0, 1.0],

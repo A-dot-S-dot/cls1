@@ -81,4 +81,4 @@ class NumericalFluxDependentRightHandSide:
         left_flux, right_flux = self._numerical_flux(dof_vector)
 
         step_length = self._volume_space.mesh.step_length
-        return (left_flux - right_flux) / step_length
+        return (left_flux + right_flux) / step_length

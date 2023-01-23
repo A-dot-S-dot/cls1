@@ -87,7 +87,7 @@ class LocalLaxFriedrichsFlux(core.NumericalFlux):
 
         return (
             node_flux[self._volume_space.left_node_indices],
-            node_flux[self._volume_space.right_node_indices],
+            -node_flux[self._volume_space.right_node_indices],
         )
 
     def _calculate_node_flux(

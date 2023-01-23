@@ -257,7 +257,7 @@ class GodunovNumericalFlux(core.NumericalFlux):
         return node_flux_right[self._volume_space.left_node_indices]
 
     def _calculate_cell_flux_right(self, node_flux_left: np.ndarray) -> np.ndarray:
-        return node_flux_left[self._volume_space.right_node_indices]
+        return -node_flux_left[self._volume_space.right_node_indices]
 
 
 def build_godunov_numerical_flux(

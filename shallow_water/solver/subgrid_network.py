@@ -106,7 +106,7 @@ class NetworkSubgridFlux(nf.NumericalFlux):
         input = self._get_input(dof_vector)
         left_subgrid_flux = self._network(input).detach().numpy()
 
-        return left_subgrid_flux, np.roll(left_subgrid_flux, -1, axis=0)
+        return left_subgrid_flux, -np.roll(left_subgrid_flux, -1, axis=0)
 
     def _get_input(self, dof_vector: np.ndarray) -> torch.Tensor:
         stencil_values = np.array(

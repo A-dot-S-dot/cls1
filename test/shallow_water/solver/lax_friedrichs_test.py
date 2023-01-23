@@ -63,7 +63,7 @@ class TestLocalLaxFriedrichNumericalFlux(TestCase):
         expected_flux_left = np.array(
             [[1.5, 0.75], [1.5, 1.75], [-1.5, 1.75], [-1.5, 0.75]]
         )
-        expected_flux_right = np.array(
+        expected_flux_right = -np.array(
             [[1.5, 1.75], [-1.5, 1.75], [-1.5, 0.75], [1.5, 0.75]]
         )
         flux_left, flux_right = self.numerical_flux(self.dof_vector)
