@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Sequence, Set, Tuple
+from typing import List, Set, Tuple
+
+import numpy as np
 
 from .mesh import Mesh
 
@@ -107,7 +109,7 @@ class DOFNeighbourIndicesMapping(IndexMapping):
     _mesh: Mesh
     _polynomial_degree: int
     _dimension: int
-    _neighbour_indices: Sequence[Set[int]]
+    _neighbour_indices: np.ndarray
 
     def __init__(self, mesh: Mesh, polynomial_degree: int, dimension: int):
         self._mesh = mesh
@@ -115,17 +117,42 @@ class DOFNeighbourIndicesMapping(IndexMapping):
         self._dimension = dimension
         self._global_index = GlobalIndexMapping(mesh, polynomial_degree)
 
-        self._build_neighbours()
+        neighbours = self._build_neighbours()
+        self._neighbour_indices = self._build_neighbours_array(neighbours)
 
-    def _build_neighbours(self):
-        self._neighbour_indices = [set() for _ in range(self._dimension)]
+    def _build_neighbours(self) -> List[Set[int]]:
+        neighbour_indices = [set() for _ in range(self._dimension)]
 
         for cell_index in range(len(self._mesh)):
             for local_index_1 in range(self._polynomial_degree + 1):
                 global_index_1 = self._global_index(cell_index, local_index_1)
                 for local_index_2 in range(self._polynomial_degree + 1):
                     global_index_2 = self._global_index(cell_index, local_index_2)
-                    self._neighbour_indices[global_index_1] |= {global_index_2}
+                    neighbour_indices[global_index_1] |= {global_index_2}
 
-    def __call__(self, dof_index: int) -> Tuple[int, ...]:
-        return tuple(self._neighbour_indices[dof_index])
+        return neighbour_indices
+
+    def _build_neighbours_array(self, neighbours: List) -> np.ndarray:
+        neighbours_max = self._calculate_neighbours_max(neighbours)
+        neighbours = [list(n) for n in neighbours]
+        neighbours = [
+            self._fill(n, i, neighbours_max) for i, n in enumerate(neighbours)
+        ]
+
+        return np.array(neighbours)
+
+    def _calculate_neighbours_max(self, neighbours: List) -> int:
+        return max([len(n) for n in neighbours])
+
+    def _fill(self, neighbours: List, index: int, number: int) -> List:
+        for _ in range(number - len(neighbours)):
+            neighbours.append(index)
+
+        return neighbours
+
+    def __call__(self, dof_index: int) -> np.ndarray:
+        return np.array(list(set(self._neighbour_indices[dof_index])))
+
+    @property
+    def array(self) -> np.ndarray:
+        return self._neighbour_indices

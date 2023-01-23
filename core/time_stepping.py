@@ -2,6 +2,7 @@ from typing import Callable
 
 import numpy as np
 
+from .benchmark import Benchmark
 from .discretization import DiscreteSolution
 
 
@@ -155,3 +156,22 @@ class TimeStepping:
             self.__class__.__name__
             + f"(start_time={self._start_time}, end_time={self._end_time}, time_step_generator={self._time_step_generator})"
         )
+
+
+def build_adaptive_time_stepping(
+    benchmark: Benchmark,
+    solution: DiscreteSolution,
+    optimal_time_step: Callable[[np.ndarray], float],
+    cfl_number: float,
+    adaptive: bool,
+) -> TimeStepping:
+    return TimeStepping(
+        benchmark.end_time,
+        cfl_number,
+        DiscreteSolutionDependentTimeStep(
+            optimal_time_step,
+            solution,
+        ),
+        adaptive=adaptive,
+        start_time=benchmark.start_time,
+    )

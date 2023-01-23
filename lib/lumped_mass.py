@@ -1,10 +1,10 @@
 import numpy as np
-from core import LagrangeSpace, SystemVector
+from core import LagrangeSpace
 
 from .mass import MassMatrix
 
 
-class LumpedMassVector(SystemVector):
+class LumpedMassVector:
     """Lumped mass system vector. It's entries are raw sums of mass matrix or
     Integral(bi), where bi is finite element basis.
 
@@ -17,5 +17,5 @@ class LumpedMassVector(SystemVector):
         lumped_mass = mass().sum(axis=1)
         self._lumped_mass = lumped_mass.A1
 
-    def __call__(self) -> np.ndarray:
+    def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         return self._lumped_mass

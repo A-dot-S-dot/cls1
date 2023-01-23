@@ -20,16 +20,11 @@ class WaveSpeed:
     _discharge_to_velocity_transformer: DischargeToVelocityTransformer
 
     def __init__(
-        self,
-        volume_space: FiniteVolumeSpace,
-        gravitational_acceleration: float,
-        discharge_to_velocity_transformer=None,
+        self, volume_space: FiniteVolumeSpace, gravitational_acceleration: float
     ):
         self._volume_space = volume_space
         self._gravitational_acceleration = gravitational_acceleration
-        self._discharge_to_velocity_transformer = (
-            discharge_to_velocity_transformer or DischargeToVelocityTransformer()
-        )
+        self._discharge_to_velocity_transformer = DischargeToVelocityTransformer()
 
     def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         height_velocity_dof_vector = self._discharge_to_velocity_transformer(dof_vector)
@@ -99,16 +94,11 @@ class MaximumWaveSpeed:
     _discharge_to_velocity_transformer: DischargeToVelocityTransformer
 
     def __init__(
-        self,
-        volume_space: FiniteVolumeSpace,
-        gravitational_acceleration: float,
-        discharge_to_velocity_transformer=None,
+        self, volume_space: FiniteVolumeSpace, gravitational_acceleration: float
     ):
         self._volume_space = volume_space
         self._gravitational_acceleration = gravitational_acceleration
-        self._discharge_to_velocity_transformer = (
-            discharge_to_velocity_transformer or DischargeToVelocityTransformer()
-        )
+        self._discharge_to_velocity_transformer = DischargeToVelocityTransformer()
 
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         height_velocity_dof_vector = self._discharge_to_velocity_transformer(dof_vector)

@@ -1,4 +1,8 @@
-from test.test_helper import LINEAR_LAGRANGE_SPACE, QUADRATIC_LAGRANGE_SPACE
+from test.test_helper import (
+    LINEAR_LAGRANGE_SPACE,
+    QUADRATIC_LAGRANGE_SPACE,
+    VOLUME_SPACE,
+)
 from unittest import TestCase
 
 import numpy as np
@@ -6,7 +10,7 @@ import numpy as np
 from lib import LocalMaximum, LocalMinimum
 
 
-class TestLinearLocalBounds(TestCase):
+class TestLinearLagrangeLocalBounds(TestCase):
     test_dofs = [np.array([1, 0, 0, 0]), np.array([1, 2, 3, 4])]
     expected_maximum = [[1, 1, 0, 1], [4, 3, 4, 4]]
     expected_minimum = [[0, 0, 0, 0], [1, 1, 2, 1]]
@@ -22,9 +26,34 @@ class TestLinearLocalBounds(TestCase):
             self.assertListEqual(list(self.local_minimum(test_dofs)), expected_minimum)
 
 
-class TestQuadraticLocalBounds(TestLinearLocalBounds):
+class TestQuadraticLagrangeLocalBounds(TestLinearLagrangeLocalBounds):
     test_dofs = [np.array([1, 2, 0, 0]), np.array([1, 2, 3, 4])]
     expected_maximum = [[2, 2, 2, 1], [4, 3, 4, 4]]
     expected_minimum = [[0, 0, 0, 0], [1, 1, 1, 1]]
     local_maximum = LocalMaximum(QUADRATIC_LAGRANGE_SPACE)
     local_minimum = LocalMinimum(QUADRATIC_LAGRANGE_SPACE)
+
+
+class TestVolumeSpaceLocalBounds(TestLinearLagrangeLocalBounds):
+    local_maximum = LocalMaximum(VOLUME_SPACE)
+    local_minimum = LocalMinimum(VOLUME_SPACE)
+
+
+class TestSystemLocalBounds(TestCase):
+    test_dof = np.array([[1, 1], [0, 2], [0, 3], [0, 4]])
+
+    def test_local_maximum(self):
+        local_maximum = LocalMaximum(VOLUME_SPACE)
+        maximum = local_maximum(self.test_dof)
+        expected_maximum = np.array([[1, 4], [1, 3], [0, 4], [1, 4]])
+        for i in range(4):
+            for j in range(2):
+                self.assertEqual(maximum[i, j], expected_maximum[i, j])
+
+    def test_local_minimum(self):
+        local_minimum = LocalMinimum(VOLUME_SPACE)
+        minimum = local_minimum(self.test_dof)
+        expected_minimum = np.array([[0, 1], [0, 1], [0, 2], [0, 1]])
+        for i in range(4):
+            for j in range(2):
+                self.assertEqual(minimum[i, j], expected_minimum[i, j])

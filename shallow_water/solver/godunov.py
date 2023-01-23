@@ -1,18 +1,26 @@
 from typing import Optional, Tuple
 
-import core.ode_solver as os
+import core
 import defaults
 import numpy as np
 import shallow_water
-from core import factory
-from core import time_stepping as ts
-from core.discretization.finite_volume import FiniteVolumeSpace
-from core.numerical_flux import NumericalFlux, NumericalFluxDependentRightHandSide
-from core.solver import Solver
 from shallow_water.benchmark import ShallowWaterBenchmark
 
 
-class GodunovNumericalFlux(NumericalFlux):
+class OptimalTimeStep:
+    _wave_speed: core.SystemVector
+    _step_length: float
+
+    def __init__(self, wave_speed: core.SystemVector, step_length: float):
+        self._wave_speed = wave_speed
+        self._step_length = step_length
+
+    def __call__(self, dof_vector: np.ndarray) -> float:
+        wave_speed = self._wave_speed(dof_vector)
+        return self._step_length / np.max(wave_speed)
+
+
+class GodunovNumericalFlux(core.NumericalFlux):
     """Calculates the shallow-water Godunov numerical fluxes,
     i.e.
 
@@ -24,30 +32,28 @@ class GodunovNumericalFlux(NumericalFlux):
 
     """
 
-    _volume_space: FiniteVolumeSpace
+    _volume_space: core.FiniteVolumeSpace
+    _wave_speed: core.SystemTuple
+    _flux: core.SystemVector
     _gravitational_acceleration: float
     _topography_step: np.ndarray
     _source_term: shallow_water.SourceTermDiscretization
-    _wave_speed: shallow_water.WaveSpeed
-    _flux: shallow_water.Flux
     _nullifier: shallow_water.Nullifier
 
     def __init__(
         self,
-        volume_space: FiniteVolumeSpace,
+        volume_space: core.FiniteVolumeSpace,
         gravitational_acceleration: float,
+        flux: core.SystemVector,
+        wave_speed: core.SystemTuple,
         bottom=None,
         source_term=None,
-        wave_speed=None,
-        flux=None,
         nullifier=None,
     ):
         self._volume_space = volume_space
         self._gravitational_acceleration = gravitational_acceleration
-        self._wave_speed = wave_speed or shallow_water.WaveSpeed(
-            volume_space, gravitational_acceleration
-        )
-        self._flux = flux or shallow_water.Flux(gravitational_acceleration)
+        self._wave_speed = wave_speed
+        self._flux = flux
         self._nullifier = nullifier or shallow_water.Nullifier()
 
         self._build_topography_step(bottom)
@@ -255,8 +261,11 @@ class GodunovNumericalFlux(NumericalFlux):
 
 
 def build_godunov_numerical_flux(
-    benchmark: ShallowWaterBenchmark, volume_space: FiniteVolumeSpace
-) -> NumericalFlux:
+    benchmark: ShallowWaterBenchmark,
+    volume_space: core.FiniteVolumeSpace,
+    flux: core.SystemVector,
+    wave_speed: core.SystemTuple,
+) -> core.NumericalFlux:
     topography = shallow_water.build_topography_discretization(
         benchmark, len(volume_space.mesh)
     )
@@ -265,12 +274,14 @@ def build_godunov_numerical_flux(
     return GodunovNumericalFlux(
         volume_space,
         benchmark.gravitational_acceleration,
-        topography,
+        flux,
+        wave_speed,
+        bottom=topography,
         source_term=source_term,
     )
 
 
-class GodunovSolver(Solver):
+class GodunovSolver(core.Solver):
     def __init__(
         self,
         benchmark: ShallowWaterBenchmark,
@@ -286,25 +297,34 @@ class GodunovSolver(Solver):
         mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE
         cfl_number = cfl_number or defaults.GODUNOV_CFL_NUMBER
         adaptive = adaptive
-        ode_solver_type = os.ForwardEuler
+        ode_solver_type = core.ForwardEuler
 
-        solution = factory.build_finite_volume_solution(
+        solution = core.build_finite_volume_solution(
             benchmark, mesh_size, save_history=save_history
         )
-        numerical_flux = build_godunov_numerical_flux(benchmark, solution.space)
-        right_hand_side = NumericalFluxDependentRightHandSide(
+        wave_speed = shallow_water.WaveSpeed(
+            solution.space, benchmark.gravitational_acceleration
+        )
+        flux = shallow_water.Flux(benchmark.gravitational_acceleration)
+
+        numerical_flux = build_godunov_numerical_flux(
+            benchmark, solution.space, flux, wave_speed
+        )
+        right_hand_side = core.NumericalFluxDependentRightHandSide(
             solution.space, numerical_flux
         )
-        time_stepping = shallow_water.build_adaptive_time_stepping(
-            benchmark, solution, cfl_number, adaptive
-        )
-        cfl_checker = ts.CFLChecker(
-            shallow_water.OptimalTimeStep(
+        optimal_time_step = OptimalTimeStep(
+            shallow_water.MaximumWaveSpeed(
                 solution.space, benchmark.gravitational_acceleration
-            )
+            ),
+            solution.space.mesh.step_length,
         )
+        time_stepping = core.build_adaptive_time_stepping(
+            benchmark, solution, optimal_time_step, cfl_number, adaptive
+        )
+        cfl_checker = core.CFLChecker(optimal_time_step)
 
-        Solver.__init__(
+        core.Solver.__init__(
             self,
             solution,
             right_hand_side,

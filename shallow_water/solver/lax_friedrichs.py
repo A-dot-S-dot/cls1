@@ -4,12 +4,10 @@ import core.ode_solver as os
 import defaults
 import numpy as np
 import shallow_water
-from core import factory
-from core import time_stepping as ts
-from core.discretization.finite_volume import FiniteVolumeSpace
-from core.numerical_flux import NumericalFlux, NumericalFluxDependentRightHandSide
-from core.solver import Solver
+import core
 from shallow_water.benchmark import ShallowWaterBenchmark
+
+from . import godunov
 
 
 class LocalLaxFriedrichsIntermediateState:
@@ -21,22 +19,19 @@ class LocalLaxFriedrichsIntermediateState:
 
     """
 
-    _volume_space: FiniteVolumeSpace
-    _flux: shallow_water.Flux
-    _wave_speed: shallow_water.MaximumWaveSpeed
+    _volume_space: core.FiniteVolumeSpace
+    _flux: core.SystemVector
+    _wave_speed: core.SystemVector
 
     def __init__(
         self,
-        volume_space: FiniteVolumeSpace,
-        gravitational_acceleration: float,
-        flux=None,
-        wave_speed=None,
+        volume_space: core.FiniteVolumeSpace,
+        flux: core.SystemVector,
+        wave_speed: core.SystemVector,
     ):
         self._volume_space = volume_space
-        self._flux = flux or shallow_water.Flux(gravitational_acceleration)
-        self._wave_speed = wave_speed or shallow_water.MaximumWaveSpeed(
-            volume_space, gravitational_acceleration
-        )
+        self._flux = flux
+        self._wave_speed = wave_speed
 
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         values_left = dof_vector[self._volume_space.left_cell_indices]
@@ -45,12 +40,12 @@ class LocalLaxFriedrichsIntermediateState:
         flux_right = self._flux(values_right)
         wave_speed = self._wave_speed(dof_vector)
 
-        return (values_left + values_right) / 2 + (flux_left - flux_right) / (
+        return (values_left + values_right) / 2 + (flux_left + -flux_right) / (
             2 * wave_speed[:, None]
         )
 
 
-class LocalLaxFriedrichsFlux(NumericalFlux):
+class LocalLaxFriedrichsFlux(core.NumericalFlux):
     """Calculates the shallow-water local lax friedrich numerical fluxes,
     i.e.
 
@@ -63,32 +58,22 @@ class LocalLaxFriedrichsFlux(NumericalFlux):
 
     """
 
-    _volume_space: FiniteVolumeSpace
-    _wave_speed: shallow_water.MaximumWaveSpeed
-    _flux: shallow_water.Flux
+    _volume_space: core.FiniteVolumeSpace
+    _flux: core.SystemVector
+    _wave_speed: core.SystemVector
+    _intermediate_state: core.SystemVector
 
     def __init__(
         self,
-        volume_space: FiniteVolumeSpace,
-        gravitational_acceleration: float,
-        flux=None,
-        wave_speed=None,
-        intermediate_state=None,
+        volume_space: core.FiniteVolumeSpace,
+        flux: core.SystemVector,
+        wave_speed: core.SystemVector,
+        intermediate_state: core.SystemVector,
     ):
         self._volume_space = volume_space
-        self._flux = flux or shallow_water.Flux(gravitational_acceleration)
-        self._wave_speed = wave_speed or shallow_water.MaximumWaveSpeed(
-            volume_space, gravitational_acceleration
-        )
-        self._intermediate_state = (
-            intermediate_state
-            or LocalLaxFriedrichsIntermediateState(
-                volume_space,
-                gravitational_acceleration,
-                flux=flux,
-                wave_speed=wave_speed,
-            )
-        )
+        self._flux = flux
+        self._wave_speed = wave_speed
+        self._intermediate_state = intermediate_state
 
     def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         value_left = dof_vector[self._volume_space.left_cell_indices]
@@ -112,22 +97,10 @@ class LocalLaxFriedrichsFlux(NumericalFlux):
         value_left: np.ndarray,
         flux_left,
     ) -> np.ndarray:
-        return wave_speed[:, None] * (value_left - intermediate_state) + flux_left
+        return wave_speed[:, None] * (value_left + -intermediate_state) + flux_left
 
 
-def build_local_lax_friedrichs_flux(
-    benchmark: ShallowWaterBenchmark, volume_space: FiniteVolumeSpace
-) -> NumericalFlux:
-    bottom = shallow_water.build_topography_discretization(
-        benchmark, len(volume_space.mesh)
-    )
-    if not shallow_water.is_constant(bottom):
-        raise ValueError("Bottom must be constant.")
-
-    return LocalLaxFriedrichsFlux(volume_space, benchmark.gravitational_acceleration)
-
-
-class LocalLaxFriedrichsSolver(Solver):
+class LocalLaxFriedrichsSolver(core.Solver):
     def __init__(
         self,
         benchmark: ShallowWaterBenchmark,
@@ -145,23 +118,39 @@ class LocalLaxFriedrichsSolver(Solver):
         adaptive = adaptive
         ode_solver_type = os.ForwardEuler
 
-        solution = factory.build_finite_volume_solution(
+        solution = core.build_finite_volume_solution(
             benchmark, mesh_size, save_history=save_history
         )
-        numerical_flux = build_local_lax_friedrichs_flux(benchmark, solution.space)
-        right_hand_side = NumericalFluxDependentRightHandSide(
+
+        bottom = shallow_water.build_topography_discretization(
+            benchmark, len(solution.space.mesh)
+        )
+        if not shallow_water.is_constant(bottom):
+            raise ValueError("Bottom must be constant.")
+
+        flux = shallow_water.Flux(benchmark.gravitational_acceleration)
+        wave_speed = shallow_water.MaximumWaveSpeed(
+            solution.space, benchmark.gravitational_acceleration
+        )
+        intermediate_state = LocalLaxFriedrichsIntermediateState(
+            solution.space, flux, wave_speed
+        )
+        numerical_flux = LocalLaxFriedrichsFlux(
+            solution.space, flux, wave_speed, intermediate_state
+        )
+        right_hand_side = core.NumericalFluxDependentRightHandSide(
             solution.space, numerical_flux
         )
-        time_stepping = shallow_water.build_adaptive_time_stepping(
-            benchmark, solution, cfl_number, adaptive
-        )
-        cfl_checker = ts.CFLChecker(
-            shallow_water.OptimalTimeStep(
-                solution.space, benchmark.gravitational_acceleration
-            )
-        )
 
-        Solver.__init__(
+        optimal_time_step = godunov.OptimalTimeStep(
+            wave_speed, solution.space.mesh.step_length
+        )
+        time_stepping = core.build_adaptive_time_stepping(
+            benchmark, solution, optimal_time_step, cfl_number, adaptive
+        )
+        cfl_checker = core.CFLChecker(optimal_time_step)
+
+        core.Solver.__init__(
             self,
             solution,
             right_hand_side,

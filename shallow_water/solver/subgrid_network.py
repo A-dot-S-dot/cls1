@@ -14,7 +14,7 @@ from core.solver import Solver
 from shallow_water.benchmark import ShallowWaterBenchmark
 from torch import nn
 
-from .godunov import build_godunov_numerical_flux
+from . import godunov
 
 
 class Curvature:
@@ -153,7 +153,14 @@ class SubgridNetworkSolver(Solver):
         solution = factory.build_finite_volume_solution(
             benchmark, mesh_size, save_history=save_history
         )
-        numerical_flux = build_godunov_numerical_flux(benchmark, solution.space)
+
+        flux = shallow_water.Flux(benchmark.gravitational_acceleration)
+        wave_speed = shallow_water.WaveSpeed(
+            solution.space, benchmark.gravitational_acceleration
+        )
+        numerical_flux = godunov.build_godunov_numerical_flux(
+            benchmark, solution.space, flux, wave_speed
+        )
         subgrid_flux = NetworkSubgridFlux(
             solution.space,
             network,
@@ -166,14 +173,17 @@ class SubgridNetworkSolver(Solver):
         right_hand_side = nf.NumericalFluxDependentRightHandSide(
             solution.space, corrected_numerical_flux
         )
-        time_stepping = shallow_water.build_adaptive_time_stepping(
-            benchmark, solution, cfl_number, adaptive=False
-        )
-        cfl_checker = ts.CFLChecker(
-            shallow_water.OptimalTimeStep(
+
+        optimal_time_step = godunov.OptimalTimeStep(
+            shallow_water.MaximumWaveSpeed(
                 solution.space, benchmark.gravitational_acceleration
-            )
+            ),
+            solution.space.mesh.step_length,
         )
+        time_stepping = ts.build_adaptive_time_stepping(
+            benchmark, solution, optimal_time_step, cfl_number, adaptive=False
+        )
+        cfl_checker = ts.CFLChecker(optimal_time_step)
 
         Solver.__init__(
             self,

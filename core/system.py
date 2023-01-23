@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, Tuple
 
 import numpy as np
 from scipy.sparse import csr_matrix, lil_matrix, spmatrix
@@ -54,13 +54,8 @@ class QuadratureBasedMatrixEntryCalculator(SystemMatrixEntryCalculator):
         self._local_basis = LocalLagrangeBasis(polynomial_degree)
 
 
-class SystemVector(ABC):
-    @abstractmethod
-    def __call__(self, *args) -> np.ndarray:
-        ...
-
-    def __repr__(self) -> str:
-        return self.__class__.__name__
+SystemVector = Callable[[np.ndarray], np.ndarray]
+SystemTuple = Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]
 
 
 class SystemMatrix:
@@ -130,7 +125,7 @@ class SystemMatrix:
         return self().multiply(vector.reshape((len(vector), 1)))
 
 
-class LocallyAssembledVector(SystemVector):
+class LocallyAssembledVector:
     """Assembles with 'local to global' principles."""
 
     _element_space: LagrangeSpace

@@ -8,11 +8,15 @@ from shallow_water.solver import godunov
 
 class TestGodunovFlux(TestCase):
     dof_vector = np.array([[1.0, 1.0], [0.0, 0.0], [1.0, -1.0], [2.0, 0.0]])
+    flux = shallow_water.Flux(1)
+    wave_speed = shallow_water.WaveSpeed(VOLUME_SPACE, 1)
     numerical_flux = godunov.GodunovNumericalFlux(
         VOLUME_SPACE,
         1,
-        np.array([0.0, 1.0, 0.0, 0.0]),
-        shallow_water.NaturalSouceTerm(),
+        flux,
+        wave_speed,
+        bottom=np.array([0.0, 1.0, 0.0, 0.0]),
+        source_term=shallow_water.NaturalSouceTerm(),
     )
     height_left = np.array([2, 1, 0, 1])
     height_right = np.array([1, 0, 1, 2])
@@ -87,24 +91,34 @@ class TestGodunovFlux(TestCase):
         numerical_flux = godunov.GodunovNumericalFlux(
             VOLUME_SPACE,
             1,
-            np.array([1.0, 0.0, 1.0, 2.0]),
+            self.flux,
+            self.wave_speed,
+            bottom=np.array([1.0, 0.0, 1.0, 2.0]),
             source_term=shallow_water.NaturalSouceTerm(),
         )
         self.assertListEqual(list(numerical_flux._topography_step), [-1, -1, 1, 1])
 
     def test_build_alternative_topography_step(self):
-        numerical_flux = godunov.GodunovNumericalFlux(VOLUME_SPACE, 1)
+        numerical_flux = godunov.GodunovNumericalFlux(
+            VOLUME_SPACE, 1, self.flux, self.wave_speed
+        )
         self.assertListEqual(list(numerical_flux._topography_step), [0, 0, 0, 0])
 
     def test_build_alternative_source_term_for_no_bottom(self):
-        numerical_flux = godunov.GodunovNumericalFlux(VOLUME_SPACE, 1)
+        numerical_flux = godunov.GodunovNumericalFlux(
+            VOLUME_SPACE, 1, self.flux, self.wave_speed
+        )
         self.assertTrue(
             isinstance(numerical_flux._source_term, shallow_water.VanishingSourceTerm)
         )
 
     def test_build_alternative_source_term_for_constant_bottom(self):
         numerical_flux = godunov.GodunovNumericalFlux(
-            VOLUME_SPACE, 1, np.array([1.0, 1.0, 1.0, 1.0])
+            VOLUME_SPACE,
+            1,
+            self.flux,
+            self.wave_speed,
+            bottom=np.array([1.0, 1.0, 1.0, 1.0]),
         )
         self.assertTrue(
             isinstance(numerical_flux._source_term, shallow_water.VanishingSourceTerm)
@@ -116,7 +130,9 @@ class TestGodunovFlux(TestCase):
             godunov.GodunovNumericalFlux,
             VOLUME_SPACE,
             1,
-            np.array([0.0, 0.0, 1.0, 0.0]),
+            self.flux,
+            self.wave_speed,
+            bottom=np.array([0.0, 0.0, 1.0, 0.0]),
         )
 
     def test_calculate_h_HLL(self):

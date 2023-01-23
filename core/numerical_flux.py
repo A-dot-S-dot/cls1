@@ -4,7 +4,6 @@ from typing import Tuple
 import numpy as np
 
 from .discretization.finite_volume import FiniteVolumeSpace
-from .system import SystemVector
 
 
 class NumericalFlux(ABC):
@@ -66,7 +65,7 @@ class CorrectedNumericalFlux(NumericalFlux):
         return flux_left + flux_correction_left, flux_right + flux_correction_right
 
 
-class NumericalFluxDependentRightHandSide(SystemVector):
+class NumericalFluxDependentRightHandSide:
     _volume_space: FiniteVolumeSpace
     _numerical_flux: NumericalFlux
 

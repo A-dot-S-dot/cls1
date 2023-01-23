@@ -12,7 +12,7 @@ class TestLinearLumpedMass(TestCase):
     expected_mass = 1 / 4 * np.array([1, 1, 1, 1])
 
     def test_entries(self):
-        lumped_mass = self.lumped_mass()
+        lumped_mass = self.lumped_mass(np.empty(0))
         for i in range(len(lumped_mass)):
             self.assertAlmostEqual(
                 lumped_mass[i], self.expected_mass[i], msg=f"index={i}"

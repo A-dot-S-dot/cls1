@@ -4,7 +4,7 @@ import numpy as np
 from core import SystemVector
 
 
-class FluxApproximation(SystemVector):
+class FluxApproximation:
     """Group Finite Element Approximation (GFE) of f(v) with finite elements,
     where f is a flux and v a finite element. To be more precise it is defined
     as following:

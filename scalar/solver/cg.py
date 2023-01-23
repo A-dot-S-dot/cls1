@@ -8,7 +8,7 @@ from core.solver import Solver
 from core.system import SystemMatrix, SystemVector
 
 
-class CGRightHandSide(SystemVector):
+class CGRightHandSide:
     """Right hand side of continuous Galerkin method r. To be more
     precise it is defined as following:
 

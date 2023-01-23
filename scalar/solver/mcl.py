@@ -1,5 +1,6 @@
 from itertools import combinations
 
+import core
 import core.ode_solver as os
 import defaults
 import lib
@@ -10,12 +11,11 @@ from core.discretization import finite_element
 from core.discretization.finite_element import LagrangeSpace
 from core.solver import Solver
 from core.system import SystemMatrix, SystemVector
-from core.time_stepping import CFLChecker
 
 from . import cg_low
 
 
-class MCLRightHandSide(SystemVector):
+class MCLRightHandSide:
     """Right hand side of MCL limiting. To be more
     precise it is defined as following:
 
@@ -102,7 +102,7 @@ class MCLRightHandSide(SystemVector):
                 corrected_flux[i] += fstar_ij
                 corrected_flux[j] -= fstar_ij
 
-        return right_hand_side + corrected_flux / self._lumped_mass()
+        return right_hand_side + corrected_flux / self._lumped_mass(dof_vector)
 
 
 def build_mcl_right_hand_side(
@@ -139,15 +139,14 @@ class MCLSolver(Solver):
             benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
         right_hand_side = build_mcl_right_hand_side(benchmark.problem, solution.space)
-        time_stepping = cg_low.build_adaptive_time_stepping(
-            benchmark, solution, cfl_number, adaptive
+        optimal_time_step = cg_low.OptimalTimeStep(
+            lib.LumpedMassVector(solution.space),
+            lib.build_artificial_diffusion(benchmark.problem, solution.space),
         )
-        cfl_checker = CFLChecker(
-            cg_low.OptimalTimeStep(
-                lib.LumpedMassVector(solution.space),
-                lib.build_artificial_diffusion(benchmark.problem, solution.space),
-            )
+        time_stepping = core.build_adaptive_time_stepping(
+            benchmark, solution, optimal_time_step, cfl_number, adaptive
         )
+        cfl_checker = core.CFLChecker(optimal_time_step)
 
         Solver.__init__(
             self,

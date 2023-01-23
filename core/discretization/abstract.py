@@ -3,6 +3,7 @@ from typing import Generic, TypeVar
 
 import numpy as np
 from core.mesh import Mesh
+from core.index_mapping import DOFNeighbourIndicesMapping
 
 T = TypeVar("T", float, np.ndarray)
 
@@ -33,6 +34,7 @@ class CellDependentFunction(ABC, Generic[T]):
 
 class SolverSpace(ABC, Generic[T]):
     mesh: Mesh
+    dof_neighbours: DOFNeighbourIndicesMapping
 
     @property
     @abstractmethod

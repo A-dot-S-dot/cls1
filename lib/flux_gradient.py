@@ -2,7 +2,7 @@ from typing import Callable
 
 import core.system as system
 import numpy as np
-from core.discretization.finite_element import LagrangeSpace, QuadratureFastElement
+from core.discretization import LagrangeSpace, QuadratureFastElement
 
 from .discrete_gradient import DiscreteGradient
 from .discrete_l2_product import BasisGradientL2ProductEntryCalculator
@@ -73,7 +73,7 @@ class FluxGradient(system.LocallyAssembledVector):
         return super().__call__()
 
 
-class AdvectionFluxGradient(system.SystemVector):
+class AdvectionFluxGradient:
     """Advection flux gradeint vector. It's entries are
 
         sum((bj,Dbi) * uj),
@@ -93,7 +93,7 @@ class AdvectionFluxGradient(system.SystemVector):
         return -self._discrete_gradient.dot(dof_vector)
 
 
-class ApproximatedFluxGradient(system.SystemVector):
+class ApproximatedFluxGradient:
     """Approximated flux derivative vector. It's entries are
 
         F * Dbi,
@@ -105,7 +105,7 @@ class ApproximatedFluxGradient(system.SystemVector):
     """
 
     _discrete_gradient: DiscreteGradient
-    _flux_approixmation: system.SystemVector
+    _flux_approximation: system.SystemVector
 
     def __init__(
         self,
