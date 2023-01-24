@@ -10,7 +10,7 @@ from shallow_water.benchmark import ShallowWaterBenchmark
 from . import godunov
 
 
-class LocalLaxFriedrichsIntermediateState:
+class IntermediateState:
     """Calculates local Lax-Friedrich's intermediate states of Riemann problem (i.e. approximative solution), i.e. we get for each node between two cells
 
     u' = (uL+uR)/2 + (f(uL)-f(uR))/(2*lambda),
@@ -45,7 +45,7 @@ class LocalLaxFriedrichsIntermediateState:
         )
 
 
-class LocalLaxFriedrichsFlux(core.NumericalFlux):
+class LLFNumericalFLux(core.NumericalFlux):
     """Calculates the shallow-water local lax friedrich numerical fluxes,
     i.e.
 
@@ -132,10 +132,8 @@ class LocalLaxFriedrichsSolver(core.Solver):
         wave_speed = shallow_water.MaximumWaveSpeed(
             solution.space, benchmark.gravitational_acceleration
         )
-        intermediate_state = LocalLaxFriedrichsIntermediateState(
-            solution.space, flux, wave_speed
-        )
-        numerical_flux = LocalLaxFriedrichsFlux(
+        intermediate_state = IntermediateState(solution.space, flux, wave_speed)
+        numerical_flux = LLFNumericalFLux(
             solution.space, flux, wave_speed, intermediate_state
         )
         right_hand_side = core.NumericalFluxDependentRightHandSide(

@@ -9,7 +9,7 @@ import shallow_water
 class TestLocalLaxFriedrichsIntermediateState(TestCase):
     flux = shallow_water.Flux(1)
     wave_speed = shallow_water.MaximumWaveSpeed(VOLUME_SPACE, 1)
-    intermediate_state = lax_friedrichs.LocalLaxFriedrichsIntermediateState(
+    intermediate_state = lax_friedrichs.IntermediateState(
         VOLUME_SPACE, flux, wave_speed
     )
 
@@ -34,10 +34,10 @@ class TestLocalLaxFriedrichNumericalFlux(TestCase):
     dof_vector = np.array([[1.0, 1.0], [0.0, 0.0], [1.0, -1.0], [2.0, 0.0]])
     flux = shallow_water.Flux(1)
     wave_speed = shallow_water.MaximumWaveSpeed(VOLUME_SPACE, 1)
-    intermediate_state = lax_friedrichs.LocalLaxFriedrichsIntermediateState(
+    intermediate_state = lax_friedrichs.IntermediateState(
         VOLUME_SPACE, flux, wave_speed
     )
-    numerical_flux = lax_friedrichs.LocalLaxFriedrichsFlux(
+    numerical_flux = lax_friedrichs.LLFNumericalFLux(
         VOLUME_SPACE, flux, wave_speed, intermediate_state
     )
     value_left = dof_vector[VOLUME_SPACE.left_cell_indices]
