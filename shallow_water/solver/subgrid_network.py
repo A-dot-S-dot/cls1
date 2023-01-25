@@ -14,7 +14,7 @@ from core.solver import Solver
 from shallow_water.benchmark import ShallowWaterBenchmark
 from torch import nn
 
-from . import godunov
+from . import gmc, godunov, lax_friedrichs
 
 
 class Curvature:
@@ -172,6 +172,96 @@ class SubgridNetworkSolver(Solver):
         )
         right_hand_side = nf.NumericalFluxDependentRightHandSide(
             solution.space, corrected_numerical_flux
+        )
+
+        optimal_time_step = godunov.OptimalTimeStep(
+            shallow_water.MaximumWaveSpeed(
+                solution.space, benchmark.gravitational_acceleration
+            ),
+            solution.space.mesh.step_length,
+        )
+        time_stepping = ts.build_adaptive_time_stepping(
+            benchmark, solution, optimal_time_step, cfl_number, adaptive=False
+        )
+        cfl_checker = ts.CFLChecker(optimal_time_step)
+
+        Solver.__init__(
+            self,
+            solution,
+            right_hand_side,
+            ode_solver_type,
+            time_stepping,
+            name=name,
+            short=short,
+            cfl_checker=cfl_checker,
+        )
+
+
+class LimitedSubgridNetworkSolver(Solver):
+    def __init__(
+        self,
+        benchmark: ShallowWaterBenchmark,
+        name=None,
+        short=None,
+        mesh_size=None,
+        coarsening_degree=None,
+        local_degree=None,
+        cfl_number=None,
+        network=None,
+        network_path=None,
+        gamma=None,
+        save_history=False,
+    ):
+        benchmark = benchmark
+        name = name or "GMC Limited Solver with NN subgrid correction"
+        short = short or "limited-subgrid-network"
+        coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
+        mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE // coarsening_degree
+        local_degree = local_degree or defaults.LOCAL_DEGREE
+        cfl_number = cfl_number or defaults.GODUNOV_CFL_NUMBER / coarsening_degree
+        network = network or NeuralNetwork()
+        network_path = network_path or defaults.NETWORK_PATH
+        gamma = gamma or defaults.GAMMA
+        ode_solver_type = os.ForwardEuler
+
+        solution = factory.build_finite_volume_solution(
+            benchmark, mesh_size, save_history=save_history
+        )
+
+        flux = shallow_water.Flux(benchmark.gravitational_acceleration)
+        wave_speed = shallow_water.WaveSpeed(
+            solution.space, benchmark.gravitational_acceleration
+        )
+        numerical_flux = godunov.build_godunov_numerical_flux(
+            benchmark, solution.space, flux, wave_speed
+        )
+        subgrid_flux = NetworkSubgridFlux(
+            solution.space,
+            network,
+            network_path,
+            local_degree,
+        )
+        corrected_flux = nf.CorrectedNumericalFlux(numerical_flux, subgrid_flux)
+
+        wave_speed_max = shallow_water.MaximumWaveSpeed(
+            solution.space, benchmark.gravitational_acceleration
+        )
+        intermediate_state = lax_friedrichs.IntermediateState(
+            solution.space, flux, wave_speed_max
+        )
+        low_order_flux = lax_friedrichs.LLFNumericalFLux(
+            solution.space, flux, wave_speed_max, intermediate_state
+        )
+
+        local_bounds = gmc.LocalAntidiffusiveFluxBounds(
+            solution.space, wave_speed_max, intermediate_state, gamma=gamma
+        )
+        limited_corrected_flux = gmc.GMCNumericalFlux(
+            solution.space, low_order_flux, corrected_flux, local_bounds
+        )
+
+        right_hand_side = nf.NumericalFluxDependentRightHandSide(
+            solution.space, limited_corrected_flux
         )
 
         optimal_time_step = godunov.OptimalTimeStep(

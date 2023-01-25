@@ -126,6 +126,25 @@ class LocalLaxFriedrichsParser(SolverParser):
         argument.add_adaptive_time_stepping(self)
 
 
+class LimitedSubgridNetworkParser(SolverParser):
+    prog = "limited-subgrid-network"
+    name = """Limited Solver with NN corrected flux"""
+    solver = LimitedSubgridNetworkSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(
+            self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
+        )
+        argument.add_coarsening_degree(self)
+        argument.add_cfl_number(
+            self, defaults.GODUNOV_CFL_NUMBER / defaults.COARSENING_DEGREE
+        )
+        argument.add_network_load_path(self)
+        argument.add_gamma(self)
+
+
 SCALAR_SOLVER_PARSERS = {
     "cg": CGParser,
     "cg_low": LowCGParser,
@@ -135,6 +154,7 @@ SHALLOW_WATER_SOLVER_PARSERS = {
     "godunov": GodunovParser,
     "subgrid-network": SubgridNetworkParser,
     "llf": LocalLaxFriedrichsParser,
+    "limited-subgrid-network": LimitedSubgridNetworkParser,
 }
 
 SOLVER_PARSERS = {}

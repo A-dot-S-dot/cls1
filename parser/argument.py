@@ -274,3 +274,15 @@ def add_network_load_path(parser):
         metavar="<file>",
         default=defaults.NETWORK_PATH,
     )
+
+
+# LIMITER
+def add_gamma(parser):
+    parser.add_argument(
+        "+g",
+        "++gamma",
+        help="Specify limiter parameter",
+        type=float,
+        metavar="<gamma>",
+        default=defaults.GAMMA,
+    )

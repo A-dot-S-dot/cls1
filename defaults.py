@@ -41,6 +41,7 @@ LOCAL_LAX_FRIEDRICHS_CFL_NUMBER = 0.4
 COARSENING_DEGREE = 8
 
 NETWORK_PATH = "network/subgrid_network.pth"
+GAMMA = 1.0
 
 ################################################################################
 # GENERATE-DATA
