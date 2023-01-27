@@ -1,11 +1,10 @@
 import random
 
+import defaults
 import numpy as np
 from scipy.optimize import newton
 
 from core import Benchmark, Interval
-
-GRAVITATIONAL_ACCELERATION = 9.81
 
 # No topography benchmark
 LENGTH = 100.0
@@ -26,7 +25,7 @@ class ShallowWaterBenchmark(Benchmark[np.ndarray]):
     """
 
     problem = "shallow_water"
-    gravitational_acceleration = GRAVITATIONAL_ACCELERATION
+    gravitational_acceleration = defaults.GRAVITATIONAL_ACCELERATION
 
     def topography(self, x: float) -> float:
         raise NotImplementedError

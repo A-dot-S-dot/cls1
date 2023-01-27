@@ -5,6 +5,7 @@ import defaults
 import numpy as np
 import shallow_water
 from shallow_water.benchmark import ShallowWaterBenchmark
+from lib import NumericalFlux, NumericalFluxDependentRightHandSide
 
 
 class OptimalTimeStep:
@@ -20,7 +21,7 @@ class OptimalTimeStep:
         return self._step_length / np.max(wave_speed)
 
 
-class GodunovNumericalFlux(core.NumericalFlux):
+class GodunovNumericalFlux(NumericalFlux):
     """Calculates the shallow-water Godunov numerical fluxes,
     i.e.
 
@@ -265,7 +266,7 @@ def build_godunov_numerical_flux(
     volume_space: core.FiniteVolumeSpace,
     flux: core.SystemVector,
     wave_speed: core.SystemTuple,
-) -> core.NumericalFlux:
+) -> NumericalFlux:
     topography = shallow_water.build_topography_discretization(
         benchmark, len(volume_space.mesh)
     )
@@ -310,7 +311,7 @@ class GodunovSolver(core.Solver):
         numerical_flux = build_godunov_numerical_flux(
             benchmark, solution.space, flux, wave_speed
         )
-        right_hand_side = core.NumericalFluxDependentRightHandSide(
+        right_hand_side = NumericalFluxDependentRightHandSide(
             solution.space, numerical_flux
         )
         optimal_time_step = OptimalTimeStep(

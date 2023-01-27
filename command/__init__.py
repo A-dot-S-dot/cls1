@@ -3,15 +3,13 @@ from .animate import Animate, ScalarAnimator, ShallowWaterAnimator
 from .calculate import Calculate
 from .command import Command
 from .error import (
-    CalculateEOC,
+    CalculateEOC,  # GenerateShallowWaterErrorEvolutionSeries,
     ErrorCalculator,
     ErrorEvolutionCalculator,
-    PlotShallowWaterErrorEvolution,
-    # GenerateShallowWaterErrorEvolutionSeries,
     PlotShallowWaterAverageErrorEvolution,
+    PlotShallowWaterErrorEvolution,
 )
-
-# from .generate_data import GenerateData
+from .generate_data import GenerateData
 from .help import Help
 from .plot import Plot, ScalarPlotter, ShallowWaterPlotter
 from .test import Test

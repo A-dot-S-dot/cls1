@@ -1,10 +1,11 @@
 from typing import Tuple
 
+import core
 import core.ode_solver as os
 import defaults
 import numpy as np
 import shallow_water
-import core
+from lib import NumericalFlux, NumericalFluxDependentRightHandSide
 from shallow_water.benchmark import ShallowWaterBenchmark
 
 from . import godunov
@@ -45,7 +46,7 @@ class IntermediateState:
         )
 
 
-class LLFNumericalFLux(core.NumericalFlux):
+class LLFNumericalFLux(NumericalFlux):
     """Calculates the shallow-water local lax friedrich numerical fluxes,
     i.e.
 
@@ -100,6 +101,17 @@ class LLFNumericalFLux(core.NumericalFlux):
         return wave_speed[:, None] * (value_left + -intermediate_state) + flux_left
 
 
+def build_llf_numerical_flux(
+    volume_space: core.FiniteVolumeSpace, gravitational_acceleration=None
+) -> NumericalFlux:
+    g = gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
+    flux = shallow_water.Flux(g)
+    wave_speed = shallow_water.MaximumWaveSpeed(volume_space, g)
+    intermediate_state = IntermediateState(volume_space, flux, wave_speed)
+
+    return LLFNumericalFLux(volume_space, flux, wave_speed, intermediate_state)
+
+
 class LocalLaxFriedrichsSolver(core.Solver):
     def __init__(
         self,
@@ -128,20 +140,18 @@ class LocalLaxFriedrichsSolver(core.Solver):
         if not shallow_water.is_constant(bottom):
             raise ValueError("Bottom must be constant.")
 
-        flux = shallow_water.Flux(benchmark.gravitational_acceleration)
-        wave_speed = shallow_water.MaximumWaveSpeed(
+        numerical_flux = build_llf_numerical_flux(
             solution.space, benchmark.gravitational_acceleration
         )
-        intermediate_state = IntermediateState(solution.space, flux, wave_speed)
-        numerical_flux = LLFNumericalFLux(
-            solution.space, flux, wave_speed, intermediate_state
-        )
-        right_hand_side = core.NumericalFluxDependentRightHandSide(
+        right_hand_side = NumericalFluxDependentRightHandSide(
             solution.space, numerical_flux
         )
 
         optimal_time_step = godunov.OptimalTimeStep(
-            wave_speed, solution.space.mesh.step_length
+            shallow_water.MaximumWaveSpeed(
+                solution.space, benchmark.gravitational_acceleration
+            ),
+            solution.space.mesh.step_length,
         )
         time_stepping = core.build_adaptive_time_stepping(
             benchmark, solution, optimal_time_step, cfl_number, adaptive

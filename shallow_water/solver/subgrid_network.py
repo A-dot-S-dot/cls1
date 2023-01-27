@@ -6,11 +6,11 @@ import numpy as np
 import shallow_water
 import torch
 from core import factory
-from core import numerical_flux as nf
 from core import ode_solver as os
 from core import time_stepping as ts
 from core.discretization.finite_volume import FiniteVolumeSpace
 from core.solver import Solver
+from lib import numerical_flux as nf
 from shallow_water.benchmark import ShallowWaterBenchmark
 from torch import nn
 

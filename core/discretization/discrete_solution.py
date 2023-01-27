@@ -98,7 +98,7 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
 
     @property
     def time_step_history(self) -> np.ndarray:
-        return self.time_history[1:] - self.time_history[:-1]
+        return self.time_history[1:] + -self.time_history[:-1]
 
     @property
     def value_history(self) -> np.ndarray:

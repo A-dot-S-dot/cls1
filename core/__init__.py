@@ -5,7 +5,6 @@ from .index_mapping import *
 from .interpolate import *
 from .mesh import *
 from .norm import *
-from .numerical_flux import *
 from .ode_solver import *
 from .quadrature import *
 from .solver import *

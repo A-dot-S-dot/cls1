@@ -1,4 +1,9 @@
 ################################################################################
+# BENCHMARK
+################################################################################
+GRAVITATIONAL_ACCELERATION = 9.81
+
+################################################################################
 # PLOT
 ################################################################################
 PLOT_TARGET = "data/plot.png"
@@ -47,8 +52,9 @@ GAMMA = 1.0
 # GENERATE-DATA
 ################################################################################
 LOCAL_DEGREE = 2
-DATA_PATH = "data/data.csv"
-BENCHMARK_PARAMETERS_PATH = "data/benchmark_parameters.csv"
+SKIP = 40  # Determines how many subgrid fluxes should be skipped
+SUBGRID_FLUX_DATA_PATH = "data/data.csv"
+BENCHMARK_DATA_PATH = "data/benchmark_data.csv"
 OVERWRITE = True
 
 ################################################################################

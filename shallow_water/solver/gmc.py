@@ -2,7 +2,7 @@ from typing import Callable, Tuple
 
 import core
 import numpy as np
-from lib import LocalMaximum, LocalMinimum
+from lib import LocalMaximum, LocalMinimum, NumericalFlux
 
 
 class LocalAntidiffusiveFluxBounds:
@@ -55,7 +55,7 @@ class LocalAntidiffusiveFluxBounds:
         ) / di[:, None]
 
 
-class GMCNumericalFlux(core.NumericalFlux):
+class GMCNumericalFlux(NumericalFlux):
     """Calculates flux by adding to a diffusive flux a limited antidiffusive
     flux, which can be specified independently.
 
@@ -66,16 +66,16 @@ class GMCNumericalFlux(core.NumericalFlux):
     """
 
     _volume_space: core.FiniteVolumeSpace
-    _low_order_flux: core.NumericalFlux
-    _high_order_flux: core.NumericalFlux
+    _low_order_flux: NumericalFlux
+    _high_order_flux: NumericalFlux
     _local_antidiffusive_flux_bounds: core.SystemTuple
     _eps: float
 
     def __init__(
         self,
         volume_space: core.FiniteVolumeSpace,
-        low_order_flux: core.NumericalFlux,
-        high_order_flux: core.NumericalFlux,
+        low_order_flux: NumericalFlux,
+        high_order_flux: NumericalFlux,
         local_antidiffusive_flux_bounds: core.SystemTuple,
         eps=1e-12,
     ):

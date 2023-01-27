@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Type
+from typing import Generic, Optional, Type, TypeVar
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -9,11 +9,13 @@ from .discretization import DiscreteSolution
 from .ode_solver import ExplicitRungeKuttaMethod
 from .system import SystemVector
 
+T = TypeVar("T", bound=DiscreteSolution)
 
-class Solver(ABC):
+
+class Solver(ABC, Generic[T]):
     name: str
     short: str
-    _solution: DiscreteSolution
+    _solution: T
     _time_stepping: ts.TimeStepping
     _ode_solver: ExplicitRungeKuttaMethod[np.ndarray]
     _right_hand_side: SystemVector
@@ -22,7 +24,7 @@ class Solver(ABC):
     @abstractmethod
     def __init__(
         self,
-        solution: DiscreteSolution,
+        solution: T,
         right_hand_side: SystemVector,
         ode_solver_type: Type[ExplicitRungeKuttaMethod[np.ndarray]],
         time_stepping: ts.TimeStepping,
@@ -43,16 +45,16 @@ class Solver(ABC):
         )
 
     @property
-    def solution(self) -> DiscreteSolution:
+    def solution(self) -> T:
         return self._solution
 
-    def solve(self, leave_progress_bar=True):
+    def solve(self, **tqdm_kwargs):
         try:
             for time_step in tqdm(
                 self._time_stepping,
                 desc=self.name,
                 postfix={"DOFs": self._solution.dimension},
-                leave=leave_progress_bar,
+                **tqdm_kwargs,
             ):
                 self.update(time_step)
 
