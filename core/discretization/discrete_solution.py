@@ -13,20 +13,17 @@ class DiscreteSolution(Generic[T]):
     _time: float
     _value: np.ndarray
 
-    _grid: Optional[np.ndarray]
     _space: Optional[T]
 
     def __init__(
         self,
         initial_value: np.ndarray,
         start_time=0.0,
-        grid=None,
-        solver_space=None,
+        space=None,
     ):
         self._time = start_time
         self._value = initial_value
-        self._grid = grid
-        self._space = solver_space
+        self._space = space
 
     @property
     def dimension(self) -> float | Tuple[float, ...]:
@@ -42,8 +39,8 @@ class DiscreteSolution(Generic[T]):
 
     @property
     def grid(self) -> np.ndarray:
-        if self._grid is not None:
-            return self._grid
+        if self._space is not None:
+            return self._space.grid
         else:
             raise AttributeError("Grid attribute does not exist.")
 
@@ -78,15 +75,13 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
         self,
         initial_value: np.ndarray,
         start_time=0.0,
-        grid=None,
-        solver_space=None,
+        space=None,
     ):
         DiscreteSolution.__init__(
             self,
             initial_value,
             start_time=start_time,
-            grid=grid,
-            solver_space=solver_space,
+            space=space,
         )
 
         self._time_history = np.array([self.time])
@@ -98,7 +93,7 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
 
     @property
     def time_step_history(self) -> np.ndarray:
-        return self.time_history[1:] + -self.time_history[:-1]
+        return np.diff(self.time_history)
 
     @property
     def value_history(self) -> np.ndarray:

@@ -23,8 +23,7 @@ def build_finite_element_solution(
     return solution_type(
         interpolator.interpolate(benchmark.initial_data),
         start_time=benchmark.start_time,
-        grid=space.grid,
-        solver_space=space,
+        space=space,
     )
 
 
@@ -39,8 +38,7 @@ def build_finite_volume_solution(
     return solution_type(
         interpolator.interpolate(benchmark.initial_data),
         start_time=benchmark.start_time,
-        grid=space.grid,
-        solver_space=space,
+        space=space,
     )
 
 

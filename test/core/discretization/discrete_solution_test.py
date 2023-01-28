@@ -1,3 +1,4 @@
+from test.test_helper import VOLUME_SPACE
 from unittest import TestCase
 
 import numpy as np
@@ -48,16 +49,15 @@ class TestDiscreteSolution(TestCase):
         self.assertEqual(solution.time, 2.0)
 
     def test_grid(self):
-        grid = np.array([0.0, 0.5, 1.0])
-        solution = self.create_solution(grid=grid)
-        self.assertListEqual(list(solution.grid), list(grid))
+        solution = self.create_solution(space=VOLUME_SPACE)
+        self.assertListEqual(list(solution.grid), list(VOLUME_SPACE.grid))
 
     def test_no_grid_error(self):
-        solution = self.create_solution()
+        solution = self.create_solution(space=None)
         self.assertRaises(AttributeError, lambda: solution.grid)
 
     def test_no_space_error(self):
-        solution = self.create_solution()
+        solution = self.create_solution(space=None)
         self.assertRaises(AttributeError, lambda: solution.space)
 
     def test_value_before_update(self):
