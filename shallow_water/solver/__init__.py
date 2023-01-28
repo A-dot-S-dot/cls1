@@ -1,3 +1,3 @@
-from .godunov import GodunovSolver
-from .lax_friedrichs import LocalLaxFriedrichsSolver
-from .subgrid_network import LimitedSubgridNetworkSolver, SubgridNetworkSolver
+from .godunov import *
+from .lax_friedrichs import *
+from .subgrid_network import *
