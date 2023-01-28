@@ -227,7 +227,7 @@ class CalculateEOC(Command):
             print(eoc)
 
 
-class ErrorEvolutionCalculator(ErrorCalculator):
+class ErrorEvolutionCalculator:
     _solver_space: core.SolverSpace
     _norm: core.Norm
 
@@ -235,26 +235,58 @@ class ErrorEvolutionCalculator(ErrorCalculator):
         self,
         solution: core.DiscreteSolutionWithHistory,
         solution_exact: core.DiscreteSolutionWithHistory,
+        norm=None,
     ) -> Tuple[np.ndarray, np.ndarray]:
+        """Returns error evolution between SOLUTION and SOLUTION_EXACT.
+
+        Note, both must have the same spatial dimension.
+
+        """
+        self._assert_spatial_dimension_equal(solution, solution_exact)
+
+        space = self._build_space(solution, solution_exact)
+        norm = norm or core.L2Norm(space.mesh)
         _time, _solution, _solution_exact = self._create_time_evolution_functions(
-            solution, solution_exact
+            solution, solution_exact, space
         )
 
-        # print(_exact_solution(0, 0.1), _discrete_solution(0, 0.1))
-        return _time, self._norm(
+        return _time, norm(
             lambda cell_index, x: _solution(cell_index, x)
             - _solution_exact(cell_index, x)
         )
+
+    def _assert_spatial_dimension_equal(
+        self,
+        solution: core.DiscreteSolutionWithHistory,
+        solution_exact: core.DiscreteSolutionWithHistory,
+    ):
+        if solution.value_history.shape[1:] != solution_exact.value_history.shape[1:]:
+            raise ValueError(
+                "Spatial dimension of SOLUTION and SOLUTION_EXACT must be equal."
+            )
+
+    def _build_space(
+        self, solution: core.DiscreteSolution, solution_exact: core.DiscreteSolution
+    ) -> core.SolverSpace:
+        space = solution._space or solution_exact._space
+
+        if space is None:
+            raise ValueError(
+                "Norm cannot be generated using SOLUTION or SOLUTION_EXACT, since a space must be specified."
+            )
+
+        return space
 
     def _create_time_evolution_functions(
         self,
         solution: core.DiscreteSolutionWithHistory,
         solution_exact: core.DiscreteSolutionWithHistory,
+        space: core.SolverSpace,
     ) -> Tuple[np.ndarray, Callable, Callable]:
         time, values, values_exact = self._adjust_time(solution, solution_exact)
 
-        _solutions = [self._space.element(values) for values in values]
-        _exact_solutions = [self._space.element(values) for values in values_exact]
+        _solutions = [space.element(dof) for dof in values]
+        _exact_solutions = [space.element(dof) for dof in values_exact]
 
         return (
             time,
