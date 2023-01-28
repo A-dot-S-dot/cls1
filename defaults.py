@@ -45,7 +45,8 @@ GODUNOV_CFL_NUMBER = 0.5
 LOCAL_LAX_FRIEDRICHS_CFL_NUMBER = 0.4
 COARSENING_DEGREE = 8
 
-NETWORK_PATH = "network/subgrid_network.pth"
+NETWORK_PATH = "data/subgrid-network.pth"
+LOSS_GRAPH_PATH = "data/loss.png"
 GAMMA = 1.0
 
 ################################################################################

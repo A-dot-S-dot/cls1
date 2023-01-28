@@ -1,37 +1,37 @@
-from typing import Callable, Optional, Sequence, Tuple, Type, TypeVar
+import os
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Type, TypeVar
 
+import core
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from core import norm, solver
-from core.benchmark import Benchmark, NoExactSolutionError
-from core.discretization import DiscreteSolution, SolverSpace
-from core.discretization.finite_element import LagrangeSpace
-from core.interpolate import TemporalInterpolator
-from tqdm import tqdm
+import shallow_water
+from shallow_water.solver import lax_friedrichs, subgrid_network
+from tqdm.auto import tqdm, trange
 
+from .calculate import Calculate
 from .command import Command
 
 T = TypeVar("T", float, np.ndarray)
 
 
 class ErrorCalculator:
-    _solver_space: SolverSpace
-    _norm: norm.Norm
+    _solver_space: core.SolverSpace
+    _norm: core.Norm
 
-    def __init__(self, space: SolverSpace, error_norm=None):
+    def __init__(self, space: core.SolverSpace, error_norm=None):
         self._space = space
-        self._norm = error_norm or norm.L2Norm(space.mesh)
+        self._norm = error_norm or core.L2Norm(space.mesh)
 
     def __call__(
         self,
-        exact_solution: DiscreteSolution | Callable[[float], T],
-        discrete_solution: DiscreteSolution,
+        exact_solution: core.DiscreteSolution | Callable[[float], T],
+        discrete_solution: core.DiscreteSolution,
     ) -> Tuple[float, T]:
         _discrete_solution = self._space.element(discrete_solution.value)
 
-        if isinstance(exact_solution, DiscreteSolution):
+        if isinstance(exact_solution, core.DiscreteSolution):
             _exact_solution = self._space.element(exact_solution.value)
         else:
             _exact_solution = lambda cell_index, x: exact_solution(x)
@@ -42,97 +42,20 @@ class ErrorCalculator:
         )
 
 
-class ErrorEvolutionCalculator(ErrorCalculator):
-    _solver_space: SolverSpace
-    _norm: norm.Norm
-
-    def __call__(
-        self,
-        exact_solution: DiscreteSolution | Callable[[float, float], float | np.ndarray],
-        discrete_solution: DiscreteSolution,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        if isinstance(exact_solution, DiscreteSolution):
-            (
-                _time,
-                _exact_solution,
-                _discrete_solution,
-            ) = self._create_time_evolution_functions(exact_solution, discrete_solution)
-        else:
-            _exact_solution = lambda cell_index, x: np.array(
-                [exact_solution(x, t) for t in discrete_solution.time_history]
-            )
-            _discrete_solutions = [
-                self._space.element(values) for values in discrete_solution.value
-            ]
-            _discrete_solution = lambda cell_index, x: np.array(
-                [solution(cell_index, x) for solution in _discrete_solutions]
-            )
-            _time = discrete_solution.time_history
-
-        return _time, self._norm(
-            lambda cell_index, x: _exact_solution(cell_index, x)
-            - _discrete_solution(cell_index, x)
-        )
-
-    def _create_time_evolution_functions(
-        self, exact_solution: DiscreteSolution, discrete_solution: DiscreteSolution
-    ) -> Tuple[np.ndarray, Callable, Callable]:
-        time, exact_values, discrete_values = self._adjust_time(
-            exact_solution, discrete_solution
-        )
-
-        _exact_solutions = [self._space.element(values) for values in exact_values]
-        _discrete_solutions = [
-            self._space.element(values) for values in discrete_values
-        ]
-
-        return (
-            time,
-            lambda cell_index, x: np.array(
-                [solution(cell_index, x) for solution in _exact_solutions]
-            ),
-            lambda cell_index, x: np.array(
-                [solution(cell_index, x) for solution in _discrete_solutions]
-            ),
-        )
-
-    def _adjust_time(
-        self, exact_solution: DiscreteSolution, discrete_solution: DiscreteSolution
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        if len(discrete_solution.time_history) > len(exact_solution.time_history):
-            exact_solution_values = TemporalInterpolator()(
-                exact_solution.time_history,
-                exact_solution.value,
-                discrete_solution.time_history,
-            )
-            discrete_solution_values = discrete_solution.value
-            time = discrete_solution.time_history
-        else:
-            exact_solution_values = exact_solution.value
-            discrete_solution_values = TemporalInterpolator()(
-                discrete_solution.time_history,
-                discrete_solution.value,
-                exact_solution.time_history,
-            )
-            time = exact_solution.time_history
-
-        return time, exact_solution_values, discrete_solution_values
-
-
 class EOCCalculator:
     norm_names: Sequence[str]
-    _benchmark: Benchmark
-    _norms: Sequence[Type[norm.Norm]]
+    _benchmark: core.Benchmark
+    _norms: Sequence[Type[core.Norm]]
 
-    def __init__(self, benchmark: Benchmark, norms=None):
+    def __init__(self, benchmark: core.Benchmark, norms=None):
         self._benchmark = benchmark
-        self._norms = norms or [norm.L1Norm, norm.L2Norm, norm.solver_spaces]
+        self._norms = norms or [core.L1Norm, core.L2Norm, core.solver_spaces]
         self.norm_names = [norm.name for norm in self._norms]
 
     def __call__(
         self,
-        solvers: Sequence[solver.Solver],
-        solver_spaces: Sequence[SolverSpace],
+        solvers: Sequence[core.Solver],
+        solver_spaces: Sequence[core.SolverSpace],
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         refine_number = len(solvers) - 1
         dofs = np.empty(refine_number + 1)
@@ -147,7 +70,7 @@ class EOCCalculator:
         return dofs, errors, eocs
 
     def _calculate_error(
-        self, discrete_solution: DiscreteSolution, solver_space: SolverSpace
+        self, discrete_solution: core.DiscreteSolution, solver_space: core.SolverSpace
     ) -> np.ndarray:
         exact_solution = self._benchmark.exact_solution_at_end_time
         error_calculators = self._build_error_calculators(solver_space)
@@ -160,21 +83,21 @@ class EOCCalculator:
         )
 
     def _build_error_calculators(
-        self, solver_space: SolverSpace
+        self, solver_space: core.SolverSpace
     ) -> Sequence[ErrorCalculator]:
         norms = self._build_norms(solver_space)
         return [ErrorCalculator(solver_space, norm) for norm in norms]
 
-    def _build_norms(self, solver_space: SolverSpace) -> Sequence[norm.Norm]:
+    def _build_norms(self, solver_space: core.SolverSpace) -> Sequence[core.Norm]:
         norms = list()
 
-        if isinstance(solver_space, LagrangeSpace):
+        if isinstance(solver_space, core.LagrangeSpace):
             quadrature_degree = solver_space.polynomial_degree + 1
         else:
             quadrature_degree = None
 
         for norm_type in self._norms:
-            if norm_type in [norm.L2Norm, norm.L1Norm]:
+            if norm_type in [core.L2Norm, core.L1Norm]:
                 norms.append(
                     norm_type(solver_space.mesh, quadrature_degree=quadrature_degree)
                 )
@@ -253,6 +176,121 @@ class EOCDataFrame:
         return self._data_frame.__repr__()
 
 
+class CalculateEOC(Command):
+    _benchmark: core.Benchmark
+    _solvers: Sequence[Sequence[core.Solver]]
+    _solver_spaces: Sequence[Sequence[core.SolverSpace]]
+
+    def __init__(
+        self,
+        benchmark: core.Benchmark,
+        solvers: Sequence[Sequence[core.Solver]],
+        solver_spaces: Sequence[Sequence[core.SolverSpace]],
+    ):
+        self._benchmark = benchmark
+        self._solvers = solvers
+        self._solver_spaces = solver_spaces
+
+    def execute(self):
+        if len(self._solvers) == 0:
+            print("WARNING: Nothing to do...")
+            return
+
+        try:
+            self._print_eocs()
+
+        except core.NoExactSolutionError as error:
+            print("ERROR: " + str(error))
+
+    def _print_eocs(self):
+        eocs = []
+        titles = []
+
+        for solvers, solver_spaces in tqdm(
+            zip(self._solvers, self._solver_spaces),
+            desc="Calculate EOC",
+            unit="solver",
+            leave=False,
+        ):
+            titles.append(solvers[0].name)
+            eoc_calculator = EOCCalculator(self._benchmark)
+            eocs.append(
+                EOCDataFrame()(
+                    *eoc_calculator(solvers, solver_spaces), eoc_calculator.norm_names
+                )
+            )
+
+        for eoc, title in zip(eocs, titles):
+            print()
+            print(title)
+            print(len(title) * "-")
+            print(eoc)
+
+
+class ErrorEvolutionCalculator(ErrorCalculator):
+    _solver_space: core.SolverSpace
+    _norm: core.Norm
+
+    def __call__(
+        self,
+        solution: core.DiscreteSolutionWithHistory,
+        solution_exact: core.DiscreteSolutionWithHistory,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        _time, _solution, _solution_exact = self._create_time_evolution_functions(
+            solution, solution_exact
+        )
+
+        # print(_exact_solution(0, 0.1), _discrete_solution(0, 0.1))
+        return _time, self._norm(
+            lambda cell_index, x: _solution(cell_index, x)
+            - _solution_exact(cell_index, x)
+        )
+
+    def _create_time_evolution_functions(
+        self,
+        solution: core.DiscreteSolutionWithHistory,
+        solution_exact: core.DiscreteSolutionWithHistory,
+    ) -> Tuple[np.ndarray, Callable, Callable]:
+        time, values, values_exact = self._adjust_time(solution, solution_exact)
+
+        _solutions = [self._space.element(values) for values in values]
+        _exact_solutions = [self._space.element(values) for values in values_exact]
+
+        return (
+            time,
+            lambda cell_index, x: np.array(
+                [solution(cell_index, x) for solution in _solutions]
+            ),
+            lambda cell_index, x: np.array(
+                [solution(cell_index, x) for solution in _exact_solutions]
+            ),
+        )
+
+    def _adjust_time(
+        self,
+        solution: core.DiscreteSolutionWithHistory,
+        solution_exact: core.DiscreteSolutionWithHistory,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        if len(solution.time_history) > len(solution_exact.time_history):
+            solution_exact_values = core.TemporalInterpolator()(
+                solution_exact.time_history,
+                solution_exact.value_history,
+                solution.time_history,
+            )
+            solution_values = solution.value_history
+            time = solution.time_history
+        else:
+            solution_exact_values = solution_exact.value_history
+            solution_values = core.TemporalInterpolator()(
+                solution.time_history,
+                solution.value_history,
+                solution_exact.time_history,
+            )
+            time = solution_exact.time_history
+
+        return time, solution_values, solution_exact_values
+
+
 class PlotShallowWaterErrorEvolution(Command):
     _time: np.ndarray
     _error: np.ndarray
@@ -288,122 +326,64 @@ class PlotShallowWaterErrorEvolution(Command):
         plt.show() if self._show else plt.close()
 
 
-class CalculateEOC(Command):
-    _benchmark: Benchmark
-    _solvers: Sequence[Sequence[solver.Solver]]
-    _solver_spaces: Sequence[Sequence[SolverSpace]]
+class GenerateShallowWaterErrorEvolutionSeries(Command):
+    """Plot Error Evolution for considered benchmark parameters."""
+
+    errors: List[np.ndarray]
+    times: List[np.ndarray]
+
+    _directory: str
+    _initial_conditions: int
+    _description: str
+    _save: Optional[str]
+    _benchmark_parameters: Dict
 
     def __init__(
         self,
-        benchmark: Benchmark,
-        solvers: Sequence[Sequence[solver.Solver]],
-        solver_spaces: Sequence[Sequence[SolverSpace]],
+        times: List[np.ndarray],
+        errors: List[np.ndarray],
+        initial_conditions=20,
+        description=None,
+        save=None,
+        **benchmark_parameters,
     ):
-        self._benchmark = benchmark
-        self._solvers = solvers
-        self._solver_spaces = solver_spaces
+        self.times = times
+        self.errors = errors
+
+        self._initial_conditions = initial_conditions
+        self._description = f"for {description}" or ""
+        self._save = save
+        self._benchmark_parameters = benchmark_parameters
+
+        if save:
+            os.makedirs(save, exist_ok=True)
 
     def execute(self):
-        if len(self._solvers) == 0:
-            print("WARNING: Nothing to do...")
-            return
-
-        try:
-            self._print_eocs()
-
-        except NoExactSolutionError as error:
-            print("ERROR: " + str(error))
-
-    def _print_eocs(self):
-        eocs = []
-        titles = []
-
-        for solvers, solver_spaces in tqdm(
-            zip(self._solvers, self._solver_spaces),
-            desc="Calculate EOC",
-            unit="solver",
-            leave=False,
+        for i in trange(
+            self._initial_conditions, desc="Calculate Evolution Error", unit="benchmark"
         ):
-            titles.append(solvers[0].name)
-            eoc_calculator = EOCCalculator(self._benchmark)
-            eocs.append(
-                EOCDataFrame()(
-                    *eoc_calculator(solvers, solver_spaces), eoc_calculator.norm_names
-                )
+            benchmark = shallow_water.RandomOscillationNoTopographyBenchmark(
+                seed=i, **self._benchmark_parameters
             )
+            approximated_solver = subgrid_network.SubgridNetworkSolver(benchmark)
+            exact_solver = lax_friedrichs.LocalLaxFriedrichsSolver(benchmark)
 
-        for eoc, title in zip(eocs, titles):
-            print()
-            print(title)
-            print(len(title) * "-")
-            print(eoc)
+            Calculate([exact_solver, approximated_solver], leave=False).execute()
 
+            _time, _error = ErrorEvolutionCalculator(exact_solver.solution.space)(
+                exact_solver._solution, approximated_solver._solution
+            )
+            self.times.append(_time)
+            self.errors.append(_error)
 
-# class GenerateShallowWaterErrorEvolutionSeries(Command):
-#     """Plot Error Evolution for considered benchmark parameters."""
-
-#     errors: List[np.ndarray]
-#     times: List[np.ndarray]
-
-#     _directory: str
-#     _initial_conditions: int
-#     _description: str
-#     _save: Optional[str]
-#     _benchmark_parameters: Dict
-
-#     def __init__(
-#         self,
-#         times: List[np.ndarray],
-#         errors: List[np.ndarray],
-#         initial_conditions=20,
-#         description=None,
-#         save=None,
-#         **benchmark_parameters,
-#     ):
-#         self.times = times
-#         self.errors = errors
-
-#         self._initial_conditions = initial_conditions
-#         self._description = f"for {description}" or ""
-#         self._save = save
-#         self._benchmark_parameters = benchmark_parameters
-
-#         if save:
-#             os.makedirs(save, exist_ok=True)
-
-#     def execute(self):
-#         for i in trange(
-#             self._initial_conditions, desc="Calculate Evolution Error", unit="benchmark"
-#         ):
-#             title = f"Generate Error {i}"
-#             title += "\n" + len(title) * "-"
-#             tqdm.write(title)
-
-#             swe_benchmark = (
-#                 benchmark.ShallowWaterRandomOscillationNoTopographyBenchmark(
-#                     seed=i, **self._benchmark_parameters
-#                 )
-#             )
-#             approximated_solver = solver.ReducedNetworkSolver("swe", swe_benchmark)
-#             exact_solver = solver.ReducedExactSolver("swe", swe_benchmark)
-
-#             Calculate([exact_solver, approximated_solver]).execute()
-#             tqdm.write("")
-
-#             _time, _error = ErrorEvolutionCalculator(exact_solver.space)(
-#                 exact_solver._solution, approximated_solver._solution
-#             )
-#             self.times.append(_time)
-#             self.errors.append(_error)
-
-#             if self._save:
-#                 PlotShallowWaterErrorEvolution(
-#                     _time,
-#                     _error,
-#                     f"$L^2$-Error {self._description} (seed={i})",
-#                     show=False,
-#                     save=f"{self._save}/{i}.png",
-#                 ).execute()
+            if self._save:
+                PlotShallowWaterErrorEvolution(
+                    _time,
+                    _error,
+                    f"$L^2$-Error {self._description} (seed={i})",
+                    show=False,
+                    save=f"{self._save}/{i}.png",
+                ).execute()
 
 
 class PlotShallowWaterAverageErrorEvolution(Command):
@@ -455,7 +435,7 @@ class PlotShallowWaterAverageErrorEvolution(Command):
         plt.show() if self._show else plt.close()
 
     def _adjust_errors(self) -> Tuple[np.ndarray, np.ndarray]:
-        interpolator = TemporalInterpolator()
+        interpolator = core.TemporalInterpolator()
         minimum_time = self._get_minimum_time()
         adjusted_errors = np.array(
             [
