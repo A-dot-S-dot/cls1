@@ -7,8 +7,6 @@ import numpy as np
 from .mesh import Mesh
 from .quadrature import GaussianQuadrature
 
-ScalarFunction = Callable[[float], float]
-
 
 class Interpolator(ABC):
     """Interpolates scalar functions by returning DOF Vectors."""
@@ -65,12 +63,12 @@ class NodeValuesInterpolator(Interpolator):
     def __init__(self, *nodes: float):
         self._nodes = nodes
 
-    def _interpolate_scalar(self, f: ScalarFunction) -> np.ndarray:
+    def _interpolate_scalar(self, f: Callable[[float], float]) -> np.ndarray:
         return np.array([f(node) for node in self._nodes])
 
 
 class TemporalInterpolator:
-    """Interpolate discrete solution values for diffrent times."""
+    """Interpolate time dependent values for a different time evolution."""
 
     def __call__(
         self, old_time: np.ndarray, values: np.ndarray, new_time: np.ndarray
@@ -83,6 +81,43 @@ class TemporalInterpolator:
                 new_time,
                 old_time,
                 values[(slice(0, len(old_time)), *index)],
+            )
+
+        return interpolated_values
+
+
+class SpatialInterpolator:
+    """Interpolate time dependent values on a different grid."""
+
+    def __call__(
+        self, old_grid: np.ndarray, values: np.ndarray, new_grid: np.ndarray
+    ) -> np.ndarray:
+        """Returns an interpolation on the new grid.
+
+        Note, values on new grid points x which are strictly less (or greater) than points in the old grid points xp are set to the first (or the last) value fp, i.e.
+
+        x < xp[0] => f(x)=fp[0]
+
+        x > xp[-1] => f(X)=fp[-1]
+
+        """
+        time_dimension = values.shape[0]
+        spatial_dimension = values.shape[2:]
+
+        interpolated_values = np.empty(
+            (time_dimension, len(new_grid), *spatial_dimension)
+        )
+
+        for index in product(
+            range(time_dimension), *[range(dim) for dim in spatial_dimension]
+        ):
+            # array[(slice(start, end))]=array[:]
+            interpolated_values[
+                (index[0], slice(0, len(new_grid)), *index[1:])
+            ] = np.interp(
+                new_grid,
+                old_grid,
+                values[(index[0], slice(0, len(old_grid)), *index[1:])],
             )
 
         return interpolated_values
