@@ -7,4 +7,3 @@ from .local_bounds import *
 from .lumped_mass import *
 from .mass import *
 from .numerical_flux import *
-from .vector_coarsener import *

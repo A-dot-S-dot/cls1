@@ -2,7 +2,7 @@ from test.test_helper import VOLUME_SPACE
 from unittest import TestCase
 
 import numpy as np
-from core.discretization import DiscreteSolution, DiscreteSolutionWithHistory
+from core.discretization.discrete_solution import *
 
 
 class TestDiscreteSolution(TestCase):
@@ -126,3 +126,34 @@ class TestDiscreteSolutionWithHistory(TestCase):
             for j in range(3):
                 for k in range(2):
                     self.assertEqual(solution.value_history[i, j, k], i)
+
+
+class TestCoarseSolution(TestCase):
+    def test_coarse_solution(self):
+        solution = DiscreteSolution(
+            np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]])
+        )
+        coarse_solution = CoarseSolution(solution, 2)
+        expected_value = np.array([[2.0, 3.0], [6.0, 7.0]])
+
+        self.assertEqual(coarse_solution.time, solution.time)
+        self.assertTrue(np.array_equal(coarse_solution.value, expected_value))
+
+
+class TestCoarseSolutionWithHistory(TestCase):
+    def test_coarse_solution(self):
+        solution = DiscreteSolutionWithHistory(
+            np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]])
+        )
+        solution.update(1.0, np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]]))
+        coarse_solution = CoarseSolutionWithHistory(solution, 2)
+        expected_value_history = np.array(
+            [[[2.0, 3.0], [6.0, 7.0]], [[2.0, 3.0], [6.0, 7.0]]]
+        )
+
+        self.assertTrue(
+            np.array_equal(solution.time_history, coarse_solution.time_history)
+        )
+        self.assertTrue(
+            np.array_equal(coarse_solution.value_history, expected_value_history)
+        )

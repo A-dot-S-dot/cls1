@@ -10,3 +10,4 @@ from .quadrature import *
 from .solver import *
 from .system import *
 from .time_stepping import *
+from .vector_coarsener import *
