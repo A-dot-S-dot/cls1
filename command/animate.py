@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 from core.benchmark import Benchmark, NoExactSolutionError
-from core.discretization import DiscreteSolution
+from core.discrete_solution import DiscreteSolution
 from core.interpolate import TemporalInterpolator
 from core.solver import Solver
 from matplotlib import animation

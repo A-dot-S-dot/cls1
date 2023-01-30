@@ -1,9 +1,8 @@
 import defaults
-import numpy as np
 import lib
-from core import factory
+import numpy as np
+from core import factory, finite_element
 from core.benchmark import Benchmark
-from core.discretization import finite_element
 from core.solver import Solver
 from core.system import SystemMatrix, SystemVector
 

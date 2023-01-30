@@ -5,9 +5,9 @@ import numpy as np
 from . import interpolate
 from . import ode_solver as os
 from .benchmark import Benchmark
-from .discretization import DiscreteSolution, DiscreteSolutionWithHistory
-from .discretization.finite_element import LagrangeSpace
-from .discretization.finite_volume import FiniteVolumeSpace
+from .discrete_solution import DiscreteSolution, DiscreteSolutionWithHistory
+from .finite_element import LagrangeSpace
+from .finite_volume import FiniteVolumeSpace
 from .mesh import Mesh, UniformMesh
 from .time_stepping import TimeStepping
 

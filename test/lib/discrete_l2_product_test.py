@@ -4,9 +4,7 @@ from typing import Callable, Sequence
 from unittest import TestCase
 
 import numpy as np
-from core.discretization import FastFunction
-from core.mesh import AffineTransformation, Mesh
-from core.quadrature import LocalElementQuadrature
+from core import AffineTransformation, FastFunction, LocalElementQuadrature, Mesh
 
 from lib import BasisGradientL2Product, BasisL2Product
 

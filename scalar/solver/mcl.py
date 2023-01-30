@@ -5,12 +5,15 @@ import core.ode_solver as os
 import defaults
 import lib
 import numpy as np
-from core import factory
-from core.benchmark import Benchmark
-from core.discretization import finite_element
-from core.discretization.finite_element import LagrangeSpace
-from core.solver import Solver
-from core.system import SystemMatrix, SystemVector
+from core import (
+    Benchmark,
+    LagrangeSpace,
+    Solver,
+    SystemMatrix,
+    SystemVector,
+    factory,
+    finite_element,
+)
 
 from . import cg_low
 

@@ -2,7 +2,7 @@ from typing import Callable
 
 import core.system as system
 import numpy as np
-from core.discretization import LagrangeSpace, QuadratureFastElement
+from core import LagrangeSpace, QuadratureFastElement
 
 from .discrete_gradient import DiscreteGradient
 from .discrete_l2_product import BasisGradientL2ProductEntryCalculator

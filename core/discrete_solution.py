@@ -1,9 +1,9 @@
 from typing import Generic, Optional, Tuple, TypeVar
 
 import numpy as np
-from core.vector_coarsener import VectorCoarsener
 
-from .abstract import SolverSpace
+from .vector_coarsener import VectorCoarsener
+from .space import SolverSpace
 
 T = TypeVar("T", bound=SolverSpace)
 

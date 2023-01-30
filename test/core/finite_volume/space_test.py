@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from core.discretization import finite_volume
+from core import finite_volume
 from core.mesh import Interval, UniformMesh
 
 

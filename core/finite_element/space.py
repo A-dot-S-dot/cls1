@@ -4,23 +4,20 @@ import numpy as np
 from core.index_mapping import DOFNeighbourIndicesMapping, GlobalIndexMapping
 from core.mesh import AffineTransformation, Mesh
 from core.quadrature import LocalElementQuadrature
+from core.space import CellDependentFunction, FastFunction, SolverSpace
 from scipy.interpolate import lagrange
-
-from . import abstract
-
-ScalarFunction = Callable[[float], float]
 
 
 class LocalLagrangeElement:
     """Finite element basis element on the standard simplex."""
 
-    _call_method: ScalarFunction
-    _derivative: ScalarFunction
+    _call_method: Callable[[float], float]
+    _derivative: Callable[[float], float]
 
     def __init__(
         self,
-        call_method: ScalarFunction,
-        derivative: ScalarFunction,
+        call_method: Callable[[float], float],
+        derivative: Callable[[float], float],
     ):
         self._call_method = call_method
         self._derivative = derivative
@@ -84,7 +81,7 @@ class LocalLagrangeBasis:
         return self._basis_elements[self.nodes.index(node)]
 
 
-class LagrangeSpace(abstract.SolverSpace[float]):
+class LagrangeSpace(SolverSpace[float]):
     mesh: Mesh
     polynomial_degree: int
     global_index: GlobalIndexMapping
@@ -129,7 +126,7 @@ class LagrangeSpace(abstract.SolverSpace[float]):
     def grid(self) -> np.ndarray:
         return self.basis_nodes
 
-    def element(self, dof_vector: np.ndarray) -> abstract.CellDependentFunction[float]:
+    def element(self, dof_vector: np.ndarray) -> CellDependentFunction[float]:
         return LagrangeFiniteElement(self, dof_vector)
 
     def __repr__(self) -> str:
@@ -138,7 +135,7 @@ class LagrangeSpace(abstract.SolverSpace[float]):
         )
 
 
-class LagrangeFiniteElement(abstract.CellDependentFunction[float]):
+class LagrangeFiniteElement(CellDependentFunction[float]):
     """Finite element which is defined by coefficients each belonging to a basis
     element of the finite element space."""
 
@@ -219,7 +216,7 @@ class FastLocalElement:
         return self._derivatives[local_index]
 
 
-class FastFiniteElement(abstract.FastFunction):
+class FastFiniteElement(FastFunction):
     """This element is made for better performance while calculating values and
     derivatives of Lagrange elements.
 

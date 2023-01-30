@@ -2,7 +2,8 @@ from test.test_helper import VOLUME_SPACE
 from unittest import TestCase
 
 import numpy as np
-from core.discretization.discrete_solution import *
+
+from core.discrete_solution import *
 
 
 class TestDiscreteSolution(TestCase):

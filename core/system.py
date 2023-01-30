@@ -5,7 +5,7 @@ import numpy as np
 from scipy.sparse import csr_matrix, lil_matrix, spmatrix
 from scipy.sparse.linalg import SuperLU, splu, spsolve
 
-from .discretization import LagrangeSpace, LocalLagrangeBasis
+from .finite_element import LagrangeSpace, LocalLagrangeBasis
 from .quadrature import LocalElementQuadrature
 
 

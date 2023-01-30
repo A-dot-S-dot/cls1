@@ -2,8 +2,12 @@ from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
 import numpy as np
-from core.mesh import Mesh
-from core.index_mapping import DOFNeighbourIndicesMapping
+
+from .index_mapping import (
+    DOFNeighbourIndicesMapping,
+)
+from .mesh import Mesh
+
 
 T = TypeVar("T", float, np.ndarray)
 

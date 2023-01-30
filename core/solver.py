@@ -5,7 +5,7 @@ import numpy as np
 from tqdm.auto import tqdm
 
 from . import time_stepping as ts
-from .discretization import DiscreteSolution
+from .discrete_solution import DiscreteSolution
 from .ode_solver import ExplicitRungeKuttaMethod
 from .system import SystemVector
 

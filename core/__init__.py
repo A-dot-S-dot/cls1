@@ -1,6 +1,8 @@
 from .benchmark import *
-from .discretization import *
+from .discrete_solution import *
 from .factory import *
+from .finite_element import *
+from .finite_volume import *
 from .index_mapping import *
 from .interpolate import *
 from .mesh import *
@@ -8,6 +10,7 @@ from .norm import *
 from .ode_solver import *
 from .quadrature import *
 from .solver import *
+from .space import *
 from .system import *
 from .time_stepping import *
 from .vector_coarsener import *
