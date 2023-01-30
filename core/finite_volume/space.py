@@ -1,4 +1,5 @@
 from typing import Generic, TypeVar
+
 import numpy as np
 from core.index_mapping import (
     DOFNeighbourIndicesMapping,
@@ -6,13 +7,12 @@ from core.index_mapping import (
     LeftRightNodeIndexMapping,
 )
 from core.mesh import Mesh
-
-from . import abstract
+from core.space import CellDependentFunction, SolverSpace
 
 T = TypeVar("T", float, np.ndarray)
 
 
-class FiniteVolumeSpace(abstract.SolverSpace, Generic[T]):
+class FiniteVolumeSpace(SolverSpace, Generic[T]):
     mesh: Mesh
     left_right_cell: LeftRightCellIndexMapping
     left_right_node: LeftRightNodeIndexMapping
@@ -89,14 +89,14 @@ class FiniteVolumeSpace(abstract.SolverSpace, Generic[T]):
     def right_node_indices(self) -> np.ndarray:
         return self._right_node_indices
 
-    def element(self, dof_vector: np.ndarray) -> abstract.CellDependentFunction[T]:
+    def element(self, dof_vector: np.ndarray) -> CellDependentFunction[T]:
         return FiniteVolumeElement(self, dof_vector)
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + f"(mesh={self.mesh})"
 
 
-class FiniteVolumeElement(abstract.CellDependentFunction, Generic[T]):
+class FiniteVolumeElement(CellDependentFunction, Generic[T]):
     def __init__(self, solver_space: FiniteVolumeSpace, dof_vector: np.ndarray):
         self._solver_space = solver_space
         self._dof_vector = dof_vector

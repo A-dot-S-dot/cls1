@@ -3,7 +3,7 @@ from typing import Callable
 import numpy as np
 
 from .benchmark import Benchmark
-from .discretization import DiscreteSolution
+from .discrete_solution import DiscreteSolution
 
 
 class TimeStepTooSmallError(Exception):

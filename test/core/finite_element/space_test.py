@@ -3,7 +3,7 @@ from test.test_helper.lagrange_basis_elements import *
 from unittest import TestCase
 
 import numpy as np
-from core.discretization import finite_element
+from core import finite_element
 from core.mesh import AffineTransformation, Interval, UniformMesh
 from core.quadrature import LocalElementQuadrature
 
