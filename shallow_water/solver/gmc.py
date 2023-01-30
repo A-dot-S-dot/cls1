@@ -2,6 +2,7 @@ from typing import Callable, Tuple
 
 import core
 import numpy as np
+from core import finite_volume
 from lib import LocalMaximum, LocalMinimum, NumericalFlux
 
 
@@ -10,7 +11,7 @@ class LocalAntidiffusiveFluxBounds:
 
     def __init__(
         self,
-        volume_space: core.FiniteVolumeSpace,
+        volume_space: finite_volume.FiniteVolumeSpace,
         wave_speed: Callable[[np.ndarray], np.ndarray],
         intermediate_state: Callable[[np.ndarray], np.ndarray],
         gamma=0.1,
@@ -65,7 +66,7 @@ class GMCNumericalFlux(NumericalFlux):
 
     """
 
-    _volume_space: core.FiniteVolumeSpace
+    _volume_space: finite_volume.FiniteVolumeSpace
     _low_order_flux: NumericalFlux
     _high_order_flux: NumericalFlux
     _local_antidiffusive_flux_bounds: core.SystemTuple
@@ -73,7 +74,7 @@ class GMCNumericalFlux(NumericalFlux):
 
     def __init__(
         self,
-        volume_space: core.FiniteVolumeSpace,
+        volume_space: finite_volume.FiniteVolumeSpace,
         low_order_flux: NumericalFlux,
         high_order_flux: NumericalFlux,
         local_antidiffusive_flux_bounds: core.SystemTuple,

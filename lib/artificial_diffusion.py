@@ -1,5 +1,6 @@
 import numpy as np
-from core import LagrangeSpace, SystemMatrix
+from core import SystemMatrix
+from core.finite_element import LagrangeSpace
 
 from .discrete_gradient import DiscreteGradient
 

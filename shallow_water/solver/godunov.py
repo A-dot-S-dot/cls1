@@ -4,8 +4,9 @@ import core
 import defaults
 import numpy as np
 import shallow_water
-from shallow_water.benchmark import ShallowWaterBenchmark
+from core import finite_volume
 from lib import NumericalFlux, NumericalFluxDependentRightHandSide
+from shallow_water.benchmark import ShallowWaterBenchmark
 
 
 class OptimalTimeStep:
@@ -33,7 +34,7 @@ class GodunovNumericalFlux(NumericalFlux):
 
     """
 
-    _volume_space: core.FiniteVolumeSpace
+    _volume_space: finite_volume.FiniteVolumeSpace
     _wave_speed: core.SystemTuple
     _flux: core.SystemVector
     _gravitational_acceleration: float
@@ -43,7 +44,7 @@ class GodunovNumericalFlux(NumericalFlux):
 
     def __init__(
         self,
-        volume_space: core.FiniteVolumeSpace,
+        volume_space: finite_volume.FiniteVolumeSpace,
         gravitational_acceleration: float,
         flux: core.SystemVector,
         wave_speed: core.SystemTuple,
@@ -263,7 +264,7 @@ class GodunovNumericalFlux(NumericalFlux):
 
 def build_godunov_numerical_flux(
     benchmark: ShallowWaterBenchmark,
-    volume_space: core.FiniteVolumeSpace,
+    volume_space: core.finite_volume.FiniteVolumeSpace,
     flux: core.SystemVector,
     wave_speed: core.SystemTuple,
 ) -> NumericalFlux:
@@ -300,7 +301,7 @@ class GodunovSolver(core.Solver):
         adaptive = adaptive
         ode_solver_type = core.ForwardEuler
 
-        solution = core.build_finite_volume_solution(
+        solution = finite_volume.build_finite_volume_solution(
             benchmark, mesh_size, save_history=save_history
         )
         wave_speed = shallow_water.WaveSpeed(

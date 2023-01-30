@@ -1,4 +1,5 @@
-from core import LagrangeSpace, Interval, UniformMesh
+from core import Interval, UniformMesh
+from core.finite_element import LagrangeSpace
 
 domain = Interval(0, 1)
 LINEAR_MESH = UniformMesh(domain, 4)

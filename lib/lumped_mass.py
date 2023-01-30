@@ -1,5 +1,5 @@
 import numpy as np
-from core import LagrangeSpace
+from core.finite_element import LagrangeSpace
 
 from .mass import MassMatrix
 

@@ -3,18 +3,20 @@
 from typing import Sequence
 
 import core
+from core import finite_element
 import numpy as np
 
 
 class BasisL2ProductEntryCalculator(core.QuadratureBasedVectorEntryCalculator):
     left_function: core.FastFunction
 
+    _space: finite_element.LagrangeSpace
+    _local_basis_elements: Sequence[finite_element.FastLocalElement]
     _mesh: core.Mesh
-    _local_basis_elements: Sequence[core.FastLocalElement]
 
     def __init__(
         self,
-        element_space: core.LagrangeSpace,
+        element_space: finite_element.LagrangeSpace,
         quadrature_degree: int,
     ):
         core.QuadratureBasedVectorEntryCalculator.__init__(
@@ -25,8 +27,8 @@ class BasisL2ProductEntryCalculator(core.QuadratureBasedVectorEntryCalculator):
         self._build_local_basis_elements()
 
     def _build_local_basis_elements(self):
-        fast_element = core.QuadratureFastElement(
-            self._element_space, self._local_quadrature
+        fast_element = finite_element.QuadratureFastElement(
+            self._space, self._local_quadrature
         )
         fast_element.set_values()
 
@@ -48,18 +50,18 @@ class BasisL2ProductEntryCalculator(core.QuadratureBasedVectorEntryCalculator):
 
 
 class BasisGradientL2ProductEntryCalculator(BasisL2ProductEntryCalculator):
-    _local_basis: core.LocalLagrangeBasis
+    _local_basis: finite_element.LocalLagrangeBasis
 
     def __init__(
         self,
-        element_space: core.LagrangeSpace,
+        element_space: finite_element.LagrangeSpace,
         quadrature_degree: int,
     ):
         BasisL2ProductEntryCalculator.__init__(self, element_space, quadrature_degree)
 
     def _build_local_basis_elements(self):
-        fast_element = core.QuadratureFastElement(
-            self._element_space, self._local_quadrature
+        fast_element = finite_element.QuadratureFastElement(
+            self._space, self._local_quadrature
         )
         fast_element.set_derivatives()
 
@@ -82,7 +84,7 @@ class BasisGradientL2ProductEntryCalculator(BasisL2ProductEntryCalculator):
         return np.dot(self._local_quadrature.weights, node_values)
 
 
-class BasisL2Product(core.LocallyAssembledVector):
+class BasisL2Product(finite_element.LocallyAssembledVector):
     """Vector built by the L2 product between a onedimensional function f and a
     finite element basis (bi), i.e. the built vector is
 
@@ -93,7 +95,7 @@ class BasisL2Product(core.LocallyAssembledVector):
     def __init__(
         self,
         left_function: core.FastFunction,
-        element_space: core.LagrangeSpace,
+        element_space: finite_element.LagrangeSpace,
         quadrature_degree: int,
     ):
         entry_calculator = BasisL2ProductEntryCalculator(
@@ -101,10 +103,12 @@ class BasisL2Product(core.LocallyAssembledVector):
         )
         entry_calculator.left_function = left_function
 
-        core.LocallyAssembledVector.__init__(self, element_space, entry_calculator)
+        finite_element.LocallyAssembledVector.__init__(
+            self, element_space, entry_calculator
+        )
 
 
-class BasisGradientL2Product(core.LocallyAssembledVector):
+class BasisGradientL2Product(finite_element.LocallyAssembledVector):
     """Vector built by the L2 product between a onedimensional function f and
     the derivatives of a finite element basis (bi), i.e. the built vector is
 
@@ -115,7 +119,7 @@ class BasisGradientL2Product(core.LocallyAssembledVector):
     def __init__(
         self,
         left_function: core.FastFunction,
-        element_space: core.LagrangeSpace,
+        element_space: finite_element.LagrangeSpace,
         quadrature_degree: int,
     ):
         entry_calculator = BasisGradientL2ProductEntryCalculator(
@@ -123,4 +127,6 @@ class BasisGradientL2Product(core.LocallyAssembledVector):
         )
         entry_calculator.left_function = left_function
 
-        core.LocallyAssembledVector.__init__(self, element_space, entry_calculator)
+        finite_element.LocallyAssembledVector.__init__(
+            self, element_space, entry_calculator
+        )

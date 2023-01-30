@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from core import FiniteVolumeSpace
+from core.finite_volume import FiniteVolumeSpace
 
 from .core import DischargeToVelocityTransformer
 

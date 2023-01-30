@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, Tuple
 
 import core
 import defaults
@@ -6,6 +6,7 @@ import lib
 import numpy as np
 import pandas as pd
 import shallow_water
+from core import finite_volume
 from shallow_water.solver import lax_friedrichs
 from tqdm.auto import tqdm, trange
 
@@ -272,9 +273,11 @@ class GenerateData(Command):
 
     def _create_subgrid_flux(
         self,
-        fine_flux_builder: Callable[[core.FiniteVolumeSpace, float], lib.NumericalFlux],
+        fine_flux_builder: Callable[
+            [finite_volume.FiniteVolumeSpace, float], lib.NumericalFlux
+        ],
         coarse_flux_builder: Callable[
-            [core.FiniteVolumeSpace, float], lib.NumericalFlux
+            [finite_volume.FiniteVolumeSpace, float], lib.NumericalFlux
         ],
         coarsening_degree: int,
     ) -> lib.NumericalFlux:
@@ -288,7 +291,7 @@ class GenerateData(Command):
         coarse_mesh = core.UniformMesh(
             fine_mesh.domain, len(fine_mesh) // coarsening_degree
         )
-        coarse_space = core.FiniteVolumeSpace(coarse_mesh)
+        coarse_space = finite_volume.FiniteVolumeSpace(coarse_mesh)
 
         coarse_flux = coarse_flux_builder(
             coarse_space, benchmark.gravitational_acceleration

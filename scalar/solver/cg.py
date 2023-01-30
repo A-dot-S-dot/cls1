@@ -1,10 +1,11 @@
 import defaults
 import lib
 import numpy as np
-from core import factory, finite_element
+from core import finite_element
 from core.benchmark import Benchmark
 from core.solver import Solver
 from core.system import SystemMatrix, SystemVector
+from core.time_stepping import build_mesh_dependent_time_stepping
 
 
 class CGRightHandSide:
@@ -58,15 +59,15 @@ class ContinuousGalerkinSolver(Solver):
         cfl_number = cfl_number or defaults.CFL_NUMBER
         exact_flux = exact_flux
 
-        solution = factory.build_finite_element_solution(
+        solution = finite_element.build_finite_element_solution(
             benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
 
         right_hand_side = build_cg_right_hand_side(
             benchmark.problem, solution.space, exact_flux=exact_flux
         )
-        ode_solver = factory.build_optimal_ode_solver(solution.space)
-        time_stepping = factory.build_mesh_dependent_time_stepping(
+        ode_solver = finite_element.build_optimal_ode_solver(solution.space)
+        time_stepping = build_mesh_dependent_time_stepping(
             benchmark, solution.space.mesh, cfl_number
         )
 

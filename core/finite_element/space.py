@@ -1,8 +1,11 @@
 from typing import Callable, Iterator, List, Sequence
 
 import numpy as np
+from core.benchmark import Benchmark
+from core.discrete_solution import DiscreteSolution, DiscreteSolutionWithHistory
 from core.index_mapping import DOFNeighbourIndicesMapping, GlobalIndexMapping
-from core.mesh import AffineTransformation, Mesh
+from core.interpolate import NodeValuesInterpolator
+from core.mesh import AffineTransformation, Mesh, UniformMesh
 from core.quadrature import LocalElementQuadrature
 from core.space import CellDependentFunction, FastFunction, SolverSpace
 from scipy.interpolate import lagrange
@@ -325,3 +328,18 @@ class AnchorNodesFastFiniteElement(FastFiniteElement):
 
     def set_derivatives(self):
         super().set_derivatives(*self._anchor_nodes)
+
+
+def build_finite_element_solution(
+    benchmark: Benchmark, mesh_size: int, polynomial_degree: int, save_history=False
+) -> DiscreteSolution[LagrangeSpace]:
+    mesh = UniformMesh(benchmark.domain, mesh_size)
+    space = LagrangeSpace(mesh, polynomial_degree)
+    interpolator = NodeValuesInterpolator(*space.basis_nodes)
+    solution_type = DiscreteSolutionWithHistory if save_history else DiscreteSolution
+
+    return solution_type(
+        interpolator.interpolate(benchmark.initial_data),
+        start_time=benchmark.start_time,
+        space=space,
+    )

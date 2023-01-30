@@ -4,6 +4,7 @@ import numpy as np
 
 from .benchmark import Benchmark
 from .discrete_solution import DiscreteSolution
+from .mesh import Mesh
 
 
 class TimeStepTooSmallError(Exception):
@@ -156,6 +157,17 @@ class TimeStepping:
             self.__class__.__name__
             + f"(start_time={self._start_time}, end_time={self._end_time}, time_step_generator={self._time_step_generator})"
         )
+
+
+def build_mesh_dependent_time_stepping(
+    benchmark: Benchmark, mesh: Mesh, cfl_number: float
+) -> TimeStepping:
+    return TimeStepping(
+        benchmark.end_time,
+        cfl_number,
+        lambda: mesh.step_length,
+        start_time=benchmark.start_time,
+    )
 
 
 def build_adaptive_time_stepping(

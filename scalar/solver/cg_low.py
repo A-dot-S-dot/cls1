@@ -3,6 +3,7 @@ import core.ode_solver as os
 import defaults
 import lib
 import numpy as np
+from core import finite_element
 
 
 class OptimalTimeStep:
@@ -57,7 +58,7 @@ class LowOrderCGRightHandSide:
 
 
 def build_cg_low_right_hand_side(
-    problem: str, element_space: core.LagrangeSpace
+    problem: str, element_space: finite_element.LagrangeSpace
 ) -> LowOrderCGRightHandSide:
     lumped_mass = lib.LumpedMassVector(element_space)
     artificial_diffusion = lib.build_artificial_diffusion(problem, element_space)
@@ -86,7 +87,7 @@ class LowOrderContinuousGalerkinSolver(core.Solver):
         cfl_number = cfl_number or defaults.MCL_CFL_NUMBER
         ode_solver_type = ode_solver_type or os.Heun
 
-        solution = core.build_finite_element_solution(
+        solution = finite_element.build_finite_element_solution(
             benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
         right_hand_side = build_cg_low_right_hand_side(

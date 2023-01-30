@@ -1,11 +1,12 @@
-"""Provides Discrete Gradient"""
 import numpy as np
-import core
+from core import finite_element
 
 
-class DiscreteGradientEntryCalculator(core.QuadratureBasedMatrixEntryCalculator):
-    def __init__(self, element_space: core.LagrangeSpace):
-        core.QuadratureBasedMatrixEntryCalculator.__init__(
+class DiscreteGradientEntryCalculator(
+    finite_element.QuadratureBasedMatrixEntryCalculator
+):
+    def __init__(self, element_space: finite_element.LagrangeSpace):
+        finite_element.QuadratureBasedMatrixEntryCalculator.__init__(
             self, element_space.polynomial_degree, element_space.polynomial_degree
         )
 
@@ -26,14 +27,14 @@ class DiscreteGradientEntryCalculator(core.QuadratureBasedMatrixEntryCalculator)
         return np.dot(self._local_quadrature.weights, values)
 
 
-class DiscreteGradient(core.LocallyAssembledSystemMatrix):
+class DiscreteGradient(finite_element.LocallyAssembledSystemMatrix):
     """Discrete gradient system matrix. It's entries are phi_i * phi'_j, where {phi_i}_i
     denotes the basis of the element space.
 
     """
 
-    def __init__(self, element_space: core.LagrangeSpace):
+    def __init__(self, element_space: finite_element.LagrangeSpace):
         entry_calculator = DiscreteGradientEntryCalculator(element_space)
-        core.LocallyAssembledSystemMatrix.__init__(
+        finite_element.LocallyAssembledSystemMatrix.__init__(
             self, element_space, entry_calculator
         )

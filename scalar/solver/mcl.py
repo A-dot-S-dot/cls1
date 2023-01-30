@@ -7,11 +7,9 @@ import lib
 import numpy as np
 from core import (
     Benchmark,
-    LagrangeSpace,
     Solver,
     SystemMatrix,
     SystemVector,
-    factory,
     finite_element,
 )
 
@@ -39,7 +37,7 @@ class MCLRightHandSide:
 
     """
 
-    _element_space: LagrangeSpace
+    _element_space: finite_element.LagrangeSpace
     _low_cg_right_hand_side: cg_low.LowOrderCGRightHandSide
     _lumped_mass: SystemVector
     _artificial_diffusion: SystemMatrix
@@ -51,7 +49,7 @@ class MCLRightHandSide:
 
     def __init__(
         self,
-        element_space: LagrangeSpace,
+        element_space: finite_element.LagrangeSpace,
         low_cg_right_hand_side: cg_low.LowOrderCGRightHandSide,
         flux_approximation: SystemVector,
     ):
@@ -138,7 +136,7 @@ class MCLSolver(Solver):
         cfl_number = cfl_number or defaults.MCL_CFL_NUMBER
         ode_solver_type = ode_solver_type or os.Heun
         adaptive = adaptive
-        solution = factory.build_finite_element_solution(
+        solution = finite_element.build_finite_element_solution(
             benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
         right_hand_side = build_mcl_right_hand_side(benchmark.problem, solution.space)

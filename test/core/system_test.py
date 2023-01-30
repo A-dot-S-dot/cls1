@@ -6,21 +6,6 @@ import numpy as np
 from core import system
 
 
-class SimpleSystemVector(system.SystemVector):
-    value = 0
-
-    def __call__(self):
-        self.value += 1
-        return self.value
-
-
-class TestSystemVector(TestCase):
-    def test_two_calls(self):
-        vector = SimpleSystemVector()
-        vector()
-        self.assertEqual(vector(), 2)
-
-
 class SimpleSystemMatrix(system.SystemMatrix):
     def __init__(self):
         system.SystemMatrix.__init__(self, 4)
@@ -117,24 +102,3 @@ class TestSystemMatrix(TestCase):
         for i in range(self.element_space.dimension):
             for j in range(self.element_space.dimension):
                 self.assertEqual(new_matrix[i, j], matrix[i, j] * dof_vector[i])
-
-
-class SimpleMatrixEntryCalculator(system.SystemMatrixEntryCalculator):
-    def __call__(
-        self, cell_index: int, local_index_1: int, local_index_2: int
-    ) -> float:
-        return 0
-
-
-class TestLocallyAssembledSystemMatrix(TestCase):
-    element_space = LINEAR_LAGRANGE_SPACE
-    entry_calculator = SimpleMatrixEntryCalculator()
-
-    def test_assemble(self):
-        matrix = system.LocallyAssembledSystemMatrix(
-            self.element_space, self.entry_calculator
-        )
-
-        for i in range(self.element_space.dimension):
-            for j in range(self.element_space.dimension):
-                self.assertEqual(matrix[i, j], 0)

@@ -1,12 +1,15 @@
 from typing import Generic, TypeVar
 
 import numpy as np
+from core.benchmark import Benchmark
+from core.discrete_solution import DiscreteSolution, DiscreteSolutionWithHistory
 from core.index_mapping import (
     DOFNeighbourIndicesMapping,
     LeftRightCellIndexMapping,
     LeftRightNodeIndexMapping,
 )
-from core.mesh import Mesh
+from core.interpolate import CellAverageInterpolator
+from core.mesh import Mesh, UniformMesh
 from core.space import CellDependentFunction, SolverSpace
 
 T = TypeVar("T", float, np.ndarray)
@@ -103,3 +106,18 @@ class FiniteVolumeElement(CellDependentFunction, Generic[T]):
 
     def __call__(self, cell_index: int, x: float) -> T:
         return self._dof_vector[cell_index]
+
+
+def build_finite_volume_solution(
+    benchmark: Benchmark, mesh_size: int, save_history=False
+) -> DiscreteSolution[FiniteVolumeSpace]:
+    mesh = UniformMesh(benchmark.domain, mesh_size)
+    space = FiniteVolumeSpace(mesh)
+    interpolator = CellAverageInterpolator(mesh, 2)
+    solution_type = DiscreteSolutionWithHistory if save_history else DiscreteSolution
+
+    return solution_type(
+        interpolator.interpolate(benchmark.initial_data),
+        start_time=benchmark.start_time,
+        space=space,
+    )

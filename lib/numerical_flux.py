@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Callable, Tuple
 
 import numpy as np
-from core import FiniteVolumeSpace, VectorCoarsener
+from core import VectorCoarsener
+from core.finite_volume import FiniteVolumeSpace
 
 
 class NumericalFlux(ABC):

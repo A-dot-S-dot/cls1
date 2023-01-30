@@ -1,8 +1,8 @@
 import numpy as np
-from core import (
+from core import Mesh
+from core.finite_element import (
     LagrangeSpace,
     LocallyAssembledSystemMatrix,
-    Mesh,
     QuadratureBasedMatrixEntryCalculator,
 )
 

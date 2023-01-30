@@ -5,7 +5,7 @@ import defaults
 import numpy as np
 import shallow_water
 import torch
-from core import FiniteVolumeSpace, Solver, factory
+from core import Solver, finite_volume
 from core import ode_solver as os
 from core import time_stepping as ts
 from lib import numerical_flux as nf
@@ -89,7 +89,7 @@ class NetworkSubgridFlux(nf.NumericalFlux):
 
     def __init__(
         self,
-        volume_space: FiniteVolumeSpace,
+        volume_space: finite_volume.FiniteVolumeSpace,
         network: nn.Module,
         network_path: str,
         local_degree: int,
@@ -148,7 +148,7 @@ class SubgridNetworkSolver(Solver):
         network_path = network_path or defaults.NETWORK_PATH
         ode_solver_type = os.ForwardEuler
 
-        solution = factory.build_finite_volume_solution(
+        solution = finite_volume.build_finite_volume_solution(
             benchmark, mesh_size, save_history=save_history
         )
 
@@ -222,7 +222,7 @@ class LimitedSubgridNetworkSolver(Solver):
         gamma = gamma or defaults.GAMMA
         ode_solver_type = os.ForwardEuler
 
-        solution = factory.build_finite_volume_solution(
+        solution = finite_volume.build_finite_volume_solution(
             benchmark, mesh_size, save_history=save_history
         )
 

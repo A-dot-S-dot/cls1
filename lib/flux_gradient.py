@@ -1,26 +1,23 @@
 from typing import Callable
 
-import core.system as system
 import numpy as np
-from core import LagrangeSpace, QuadratureFastElement
+from core import finite_element, system
 
 from .discrete_gradient import DiscreteGradient
 from .discrete_l2_product import BasisGradientL2ProductEntryCalculator
 from .flux_approximation import FluxApproximation
 
-ScalarFunction = Callable[[float], float]
-
 
 class FluxGradientEntryCalculator(BasisGradientL2ProductEntryCalculator):
     dof_vector: np.ndarray
 
-    _flux: ScalarFunction
-    _fast_element: QuadratureFastElement
+    _flux: Callable[[float], float]
+    _fast_element: finite_element.QuadratureFastElement
 
     def __init__(
         self,
-        element_space: LagrangeSpace,
-        flux: ScalarFunction,
+        element_space: finite_element.LagrangeSpace,
+        flux: Callable[[float], float],
     ):
         BasisGradientL2ProductEntryCalculator.__init__(
             self, element_space, 2**element_space.polynomial_degree
@@ -29,8 +26,8 @@ class FluxGradientEntryCalculator(BasisGradientL2ProductEntryCalculator):
         self._build_finite_element()
 
     def _build_finite_element(self):
-        self._fast_element = QuadratureFastElement(
-            self._element_space, self._local_quadrature
+        self._fast_element = finite_element.QuadratureFastElement(
+            self._space, self._local_quadrature
         )
         self._fast_element.set_values()
 
@@ -43,7 +40,7 @@ class FluxGradientEntryCalculator(BasisGradientL2ProductEntryCalculator):
         return self._flux(finite_element_value)
 
 
-class FluxGradient(system.LocallyAssembledVector):
+class FluxGradient(finite_element.LocallyAssembledVector):
     """Flux derivative vector. It's entries are
 
         f(v) * phi'_i,
@@ -59,12 +56,12 @@ class FluxGradient(system.LocallyAssembledVector):
 
     def __init__(
         self,
-        element_space: LagrangeSpace,
-        flux: ScalarFunction,
+        element_space: finite_element.LagrangeSpace,
+        flux: Callable[[float], float],
     ):
         self._entry_calculator = FluxGradientEntryCalculator(element_space, flux)
 
-        system.LocallyAssembledVector.__init__(
+        finite_element.LocallyAssembledVector.__init__(
             self, element_space, self._entry_calculator
         )
 
@@ -86,7 +83,7 @@ class AdvectionFluxGradient:
 
     _discrete_gradient: DiscreteGradient
 
-    def __init__(self, element_space: LagrangeSpace):
+    def __init__(self, element_space: finite_element.LagrangeSpace):
         self._discrete_gradient = DiscreteGradient(element_space)
 
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
@@ -109,7 +106,7 @@ class ApproximatedFluxGradient:
 
     def __init__(
         self,
-        element_space: LagrangeSpace,
+        element_space: finite_element.LagrangeSpace,
         flux: Callable[[np.ndarray], np.ndarray],
     ):
         self._discrete_gradient = DiscreteGradient(element_space)
@@ -120,7 +117,7 @@ class ApproximatedFluxGradient:
 
 
 def build_exact_flux_gradient(
-    problem: str, element_space: LagrangeSpace
+    problem: str, element_space: finite_element.LagrangeSpace
 ) -> system.SystemVector:
     flux_gradients = {
         "advection": AdvectionFluxGradient(element_space),
@@ -130,7 +127,7 @@ def build_exact_flux_gradient(
 
 
 def build_flux_gradient_approximation(
-    problem: str, element_space: LagrangeSpace
+    problem: str, element_space: finite_element.LagrangeSpace
 ) -> system.SystemVector:
     flux_gradients = {
         "advection": AdvectionFluxGradient(element_space),
@@ -140,7 +137,7 @@ def build_flux_gradient_approximation(
 
 
 def build_flux_gradient(
-    problem: str, element_space: LagrangeSpace, exact_flux: bool
+    problem: str, element_space: finite_element.LagrangeSpace, exact_flux: bool
 ) -> system.SystemVector:
     if exact_flux:
         return build_exact_flux_gradient(problem, element_space)

@@ -5,6 +5,7 @@ import core.ode_solver as os
 import defaults
 import numpy as np
 import shallow_water
+from core import finite_volume
 from lib import NumericalFlux, NumericalFluxDependentRightHandSide
 from shallow_water.benchmark import ShallowWaterBenchmark
 
@@ -20,13 +21,13 @@ class IntermediateState:
 
     """
 
-    _volume_space: core.FiniteVolumeSpace
+    _volume_space: finite_volume.FiniteVolumeSpace
     _flux: core.SystemVector
     _wave_speed: core.SystemVector
 
     def __init__(
         self,
-        volume_space: core.FiniteVolumeSpace,
+        volume_space: finite_volume.FiniteVolumeSpace,
         flux: core.SystemVector,
         wave_speed: core.SystemVector,
     ):
@@ -59,14 +60,14 @@ class LLFNumericalFLux(NumericalFlux):
 
     """
 
-    _volume_space: core.FiniteVolumeSpace
+    _volume_space: finite_volume.FiniteVolumeSpace
     _flux: core.SystemVector
     _wave_speed: core.SystemVector
     _intermediate_state: core.SystemVector
 
     def __init__(
         self,
-        volume_space: core.FiniteVolumeSpace,
+        volume_space: finite_volume.FiniteVolumeSpace,
         flux: core.SystemVector,
         wave_speed: core.SystemVector,
         intermediate_state: core.SystemVector,
@@ -102,7 +103,7 @@ class LLFNumericalFLux(NumericalFlux):
 
 
 def build_llf_numerical_flux(
-    volume_space: core.FiniteVolumeSpace, gravitational_acceleration=None
+    volume_space: finite_volume.FiniteVolumeSpace, gravitational_acceleration=None
 ) -> NumericalFlux:
     g = gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
     flux = shallow_water.Flux(g)
@@ -130,7 +131,7 @@ class LocalLaxFriedrichsSolver(core.Solver):
         adaptive = adaptive
         ode_solver_type = os.ForwardEuler
 
-        solution = core.build_finite_volume_solution(
+        solution = finite_volume.build_finite_volume_solution(
             benchmark, mesh_size, save_history=save_history
         )
 
