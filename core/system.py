@@ -40,8 +40,7 @@ class QuadratureBasedVectorEntryCalculator(VectorEntryCalculator):
         self._local_quadrature = LocalElementQuadrature(quadrature_degree)
 
 
-SystemVector = Callable[[np.ndarray], np.ndarray]
-SystemTuple = Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]
+RightHandSide = Callable[[float, np.ndarray], np.ndarray]
 
 
 class SystemMatrix:

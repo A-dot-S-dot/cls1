@@ -37,7 +37,7 @@ class TestExplicitRungeKutta(TestCase, Generic[T]):
 
         return solver.time, solver.solution
 
-    def right_hand_side(self, x: T) -> T:
+    def right_hand_side(self, t: float, x: T) -> T:
         ...
 
     def _test_solution(self, solution: T):
@@ -46,13 +46,13 @@ class TestExplicitRungeKutta(TestCase, Generic[T]):
 
 class TestStageValues(TestCase):
     def test_euler(self):
-        solver = os.ForwardEuler(lambda x: 1, 0.0)
+        solver = os.ForwardEuler(lambda t, x: 1, 0.0)
         solver.execute(1.0)
         expected_stage_values = [0.0]
         self.assertListEqual(solver.stage_values, expected_stage_values)
 
     def test_heun(self):
-        solver = os.Heun(lambda x: 1, 0.0)
+        solver = os.Heun(lambda t, x: 1, 0.0)
         solver.execute(1.0)
         expected_stage_values = [0.0, 1.0]
         self.assertListEqual(solver.stage_values, expected_stage_values)
@@ -66,7 +66,7 @@ class TestConstantEuler(TestExplicitRungeKutta[float]):
     expected_solution = target_time
     time_step_numbers = [1, 10, 100, 1000]
 
-    def right_hand_side(self, x: float) -> float:
+    def right_hand_side(self, t: float, x: float) -> float:
         return 1
 
     def _test_solution(self, solution: float):
@@ -78,7 +78,7 @@ class TestLinearEuler(TestConstantEuler):
     expected_solution = 2.0
     time_step_numbers = [1]
 
-    def right_hand_side(self, x: float) -> float:
+    def right_hand_side(self, t: float, x: float) -> float:
         return x
 
 
@@ -90,7 +90,7 @@ class TestConstantSystemEuler(TestExplicitRungeKutta[np.ndarray]):
     expected_solution = np.array([target_time, target_time])
     time_step_numbers = [1, 10, 100, 1000]
 
-    def right_hand_side(self, x: np.ndarray) -> np.ndarray:
+    def right_hand_side(self, t: float, x: np.ndarray) -> np.ndarray:
         return np.array([1.0, 1.0])
 
     def _test_solution(self, solution: np.ndarray):
@@ -103,7 +103,7 @@ class TestLinearSystemEuler(TestConstantSystemEuler):
     expected_solution = np.array([2.0, 4.0])
     time_step_numbers = [1]
 
-    def right_hand_side(self, x: np.ndarray) -> np.ndarray:
+    def right_hand_side(self, t: float, x: np.ndarray) -> np.ndarray:
         return x
 
 
@@ -144,26 +144,6 @@ class TestLinearSystemStrongStabilityPreservingRungeKutta3(TestLinearSystemEuler
     expected_solution = np.array([8 / 3, 16 / 3])
 
 
-class TestConstantStrongStabilityPreservingRungeKutta4(TestConstantEuler):
-    solver_type = os.StrongStabilityPreservingRungeKutta4
-
-
-class TestLinearStrongStabilityPreservingRungeKutta4(TestLinearEuler):
-    solver_type = os.StrongStabilityPreservingRungeKutta4
-    expected_solution = np.exp(1)
-    accuracy = 0.05
-
-
-class TestConstantSystemStrongStabilityPreservingRungeKutta4(TestConstantSystemEuler):
-    solver_type = os.StrongStabilityPreservingRungeKutta4
-
-
-class TestLinearSystemStrongStabilityPreservingRungeKutta4(TestLinearSystemEuler):
-    solver_type = os.StrongStabilityPreservingRungeKutta4
-    expected_solution = np.array([np.exp(1), 2 * np.exp(1)])
-    accuracy = 0.05
-
-
 class TestConstantRungeKutta8(TestConstantEuler):
     solver_type = os.RungeKutta8
 
@@ -182,3 +162,24 @@ class TestLinearSystemRungeKutta8(TestLinearSystemEuler):
     solver_type = os.RungeKutta8
     expected_solution = np.array([np.exp(1), 2 * np.exp(1)])
     accuracy = 1e-4
+
+
+# DEPRECATED
+# class TestConstantStrongStabilityPreservingRungeKutta4(TestConstantEuler):
+#     solver_type = os.StrongStabilityPreservingRungeKutta4
+
+
+# class TestLinearStrongStabilityPreservingRungeKutta4(TestLinearEuler):
+#     solver_type = os.StrongStabilityPreservingRungeKutta4
+#     expected_solution = np.exp(1)
+#     accuracy = 0.05
+
+
+# class TestConstantSystemStrongStabilityPreservingRungeKutta4(TestConstantSystemEuler):
+#     solver_type = os.StrongStabilityPreservingRungeKutta4
+
+
+# class TestLinearSystemStrongStabilityPreservingRungeKutta4(TestLinearSystemEuler):
+#     solver_type = os.StrongStabilityPreservingRungeKutta4
+#     expected_solution = np.array([np.exp(1), 2 * np.exp(1)])
+#     accuracy = 0.05

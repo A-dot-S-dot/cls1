@@ -1,17 +1,12 @@
 from itertools import combinations
+from typing import Callable
 
 import core
 import core.ode_solver as os
 import defaults
 import lib
 import numpy as np
-from core import (
-    Benchmark,
-    Solver,
-    SystemMatrix,
-    SystemVector,
-    finite_element,
-)
+from core import Benchmark, Solver, SystemMatrix, finite_element
 
 from . import cg_low
 
@@ -39,19 +34,19 @@ class MCLRightHandSide:
 
     _element_space: finite_element.LagrangeSpace
     _low_cg_right_hand_side: cg_low.LowOrderCGRightHandSide
-    _lumped_mass: SystemVector
+    _lumped_mass: Callable[[np.ndarray], np.ndarray]
     _artificial_diffusion: SystemMatrix
-    _flux_approximation: SystemVector
+    _flux_approximation: Callable[[np.ndarray], np.ndarray]
     _mass: SystemMatrix
     _discrete_gradient: SystemMatrix
-    _local_maximum: SystemVector
-    _local_minimum: SystemVector
+    _local_maximum: Callable[[np.ndarray], np.ndarray]
+    _local_minimum: Callable[[np.ndarray], np.ndarray]
 
     def __init__(
         self,
         element_space: finite_element.LagrangeSpace,
         low_cg_right_hand_side: cg_low.LowOrderCGRightHandSide,
-        flux_approximation: SystemVector,
+        flux_approximation: Callable[[np.ndarray], np.ndarray],
     ):
         self._element_space = element_space
 
@@ -64,10 +59,10 @@ class MCLRightHandSide:
         self._local_maximum = lib.LocalMaximum(element_space)
         self._local_minimum = lib.LocalMinimum(element_space)
 
-    def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
+    def __call__(self, time: float, dof_vector: np.ndarray) -> np.ndarray:
         corrected_flux = np.zeros(len(dof_vector))
         flux_approximation = self._flux_approximation(dof_vector)
-        right_hand_side = self._low_cg_right_hand_side(dof_vector)
+        right_hand_side = self._low_cg_right_hand_side(time, dof_vector)
         local_maximum = self._local_maximum(dof_vector)
         local_minimum = self._local_minimum(dof_vector)
 
@@ -108,7 +103,7 @@ class MCLRightHandSide:
 
 def build_mcl_right_hand_side(
     problem: str, element_space: finite_element.LagrangeSpace
-) -> SystemVector:
+) -> MCLRightHandSide:
     flux_approximation = lib.build_flux_approximation(problem)
 
     low_cg_right_hand_side = cg_low.build_cg_low_right_hand_side(problem, element_space)

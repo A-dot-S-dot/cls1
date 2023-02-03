@@ -6,7 +6,6 @@ import lib
 import numpy as np
 import pandas as pd
 import shallow_water
-from core import finite_volume
 from shallow_water.solver import lax_friedrichs
 from tqdm.auto import tqdm, trange
 
@@ -15,7 +14,7 @@ from .command import Command
 
 
 class SubgridFluxDataBuilder:
-    _subgrid_flux: lib.NumericalFlux
+    _subgrid_flux: lib.NUMERICAL_FLUX
     _coarsener: lib.VectorCoarsener
     _skip: int
     _update_coarse_solution: Callable[[np.ndarray, np.ndarray], np.ndarray]
@@ -23,7 +22,7 @@ class SubgridFluxDataBuilder:
 
     def __init__(
         self,
-        subgrid_flux: lib.NumericalFlux,
+        subgrid_flux: lib.NUMERICAL_FLUX,
         coarsening_degree: int,
         skip: int,
         print_output=True,
@@ -57,13 +56,16 @@ class SubgridFluxDataBuilder:
         flux_history = lib.NumericalFluxWithHistory(self._subgrid_flux)
         coarse_solution = np.empty(0)
 
-        for dof_vector in tqdm(
-            solver.solution.value_history[:: self._skip],
+        for time, dof_vector in tqdm(
+            zip(
+                solver.solution.time_history[:: self._skip],
+                solver.solution.value_history[:: self._skip],
+            ),
             desc="Create Subgrid Flux Data",
             disable=not self._print_output,
             leave=False,
         ):
-            flux_history(dof_vector)
+            flux_history(time, dof_vector)
             coarse_solution = self._update_coarse_solution(dof_vector, coarse_solution)
 
         self._update_coarse_solution = self._initialize_coarse_solution
@@ -215,7 +217,7 @@ class GenerateData(Command):
         coarse_flux_builder=None,
         coarsening_degree=None,
         skip=None,
-        local_degree=None,
+        input_radius=None,
         node_index=None,
         subgrid_flux_data_path=None,
         benchmark_data_path=None,
@@ -234,8 +236,8 @@ class GenerateData(Command):
         coarse_flux_builder = coarse_flux_builder or fine_flux_builder
         coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
         skip = skip or defaults.SKIP
-        local_degree = local_degree or defaults.LOCAL_DEGREE
-        node_index = node_index or local_degree
+        input_radius = input_radius or defaults.INPUT_RADIUS
+        node_index = node_index or input_radius
         self._subgrid_flux_data_path = (
             subgrid_flux_data_path or defaults.SUBGRID_FLUX_DATA_PATH
         )
@@ -253,7 +255,7 @@ class GenerateData(Command):
             subgrid_flux, coarsening_degree, skip, print_output=print_output
         )
         self._subgrid_flux_data_frame_creator = SubgridFluxDataFrameCreator(
-            local_degree, node_index, print_output=print_output
+            input_radius, node_index, print_output=print_output
         )
         self._benchmark_parameters_data_frame_creator = BenchmarkParametersDataCreator()
 
@@ -274,28 +276,23 @@ class GenerateData(Command):
     def _create_subgrid_flux(
         self,
         fine_flux_builder: Callable[
-            [finite_volume.FiniteVolumeSpace, float], lib.NumericalFlux
+            [shallow_water.ShallowWaterBenchmark, core.Mesh], lib.NUMERICAL_FLUX
         ],
         coarse_flux_builder: Callable[
-            [finite_volume.FiniteVolumeSpace, float], lib.NumericalFlux
+            [shallow_water.ShallowWaterBenchmark, core.Mesh], lib.NUMERICAL_FLUX
         ],
         coarsening_degree: int,
-    ) -> lib.NumericalFlux:
+    ) -> lib.NUMERICAL_FLUX:
         benchmark = self._create_benchmark()
         solver = self._create_solver(benchmark)
-        fine_flux = fine_flux_builder(
-            solver.solution.space, benchmark.gravitational_acceleration
-        )
+        fine_flux = fine_flux_builder(benchmark, solver.solution.space.mesh)
 
         fine_mesh = solver.solution.space.mesh
         coarse_mesh = core.UniformMesh(
             fine_mesh.domain, len(fine_mesh) // coarsening_degree
         )
-        coarse_space = finite_volume.FiniteVolumeSpace(coarse_mesh)
 
-        coarse_flux = coarse_flux_builder(
-            coarse_space, benchmark.gravitational_acceleration
-        )
+        coarse_flux = coarse_flux_builder(benchmark, coarse_mesh)
 
         return lib.SubgridFlux(fine_flux, coarse_flux, coarsening_degree)
 

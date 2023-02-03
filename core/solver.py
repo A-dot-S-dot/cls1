@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from typing import Generic, Optional, Type, TypeVar
 
 import numpy as np
@@ -7,25 +6,24 @@ from tqdm.auto import tqdm
 from . import time_stepping as ts
 from .discrete_solution import DiscreteSolution
 from .ode_solver import ExplicitRungeKuttaMethod
-from .system import SystemVector
+from .system import RightHandSide
 
 T = TypeVar("T", bound=DiscreteSolution)
 
 
-class Solver(ABC, Generic[T]):
+class Solver(Generic[T]):
     name: str
     short: str
     _solution: T
     _time_stepping: ts.TimeStepping
     _ode_solver: ExplicitRungeKuttaMethod[np.ndarray]
-    _right_hand_side: SystemVector
+    _right_hand_side: RightHandSide
     _cfl_checker: Optional[ts.CFLChecker]
 
-    @abstractmethod
     def __init__(
         self,
         solution: T,
-        right_hand_side: SystemVector,
+        right_hand_side: RightHandSide,
         ode_solver_type: Type[ExplicitRungeKuttaMethod[np.ndarray]],
         time_stepping: ts.TimeStepping,
         name=None,
@@ -69,7 +67,11 @@ class Solver(ABC, Generic[T]):
     def _check_cfl_condition(self, time_step: float):
         if self._cfl_checker:
             try:
-                self._cfl_checker(time_step, *self._ode_solver.stage_values)
+                self._cfl_checker(
+                    time_step,
+                    self._ode_solver.time_nodes,
+                    *self._ode_solver.stage_values,
+                )
             except ts.CFLConditionViolatedError:
                 tqdm.write(
                     f"WARNING: CFL condition is violated at time {self._time_stepping.time:.4f}"

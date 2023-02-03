@@ -52,7 +52,7 @@ GAMMA = 1.0
 ################################################################################
 # GENERATE-DATA
 ################################################################################
-LOCAL_DEGREE = 2
+INPUT_RADIUS = 2
 SKIP = 40  # Determines how many subgrid fluxes should be skipped
 SUBGRID_FLUX_DATA_PATH = "data/data.csv"
 BENCHMARK_DATA_PATH = "data/benchmark_data.csv"

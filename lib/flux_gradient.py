@@ -1,7 +1,7 @@
 from typing import Callable
 
 import numpy as np
-from core import finite_element, system
+from core import finite_element
 
 from .discrete_gradient import DiscreteGradient
 from .discrete_l2_product import BasisGradientL2ProductEntryCalculator
@@ -102,7 +102,7 @@ class ApproximatedFluxGradient:
     """
 
     _discrete_gradient: DiscreteGradient
-    _flux_approximation: system.SystemVector
+    _flux_approximation: Callable[[np.ndarray], np.ndarray]
 
     def __init__(
         self,
@@ -118,7 +118,7 @@ class ApproximatedFluxGradient:
 
 def build_exact_flux_gradient(
     problem: str, element_space: finite_element.LagrangeSpace
-) -> system.SystemVector:
+) -> Callable[[np.ndarray], np.ndarray]:
     flux_gradients = {
         "advection": AdvectionFluxGradient(element_space),
         "burgers": FluxGradient(element_space, lambda u: 1 / 2 * u**2),
@@ -128,7 +128,7 @@ def build_exact_flux_gradient(
 
 def build_flux_gradient_approximation(
     problem: str, element_space: finite_element.LagrangeSpace
-) -> system.SystemVector:
+) -> Callable[[np.ndarray], np.ndarray]:
     flux_gradients = {
         "advection": AdvectionFluxGradient(element_space),
         "burgers": ApproximatedFluxGradient(element_space, lambda u: 1 / 2 * u**2),
@@ -138,7 +138,7 @@ def build_flux_gradient_approximation(
 
 def build_flux_gradient(
     problem: str, element_space: finite_element.LagrangeSpace, exact_flux: bool
-) -> system.SystemVector:
+) -> Callable[[np.ndarray], np.ndarray]:
     if exact_flux:
         return build_exact_flux_gradient(problem, element_space)
     else:

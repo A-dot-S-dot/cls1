@@ -1,11 +1,13 @@
 from test.test_helper import (
     LINEAR_LAGRANGE_SPACE,
     QUADRATIC_LAGRANGE_SPACE,
+    VOLUME_MESH,
     VOLUME_SPACE,
 )
 from unittest import TestCase
 
 import numpy as np
+from core.finite_volume import FiniteVolumeSpace
 
 from lib import LocalMaximum, LocalMinimum
 
@@ -34,9 +36,12 @@ class TestQuadraticLagrangeLocalBounds(TestLinearLagrangeLocalBounds):
     local_minimum = LocalMinimum(QUADRATIC_LAGRANGE_SPACE)
 
 
-class TestVolumeSpaceLocalBounds(TestLinearLagrangeLocalBounds):
-    local_maximum = LocalMaximum(VOLUME_SPACE)
-    local_minimum = LocalMinimum(VOLUME_SPACE)
+class TestVolumeSpaceNoPeriodicBoundariesLocalBounds(TestLinearLagrangeLocalBounds):
+    volume_space = FiniteVolumeSpace(VOLUME_MESH)
+    expected_maximum = [[1, 1, 0, 0], [2, 3, 4, 4]]
+    expected_minimum = [[0, 0, 0, 0], [1, 1, 2, 3]]
+    local_maximum = LocalMaximum(volume_space)
+    local_minimum = LocalMinimum(volume_space)
 
 
 class TestSystemLocalBounds(TestCase):

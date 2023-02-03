@@ -6,8 +6,10 @@ import numpy as np
 from lib.numerical_flux import *
 
 
-class TestNumericalFlux(NumericalFlux):
-    def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+class TestNumericalFlux:
+    def __call__(
+        self, time: float, dof_vector: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
         return dof_vector, np.roll(dof_vector, -1, axis=0)
 
 
@@ -16,8 +18,8 @@ class TestNumericalFluxWithHistory(TestCase):
         vector = np.array([[0.0, 0.0], [4.0, 2.0], [6.0, 4.0], [8.0, 6.0]])
         flux = NumericalFluxWithHistory(TestNumericalFlux())
 
-        flux(vector)
-        flux(vector)
+        flux(0, vector)
+        flux(1, vector)
 
         expected_flux_left_history = [
             [[0.0, 0.0], [4.0, 2.0], [6.0, 4.0], [8.0, 6.0]],
@@ -34,8 +36,8 @@ class TestNumericalFluxWithHistory(TestCase):
         vector = np.array([[0.0, 0.0], [4.0, 2.0], [6.0, 4.0], [8.0, 6.0]])
         flux = NumericalFluxWithHistory(TestNumericalFlux())
 
-        flux(vector)
-        flux(vector)
+        flux(0, vector)
+        flux(1, vector)
 
         expected_flux_right_history = [
             [[4.0, 2.0], [6.0, 4.0], [8.0, 6.0], [0.0, 0.0]],
@@ -56,7 +58,7 @@ class TestSubgridFlux(TestCase):
         vector = np.array([[0.0, 0.0], [4.0, 2.0], [6.0, 4.0], [8.0, 6.0]])
         expected_subgrid_flux_left = [[-2.0, -1.0], [-1.0, -1.0]]
 
-        subgrid_flux_left, _ = subgrid_flux(vector)
+        subgrid_flux_left, _ = subgrid_flux(0, vector)
 
         for i in range(2):
             self.assertListEqual(
@@ -68,7 +70,7 @@ class TestSubgridFlux(TestCase):
         vector = np.array([[0.0, 0.0], [4.0, 2.0], [6.0, 4.0], [8.0, 6.0]])
         expected_subgrid_flux_right = [[-1.0, -1.0], [-2.0, -1.0]]
 
-        _, subgrid_flux_right = subgrid_flux(vector)
+        _, subgrid_flux_right = subgrid_flux(0, vector)
 
         for i in range(2):
             self.assertListEqual(

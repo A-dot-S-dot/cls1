@@ -1,3 +1,5 @@
+from typing import Callable
+
 import core
 import core.ode_solver as os
 import defaults
@@ -7,16 +9,18 @@ from core import finite_element
 
 
 class OptimalTimeStep:
-    _lumped_mass: core.SystemVector
+    _lumped_mass: Callable[[np.ndarray], np.ndarray]
     _artificial_diffusion: core.SystemMatrix
 
     def __init__(
-        self, lumped_mass: core.SystemVector, artificial_diffusion: core.SystemMatrix
+        self,
+        lumped_mass: Callable[[np.ndarray], np.ndarray],
+        artificial_diffusion: core.SystemMatrix,
     ):
         self._lumped_mass = lumped_mass
         self._artificial_diffusion = artificial_diffusion
 
-    def __call__(self, dof_vector: np.ndarray) -> float:
+    def __call__(self, time: float, dof_vector: np.ndarray) -> float:
         self._artificial_diffusion.assemble(dof_vector)
 
         return min(
@@ -36,21 +40,21 @@ class LowOrderCGRightHandSide:
 
     """
 
-    _lumped_mass: core.SystemVector
+    _lumped_mass: Callable[[np.ndarray], np.ndarray]
     _artificial_diffusion: core.SystemMatrix
-    _flux_gradient: core.SystemVector
+    _flux_gradient: Callable[[np.ndarray], np.ndarray]
 
     def __init__(
         self,
-        lumped_mass: core.SystemVector,
+        lumped_mass: Callable[[np.ndarray], np.ndarray],
         artificial_diffusion: core.SystemMatrix,
-        flux_gradient: core.SystemVector,
+        flux_gradient: Callable[[np.ndarray], np.ndarray],
     ):
         self._lumped_mass = lumped_mass
         self._artificial_diffusion = artificial_diffusion
         self._flux_gradient = flux_gradient
 
-    def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
+    def __call__(self, time: float, dof_vector: np.ndarray) -> np.ndarray:
         self._artificial_diffusion.assemble(dof_vector)
         return (
             self._artificial_diffusion.dot(dof_vector) + self._flux_gradient(dof_vector)

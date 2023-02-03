@@ -242,7 +242,7 @@ def add_ode_solver(parser):
         "euler": ode_solver.ForwardEuler,
         "heun": ode_solver.Heun,
         "ssp3": ode_solver.StrongStabilityPreservingRungeKutta3,
-        "ssp4": ode_solver.StrongStabilityPreservingRungeKutta4,
+        # "ssp4": ode_solver.StrongStabilityPreservingRungeKutta4,
     }
 
     parser.add_argument(

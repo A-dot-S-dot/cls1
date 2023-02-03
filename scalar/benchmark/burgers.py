@@ -33,6 +33,8 @@ class BurgersBenchmark(Benchmark[float]):
 
 class SchockBenchmark(BurgersBenchmark):
     domain = Interval(0, 1)
+    boundary_conditions = "periodic"
+
     _critical_time = 1 / (2 * pi)
 
     def initial_data(self, x: float) -> float:
@@ -44,6 +46,8 @@ class SchockBenchmark(BurgersBenchmark):
 
 class SmoothBenchmark(BurgersBenchmark):
     domain = Interval(0, 2 * pi)
+    boundary_conditions = "periodic"
+
     _critical_time = 1
 
     def initial_data(self, x: float) -> float:

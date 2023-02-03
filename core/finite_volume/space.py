@@ -3,11 +3,7 @@ from typing import Generic, TypeVar
 import numpy as np
 from core.benchmark import Benchmark
 from core.discrete_solution import DiscreteSolution, DiscreteSolutionWithHistory
-from core.index_mapping import (
-    DOFNeighbourIndicesMapping,
-    LeftRightCellIndexMapping,
-    LeftRightNodeIndexMapping,
-)
+from .index_mapping import NeighbourIndicesMapping
 from core.interpolate import CellAverageInterpolator
 from core.mesh import Mesh, UniformMesh
 from core.space import CellDependentFunction, SolverSpace
@@ -17,48 +13,18 @@ T = TypeVar("T", float, np.ndarray)
 
 class FiniteVolumeSpace(SolverSpace, Generic[T]):
     mesh: Mesh
-    left_right_cell: LeftRightCellIndexMapping
-    left_right_node: LeftRightNodeIndexMapping
-    dof_neighbours: DOFNeighbourIndicesMapping
+    dof_neighbours: NeighbourIndicesMapping
 
     _cell_centers: np.ndarray
-    _right_cell_indices: np.ndarray
-    _right_cell_indices: np.ndarray
 
-    def __init__(self, mesh: Mesh):
+    def __init__(self, mesh: Mesh, periodic=False):
         self.mesh = mesh
-        self.left_right_cell = LeftRightCellIndexMapping(mesh)
-        self.left_right_node = LeftRightNodeIndexMapping(mesh)
-        self.dof_neighbours = DOFNeighbourIndicesMapping(mesh, 1, self.dimension)
+        self.dof_neighbours = NeighbourIndicesMapping(len(mesh), periodic)
 
         self._build_cell_centers()
-        self._build_left_cell_indices()
-        self._build_right_cell_indices()
-        self._build_left_node_indices()
-        self._build_right_node_indices()
 
     def _build_cell_centers(self):
         self._cell_centers = np.array([(cell.a + cell.b) / 2 for cell in self.mesh])
-
-    def _build_left_cell_indices(self):
-        self._left_cell_indices = np.array(
-            [self.left_right_cell(i)[0] for i in range(self.left_right_cell.dimension)]
-        )
-
-    def _build_right_cell_indices(self):
-        self._right_cell_indices = np.array(
-            [self.left_right_cell(i)[1] for i in range(self.left_right_cell.dimension)]
-        )
-
-    def _build_left_node_indices(self):
-        self._left_node_indices = np.array(
-            [self.left_right_node(i)[0] for i in range(self.left_right_node.dimension)]
-        )
-
-    def _build_right_node_indices(self):
-        self._right_node_indices = np.array(
-            [self.left_right_node(i)[1] for i in range(self.left_right_node.dimension)]
-        )
 
     @property
     def dimension(self):
@@ -75,22 +41,6 @@ class FiniteVolumeSpace(SolverSpace, Generic[T]):
     @property
     def grid(self) -> np.ndarray:
         return self.cell_centers
-
-    @property
-    def left_cell_indices(self) -> np.ndarray:
-        return self._left_cell_indices
-
-    @property
-    def right_cell_indices(self) -> np.ndarray:
-        return self._right_cell_indices
-
-    @property
-    def left_node_indices(self) -> np.ndarray:
-        return self._left_node_indices
-
-    @property
-    def right_node_indices(self) -> np.ndarray:
-        return self._right_node_indices
 
     def element(self, dof_vector: np.ndarray) -> CellDependentFunction[T]:
         return FiniteVolumeElement(self, dof_vector)
@@ -109,10 +59,13 @@ class FiniteVolumeElement(CellDependentFunction, Generic[T]):
 
 
 def build_finite_volume_solution(
-    benchmark: Benchmark, mesh_size: int, save_history=False
+    benchmark: Benchmark,
+    mesh_size: int,
+    save_history=False,
+    periodic=False,
 ) -> DiscreteSolution[FiniteVolumeSpace]:
     mesh = UniformMesh(benchmark.domain, mesh_size)
-    space = FiniteVolumeSpace(mesh)
+    space = FiniteVolumeSpace(mesh, periodic=periodic)
     interpolator = CellAverageInterpolator(mesh, 2)
     solution_type = DiscreteSolutionWithHistory if save_history else DiscreteSolution
 

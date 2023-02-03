@@ -2,14 +2,15 @@ from typing import Tuple
 
 import core.ode_solver as os
 import defaults
+import lib
 import numpy as np
 import shallow_water
 import torch
 from core import Solver, finite_volume
 from core import ode_solver as os
 from core import time_stepping as ts
-from lib import numerical_flux as nf
 from shallow_water.benchmark import ShallowWaterBenchmark
+from shallow_water.finite_volume import build_boundary_conditions_applier
 from torch import nn
 
 from . import gmc, godunov, lax_friedrichs
@@ -78,49 +79,59 @@ class NeuralNetwork(nn.Module):
         return self.linear_relu_stack(x)
 
 
-class NetworkSubgridFlux(nf.NumericalFlux):
+class NetworkSubgridFlux:
     """Calculates subgrid flux for shallow water equations with flat bottom. To
     calculate a subgrid flux of a certain edge the Network needs a certain
     number of values of neighboured cells. Requires periodic boundaries."""
 
-    _network: nn.Module
-    _local_degree: int
+    _input_radius: int
+    _conditions_applier: finite_volume.BoundaryConditionsApplier
     _curvature: Curvature
+    _network: nn.Module
 
     def __init__(
         self,
-        volume_space: finite_volume.FiniteVolumeSpace,
+        input_radius: int,
+        conditions_applier: finite_volume.BoundaryConditionsApplier,
+        curvature: Curvature,
         network: nn.Module,
         network_path: str,
-        local_degree: int,
     ):
-        self._local_degree = local_degree
-        self._curvature = Curvature(volume_space.mesh.step_length)
+        assert conditions_applier.cells_to_add_numbers == (
+            input_radius,
+            input_radius,
+        )
+
+        self._input_radius = input_radius
+        self._conditions_applier = conditions_applier
+        self._curvature = curvature
         self._network = network
+
         self._network.load_state_dict(torch.load(network_path))
         self._network.eval()
 
-    def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        input = self._get_input(dof_vector)
-        left_subgrid_flux = self._network(input).detach().numpy()
+    def __call__(
+        self, time: float, dof_vector: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        dof_vector_with_applied_conditions = self._conditions_applier.add_conditions(
+            time, dof_vector
+        )
+        input = self._get_input(dof_vector_with_applied_conditions)
+        subgrid_flux = self._network(input).detach().numpy()
 
-        return left_subgrid_flux, -np.roll(left_subgrid_flux, -1, axis=0)
+        return subgrid_flux[:-1], -subgrid_flux[1:]
 
     def _get_input(self, dof_vector: np.ndarray) -> torch.Tensor:
         stencil_values = np.array(
-            [
-                np.roll(dof_vector, i, axis=0)
-                for i in range(self._local_degree, -self._local_degree, -1)
-            ]
+            [np.roll(dof_vector, -i, axis=0) for i in range(2 * self._input_radius)]
         )
         curvature = self._curvature(*stencil_values)
+        network_input = np.concatenate(
+            [*stencil_values, curvature],
+            axis=1,
+        )[: -2 * self._input_radius + 1]
 
-        return torch.Tensor(
-            np.concatenate(
-                [*stencil_values, curvature],
-                axis=1,
-            )
-        )
+        return torch.Tensor(network_input)
 
 
 class SubgridNetworkSolver(Solver):
@@ -131,7 +142,7 @@ class SubgridNetworkSolver(Solver):
         short=None,
         mesh_size=None,
         coarsening_degree=None,
-        local_degree=None,
+        input_radius=None,
         cfl_number=None,
         network=None,
         network_path=None,
@@ -142,41 +153,41 @@ class SubgridNetworkSolver(Solver):
         short = short or "subgrid-network"
         coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
         mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE // coarsening_degree
-        local_degree = local_degree or defaults.LOCAL_DEGREE
+        input_radius = input_radius or defaults.INPUT_RADIUS
         cfl_number = cfl_number or defaults.GODUNOV_CFL_NUMBER / coarsening_degree
         network = network or NeuralNetwork()
         network_path = network_path or defaults.NETWORK_PATH
         ode_solver_type = os.ForwardEuler
 
         solution = finite_volume.build_finite_volume_solution(
-            benchmark, mesh_size, save_history=save_history
+            benchmark,
+            mesh_size,
+            save_history=save_history,
+            periodic=benchmark.boundary_conditions == "periodic",
         )
 
-        flux = shallow_water.Flux(benchmark.gravitational_acceleration)
-        wave_speed = shallow_water.WaveSpeed(
-            solution.space, benchmark.gravitational_acceleration
-        )
         numerical_flux = godunov.build_godunov_numerical_flux(
-            benchmark, solution.space, flux, wave_speed
+            benchmark, solution.space.mesh
         )
+
         subgrid_flux = NetworkSubgridFlux(
-            solution.space,
+            input_radius,
+            build_boundary_conditions_applier(
+                benchmark, cells_to_add_numbers=(input_radius, input_radius)
+            ),
+            Curvature(solution.space.mesh.step_length),
             network,
             network_path,
-            local_degree,
         )
-        corrected_numerical_flux = nf.CorrectedNumericalFlux(
+        corrected_numerical_flux = lib.CorrectedNumericalFlux(
             numerical_flux, subgrid_flux
         )
-        right_hand_side = nf.NumericalFluxDependentRightHandSide(
+        right_hand_side = lib.NumericalFluxDependentRightHandSide(
             solution.space, corrected_numerical_flux
         )
 
         optimal_time_step = godunov.OptimalTimeStep(
-            shallow_water.MaximumWaveSpeed(
-                solution.space, benchmark.gravitational_acceleration
-            ),
-            solution.space.mesh.step_length,
+            numerical_flux.riemann_solver, solution.space.mesh.step_length
         )
         time_stepping = ts.build_adaptive_time_stepping(
             benchmark, solution, optimal_time_step, cfl_number, adaptive=False
@@ -203,7 +214,7 @@ class LimitedSubgridNetworkSolver(Solver):
         short=None,
         mesh_size=None,
         coarsening_degree=None,
-        local_degree=None,
+        input_radius=None,
         cfl_number=None,
         network=None,
         network_path=None,
@@ -215,7 +226,7 @@ class LimitedSubgridNetworkSolver(Solver):
         short = short or "limited-subgrid-network"
         coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
         mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE // coarsening_degree
-        local_degree = local_degree or defaults.LOCAL_DEGREE
+        input_radius = input_radius or defaults.INPUT_RADIUS
         cfl_number = cfl_number or defaults.GODUNOV_CFL_NUMBER / coarsening_degree
         network = network or NeuralNetwork()
         network_path = network_path or defaults.NETWORK_PATH
@@ -226,47 +237,36 @@ class LimitedSubgridNetworkSolver(Solver):
             benchmark, mesh_size, save_history=save_history
         )
 
-        flux = shallow_water.Flux(benchmark.gravitational_acceleration)
-        wave_speed = shallow_water.WaveSpeed(
-            solution.space, benchmark.gravitational_acceleration
-        )
         numerical_flux = godunov.build_godunov_numerical_flux(
-            benchmark, solution.space, flux, wave_speed
+            benchmark, solution.space.mesh
         )
         subgrid_flux = NetworkSubgridFlux(
-            solution.space,
+            input_radius,
+            build_boundary_conditions_applier(
+                benchmark, cells_to_add_numbers=(input_radius, input_radius)
+            ),
+            Curvature(solution.space.mesh.step_length),
             network,
             network_path,
-            local_degree,
-        )
-        corrected_flux = nf.CorrectedNumericalFlux(numerical_flux, subgrid_flux)
-
-        wave_speed_max = shallow_water.MaximumWaveSpeed(
-            solution.space, benchmark.gravitational_acceleration
-        )
-        intermediate_state = lax_friedrichs.IntermediateState(
-            solution.space, flux, wave_speed_max
-        )
-        low_order_flux = lax_friedrichs.LLFNumericalFLux(
-            solution.space, flux, wave_speed_max, intermediate_state
         )
 
-        local_bounds = gmc.LocalAntidiffusiveFluxBounds(
-            solution.space, wave_speed_max, intermediate_state, gamma=gamma
-        )
+        corrected_flux = lib.CorrectedNumericalFlux(numerical_flux, subgrid_flux)
+
         limited_corrected_flux = gmc.GMCNumericalFlux(
-            solution.space, low_order_flux, corrected_flux, local_bounds
+            solution.space,
+            shallow_water.RiemannSolver(
+                build_boundary_conditions_applier(benchmark, (1, 1))
+            ),
+            corrected_flux,
+            gamma=gamma,
         )
 
-        right_hand_side = nf.NumericalFluxDependentRightHandSide(
+        right_hand_side = lib.NumericalFluxDependentRightHandSide(
             solution.space, limited_corrected_flux
         )
 
         optimal_time_step = godunov.OptimalTimeStep(
-            shallow_water.MaximumWaveSpeed(
-                solution.space, benchmark.gravitational_acceleration
-            ),
-            solution.space.mesh.step_length,
+            limited_corrected_flux.riemann_solver, solution.space.mesh.step_length
         )
         time_stepping = ts.build_adaptive_time_stepping(
             benchmark, solution, optimal_time_step, cfl_number, adaptive=False

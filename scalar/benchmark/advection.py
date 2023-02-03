@@ -17,6 +17,8 @@ class AdvectionBenchmark(Benchmark[float]):
 
 
 class ThreeHillsBenchmark(AdvectionBenchmark):
+    boundary_conditions = "periodic"
+
     def initial_data(self, x: float) -> float:
         if x >= 0.025 and x < 0.275:
             return exp(-300 * (2 * x - 0.3) ** 2)
@@ -29,6 +31,8 @@ class ThreeHillsBenchmark(AdvectionBenchmark):
 
 
 class TwoHillsBenchmark(AdvectionBenchmark):
+    boundary_conditions = "periodic"
+
     def initial_data(self, x: float) -> float:
         if x > 0.5 and x < 0.9:
             return exp(10) * exp(-1 / (x - 0.5)) * exp(1 / (x - 0.9))
@@ -39,6 +43,8 @@ class TwoHillsBenchmark(AdvectionBenchmark):
 
 
 class OneHillBenchmark(AdvectionBenchmark):
+    boundary_conditions = "periodic"
+
     def initial_data(self, x: float) -> float:
         if x >= 0.1 and x <= 0.3:
             return 1.0
@@ -47,11 +53,15 @@ class OneHillBenchmark(AdvectionBenchmark):
 
 
 class CosineBenchmark(AdvectionBenchmark):
+    boundary_conditions = "periodic"
+
     def initial_data(self, x: float) -> float:
         return cos(2 * pi * (x - 0.5))
 
 
 class GaussianBellBenchmark(AdvectionBenchmark):
+    boundary_conditions = "periodic"
+
     def initial_data(self, x: float) -> float:
         return exp(-100 * (x - 0.5) ** 2)
 

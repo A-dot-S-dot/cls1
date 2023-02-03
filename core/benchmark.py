@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic, Tuple, TypeVar
 
 import numpy as np
 
@@ -17,6 +17,7 @@ class Benchmark(ABC, Generic[T]):
     domain: Interval
     start_time = 0.0
     end_time: float
+    boundary_conditions: str | Tuple[str, str]
 
     @abstractmethod
     def __init__(self, end_time=None, **benchmark_parameters):
@@ -25,6 +26,12 @@ class Benchmark(ABC, Generic[T]):
     @abstractmethod
     def initial_data(self, x: float) -> T:
         ...
+
+    def inflow_left(self, t: float) -> T:
+        raise AttributeError("No left inflow speciefied.")
+
+    def inflow_right(self, t: float) -> T:
+        raise AttributeError("No right inflow speciefied.")
 
     def exact_solution(self, x: float, t: float) -> T:
         raise NoExactSolutionError("No exact solution exist.")

@@ -6,48 +6,40 @@ import defaults
 import numpy as np
 import shallow_water
 from core import finite_volume
-from lib import NumericalFlux, NumericalFluxDependentRightHandSide
-from shallow_water.benchmark import ShallowWaterBenchmark
+from lib import NumericalFluxDependentRightHandSide
 
-from . import godunov
+from ..benchmark import ShallowWaterBenchmark
+from ..core import *
+from ..finite_volume import build_boundary_conditions_applier
+from ..riemann_solver import RiemannSolver
 
 
-class IntermediateState:
-    """Calculates local Lax-Friedrich's intermediate states of Riemann problem (i.e. approximative solution), i.e. we get for each node between two cells
-
-    u' = (uL+uR)/2 + (f(uL)-f(uR))/(2*lambda),
-
-    where lambda denotes the wave speed and f the flux.
-
-    """
-
-    _volume_space: finite_volume.FiniteVolumeSpace
-    _flux: core.SystemVector
-    _wave_speed: core.SystemVector
+class OptimalTimeStep:
+    _riemann_solver: core.RiemannSolver
+    _step_length: float
 
     def __init__(
         self,
-        volume_space: finite_volume.FiniteVolumeSpace,
-        flux: core.SystemVector,
-        wave_speed: core.SystemVector,
+        riemann_solver: core.RiemannSolver,
+        step_length: float,
     ):
-        self._volume_space = volume_space
-        self._flux = flux
-        self._wave_speed = wave_speed
+        self._riemann_solver = riemann_solver
+        self._step_length = step_length
 
-    def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
-        values_left = dof_vector[self._volume_space.left_cell_indices]
-        values_right = dof_vector[self._volume_space.right_cell_indices]
-        flux_left = self._flux(values_left)
-        flux_right = self._flux(values_right)
-        wave_speed = self._wave_speed(dof_vector)
+    def __call__(self, time: float, dof_vector: np.ndarray) -> float:
+        self._riemann_solver.solve(time, dof_vector)
 
-        return (values_left + values_right) / 2 + (flux_left + -flux_right) / (
-            2 * wave_speed[:, None]
+        return self._step_length / np.max(
+            np.array(
+                [
+                    np.abs(self._riemann_solver.wave_speed_left),
+                    self._riemann_solver.wave_speed_right,
+                ]
+            )
         )
 
 
-class LLFNumericalFLux(NumericalFlux):
+class LLFNumericalFLux:
     """Calculates the shallow-water local lax friedrich numerical fluxes,
     i.e.
 
@@ -60,57 +52,33 @@ class LLFNumericalFLux(NumericalFlux):
 
     """
 
-    _volume_space: finite_volume.FiniteVolumeSpace
-    _flux: core.SystemVector
-    _wave_speed: core.SystemVector
-    _intermediate_state: core.SystemVector
+    _riemann_solver: core.RiemannSolver
 
-    def __init__(
-        self,
-        volume_space: finite_volume.FiniteVolumeSpace,
-        flux: core.SystemVector,
-        wave_speed: core.SystemVector,
-        intermediate_state: core.SystemVector,
-    ):
-        self._volume_space = volume_space
-        self._flux = flux
-        self._wave_speed = wave_speed
-        self._intermediate_state = intermediate_state
+    def __init__(self, riemann_solver: core.RiemannSolver):
+        self._riemann_solver = riemann_solver
 
-    def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        value_left = dof_vector[self._volume_space.left_cell_indices]
-        flux_left = self._flux(value_left)
-        wave_speed = self._wave_speed(dof_vector)
-        intermediate_state = self._intermediate_state(dof_vector)
+    @property
+    def riemann_solver(self) -> core.RiemannSolver:
+        return self._riemann_solver
 
-        node_flux = self._calculate_node_flux(
-            wave_speed, intermediate_state, value_left, flux_left
-        )
+    def __call__(
+        self, time: float, dof_vector: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        self._riemann_solver.solve(time, dof_vector)
 
-        return (
-            node_flux[self._volume_space.left_node_indices],
-            -node_flux[self._volume_space.right_node_indices],
-        )
+        node_flux = self._riemann_solver.intermediate_flux
 
-    def _calculate_node_flux(
-        self,
-        wave_speed: np.ndarray,
-        intermediate_state: np.ndarray,
-        value_left: np.ndarray,
-        flux_left,
-    ) -> np.ndarray:
-        return wave_speed[:, None] * (value_left + -intermediate_state) + flux_left
+        return node_flux[:-1], -node_flux[1:]
 
 
 def build_llf_numerical_flux(
-    volume_space: finite_volume.FiniteVolumeSpace, gravitational_acceleration=None
-) -> NumericalFlux:
-    g = gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
-    flux = shallow_water.Flux(g)
-    wave_speed = shallow_water.MaximumWaveSpeed(volume_space, g)
-    intermediate_state = IntermediateState(volume_space, flux, wave_speed)
-
-    return LLFNumericalFLux(volume_space, flux, wave_speed, intermediate_state)
+    benchmark: shallow_water.ShallowWaterBenchmark,
+    mesh: core.Mesh,
+) -> LLFNumericalFLux:
+    riemann_solver = shallow_water.RiemannSolver(
+        build_boundary_conditions_applier(benchmark)
+    )
+    return LLFNumericalFLux(riemann_solver)
 
 
 class LocalLaxFriedrichsSolver(core.Solver):
@@ -132,27 +100,29 @@ class LocalLaxFriedrichsSolver(core.Solver):
         ode_solver_type = os.ForwardEuler
 
         solution = finite_volume.build_finite_volume_solution(
-            benchmark, mesh_size, save_history=save_history
+            benchmark,
+            mesh_size,
+            save_history=save_history,
+            periodic=benchmark.boundary_conditions == "periodic",
         )
 
-        bottom = shallow_water.build_topography_discretization(
-            benchmark, len(solution.space.mesh)
-        )
-        if not shallow_water.is_constant(bottom):
+        bottom = build_topography_discretization(benchmark, len(solution.space.mesh))
+        if not is_constant(bottom):
             raise ValueError("Bottom must be constant.")
 
-        numerical_flux = build_llf_numerical_flux(
-            solution.space, benchmark.gravitational_acceleration
+        conditions_applier = build_boundary_conditions_applier(
+            benchmark, cells_to_add_numbers=(1, 1)
         )
+        riemann_solver = RiemannSolver(
+            conditions_applier, benchmark.gravitational_acceleration
+        )
+        numerical_flux = LLFNumericalFLux(riemann_solver)
         right_hand_side = NumericalFluxDependentRightHandSide(
             solution.space, numerical_flux
         )
 
-        optimal_time_step = godunov.OptimalTimeStep(
-            shallow_water.MaximumWaveSpeed(
-                solution.space, benchmark.gravitational_acceleration
-            ),
-            solution.space.mesh.step_length,
+        optimal_time_step = OptimalTimeStep(
+            riemann_solver, solution.space.mesh.step_length
         )
         time_stepping = core.build_adaptive_time_stepping(
             benchmark, solution, optimal_time_step, cfl_number, adaptive

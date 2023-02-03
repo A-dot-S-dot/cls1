@@ -82,6 +82,19 @@ class MCLParser(SolverParser):
         argument.add_ode_solver(self)
 
 
+class LocalLaxFriedrichsParser(SolverParser):
+    prog = "llf"
+    name = "Local Lax-Friedrichs finite volume scheme"
+    solver = LocalLaxFriedrichsSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+
+
 class GodunovParser(SolverParser):
     prog = "godunov"
     name = "Godunov's finite volume scheme"
@@ -113,19 +126,6 @@ class SubgridNetworkParser(SolverParser):
         argument.add_network_load_path(self)
 
 
-class LocalLaxFriedrichsParser(SolverParser):
-    prog = "llf"
-    name = "Local Lax-Friedrichs finite volume scheme"
-    solver = LocalLaxFriedrichsSolver
-
-    def _add_arguments(self):
-        argument.add_name(self, self.name)
-        argument.add_short(self, self.prog)
-        argument.add_mesh_size(self)
-        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
-        argument.add_adaptive_time_stepping(self)
-
-
 class LimitedSubgridNetworkParser(SolverParser):
     prog = "limited-subgrid-network"
     name = """Limited Solver with NN corrected flux"""
@@ -151,9 +151,9 @@ SCALAR_SOLVER_PARSERS = {
     "mcl": MCLParser,
 }
 SHALLOW_WATER_SOLVER_PARSERS = {
+    "llf": LocalLaxFriedrichsParser,
     "godunov": GodunovParser,
     "subgrid-network": SubgridNetworkParser,
-    "llf": LocalLaxFriedrichsParser,
     "limited-subgrid-network": LimitedSubgridNetworkParser,
 }
 

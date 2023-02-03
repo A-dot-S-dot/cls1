@@ -1,7 +1,6 @@
 from typing import Tuple
 from unittest import TestCase
 
-import lib
 import numpy as np
 import pandas as pd
 import shallow_water
@@ -10,8 +9,10 @@ from shallow_water.solver import lax_friedrichs as llf
 from command.generate_data import *
 
 
-class TestSubgridFlux(lib.NumericalFlux):
-    def __call__(self, dof_vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+class TestSubgridFlux:
+    def __call__(
+        self, time: float, dof_vector: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
         return dof_vector[::2], dof_vector[1::2]
 
 

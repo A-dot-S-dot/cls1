@@ -25,7 +25,7 @@ class TestLinearLowOrderCGRightHandSide(TestCase):
         for dofs, expected_result in zip(
             self.test_dofs, self.expected_right_hand_sides
         ):
-            mcl = self.mcl(dofs)
+            mcl = self.mcl(0.0, dofs)
             for i in range(len(mcl)):
                 self.assertAlmostEqual(mcl[i], expected_result[i], msg=f"index={i}")
 

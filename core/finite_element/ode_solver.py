@@ -12,7 +12,8 @@ def build_optimal_ode_solver(
     optimal_solver = {
         1: Heun,
         2: StrongStabilityPreservingRungeKutta3,
-        3: StrongStabilityPreservingRungeKutta4,
+        3: RungeKutta8,
+        # 3: StrongStabilityPreservingRungeKutta4,
         4: RungeKutta8,
         5: RungeKutta8,
         6: RungeKutta8,

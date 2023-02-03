@@ -1,10 +1,12 @@
+from typing import Callable
+
 import defaults
 import lib
 import numpy as np
 from core import finite_element
 from core.benchmark import Benchmark
 from core.solver import Solver
-from core.system import SystemMatrix, SystemVector
+from core.system import SystemMatrix
 from core.time_stepping import build_mesh_dependent_time_stepping
 
 
@@ -19,13 +21,15 @@ class CGRightHandSide:
     """
 
     mass: SystemMatrix
-    flux_gradient: SystemVector
+    flux_gradient: Callable[[np.ndarray], np.ndarray]
 
-    def __init__(self, mass: SystemMatrix, flux_gradient: SystemVector):
+    def __init__(
+        self, mass: SystemMatrix, flux_gradient: Callable[[np.ndarray], np.ndarray]
+    ):
         self.mass = mass
         self.flux_gradient = flux_gradient
 
-    def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
+    def __call__(self, time: float, dof_vector: np.ndarray) -> np.ndarray:
         return self.mass.inverse(self.flux_gradient(dof_vector))
 
 
@@ -33,7 +37,7 @@ def build_cg_right_hand_side(
     problem: str,
     element_space: finite_element.LagrangeSpace,
     exact_flux=False,
-) -> SystemVector:
+) -> CGRightHandSide:
     mass = lib.MassMatrix(element_space)
     flux_gradient = lib.build_flux_gradient(problem, element_space, exact_flux)
 

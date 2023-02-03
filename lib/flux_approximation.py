@@ -1,7 +1,6 @@
 from typing import Callable
 
 import numpy as np
-from core import SystemVector
 
 
 class FluxApproximation:
@@ -33,6 +32,6 @@ class FluxApproximation:
         return self._flux_approximation
 
 
-def build_flux_approximation(problem: str) -> SystemVector:
+def build_flux_approximation(problem: str) -> FluxApproximation:
     fluxes = {"advection": lambda u: u, "burgers": lambda u: 1 / 2 * u**2}
     return FluxApproximation(fluxes[problem])

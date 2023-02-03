@@ -91,7 +91,7 @@ class EOCCalculator:
     def _build_norms(self, solver_space: core.SolverSpace) -> Sequence[core.Norm]:
         norms = list()
 
-        if isinstance(solver_space, core.LagrangeSpace):
+        if isinstance(solver_space, core.finite_element.LagrangeSpace):
             quadrature_degree = solver_space.polynomial_degree + 1
         else:
             quadrature_degree = None

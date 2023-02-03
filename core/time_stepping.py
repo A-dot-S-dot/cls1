@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, List
 
 import numpy as np
 
@@ -16,30 +16,32 @@ class CFLConditionViolatedError(Exception):
 
 
 class DiscreteSolutionDependentTimeStep:
-    _time_step: Callable[[np.ndarray], float]
+    _time_step: Callable[[float, np.ndarray], float]
     _discrete_solution: DiscreteSolution
 
     def __init__(
         self,
-        time_step: Callable[[np.ndarray], float],
+        time_step: Callable[[float, np.ndarray], float],
         discrete_solution: DiscreteSolution,
     ):
         self._time_step = time_step
         self._discrete_solution = discrete_solution
 
     def __call__(self) -> float:
-        return self._time_step(self._discrete_solution.value)
+        return self._time_step(
+            self._discrete_solution.time, self._discrete_solution.value
+        )
 
 
 class CFLChecker:
-    _optimal_time_step: Callable[[np.ndarray], float]
+    _optimal_time_step: Callable[[float, np.ndarray], float]
 
-    def __init__(self, optimal_time_step: Callable[[np.ndarray], float]):
+    def __init__(self, optimal_time_step: Callable[[float, np.ndarray], float]):
         self._optimal_time_step = optimal_time_step
 
-    def __call__(self, time_step, *dof_vector: np.ndarray):
-        for dofs in dof_vector:
-            optimal_time_step = self._optimal_time_step(dofs)
+    def __call__(self, time_step, time_nodes: List[float], *dof_vector: np.ndarray):
+        for i, dofs in enumerate(dof_vector):
+            optimal_time_step = self._optimal_time_step(time_nodes[i], dofs)
             if time_step > optimal_time_step:
                 raise CFLConditionViolatedError
 
@@ -173,7 +175,7 @@ def build_mesh_dependent_time_stepping(
 def build_adaptive_time_stepping(
     benchmark: Benchmark,
     solution: DiscreteSolution,
-    optimal_time_step: Callable[[np.ndarray], float],
+    optimal_time_step: Callable[[float, np.ndarray], float],
     cfl_number: float,
     adaptive: bool,
 ) -> TimeStepping:

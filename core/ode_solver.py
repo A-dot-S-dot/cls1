@@ -14,14 +14,16 @@ class ExplicitRungeKuttaMethod(Generic[T]):
 
     _time: float
 
-    _right_hand_side: Callable[[T], T]
+    _right_hand_side: Callable[[float, T], T]
     _runge_kutta_matrix: np.ndarray  # A in Runge-Kutta tableau
     _weights: np.ndarray  # b in Runge-Kutta tableau
+    _nodes: np.ndarray  # c in Runge-Kutta tableu
     _solution: T
     _stage_values: List[T]
+    _time_nodes: List[float]
 
     def __init__(
-        self, right_hand_side: Callable[[T], T], initial_value: T, start_time=0.0
+        self, right_hand_side: Callable[[float, T], T], initial_value: T, start_time=0.0
     ):
         self._time = start_time
         self._right_hand_side = right_hand_side
@@ -46,16 +48,22 @@ class ExplicitRungeKuttaMethod(Generic[T]):
     def stage_values(self) -> List[T]:
         return self._stage_values
 
+    @property
+    def time_nodes(self) -> List[float]:
+        return self._time_nodes
+
     def execute(self, time_step: float):
         """A Runge Kutta step starting at actual point `xn` at actual time `tn` with the
         time step length `delta_t`.
 
         """
+        self._time_nodes = []
         self._stage_values = []
         stages = []
         stage_number = len(self._weights)
 
         for index in range(stage_number):
+            time_node = self.time + self._nodes[index] * time_step
             stage_value = self.solution + time_step * np.sum(
                 np.array(
                     [
@@ -65,8 +73,10 @@ class ExplicitRungeKuttaMethod(Generic[T]):
                 ),
                 axis=0,
             )
+            self._time_nodes.append(time_node)
             self._stage_values.append(stage_value)
-            stages.append(self._right_hand_side(stage_value))
+
+            stages.append(self._right_hand_side(time_node, stage_value))
 
         self._solution += time_step * np.sum(
             np.array([weight * stage for weight, stage in zip(self._weights, stages)]),
@@ -83,6 +93,7 @@ class ForwardEuler(ExplicitRungeKuttaMethod):
 
     _runge_kutta_matrix = np.array([[0]])
     _weights = np.array([1])
+    _nodes = np.array([0])
 
 
 class Heun(ExplicitRungeKuttaMethod):
@@ -90,6 +101,7 @@ class Heun(ExplicitRungeKuttaMethod):
 
     _runge_kutta_matrix = np.array([[0, 0], [1, 0]])
     _weights = np.array([1 / 2, 1 / 2])
+    _nodes = np.array([0.0, 1.0])
 
 
 class StrongStabilityPreservingRungeKutta3(ExplicitRungeKuttaMethod):
@@ -97,94 +109,7 @@ class StrongStabilityPreservingRungeKutta3(ExplicitRungeKuttaMethod):
 
     _runge_kutta_matrix = np.array([[0, 0, 0], [1, 0, 0], [1 / 4, 1 / 4, 0]])
     _weights = np.array([1 / 6, 1 / 6, 2 / 3])
-
-
-class StrongStabilityPreservingRungeKutta4(ExplicitRungeKuttaMethod):
-    """Class of an optimal fourth order SSP Runge-Kutta method.
-
-    The coefficients are taken from 'Optimal explicit strong stability
-    preserving Runge-Kutta methods with high linear order and optimal nonlinear
-    order', Gottlieb et al., 2015.
-
-    """
-
-    _coefficients = [
-        [0.391752226571890],
-        [0.444370493651235, 0.555629506348765, 0.368410593050371],
-        [0.620101851488403, 0.379898148511597, 0.251891774271694],
-        [0.178079954393132, 0.821920045606868, 0.544974750228521],
-        [
-            0.517231671970585,
-            0.096059710526147,
-            0.063692468666290,
-            0.386708617503269,
-            0.226007483236906,
-        ],
-    ]
-    _stages: List[np.ndarray]
-
-    def execute(self, delta_t: float):
-        self._build_empty_stages()
-        self._calculate_stages(delta_t)
-
-        self._solution = self._calculate_new_solution(delta_t)
-        self._time += delta_t
-
-    def _build_empty_stages(self):
-        self._stages = []
-        for _ in range(4):
-            self._stages.append(np.array(0))
-
-    def _calculate_stages(self, delta_t: float):
-        self._calculate_first_stage(delta_t)
-        self._calculate_second_stage(delta_t)
-        self._calculate_third_stage(delta_t)
-        self._calculate_fourth_stage(delta_t)
-
-    def _calculate_first_stage(self, delta_t: float):
-        self._stages[0] = self.solution + (
-            self._coefficients[0][0] * delta_t * self._right_hand_side(self.solution)
-        )
-
-    def _calculate_second_stage(self, delta_t: float):
-        self._stages[1] = (
-            self._coefficients[1][0] * self.solution
-            + self._coefficients[1][1] * self._stages[0]
-            + self._coefficients[1][2]
-            * delta_t
-            * self._right_hand_side(self._stages[0])
-        )
-
-    def _calculate_third_stage(self, delta_t: float):
-        self._stages[2] = (
-            self._coefficients[2][0] * self.solution
-            + self._coefficients[2][1] * self._stages[1]
-            + self._coefficients[2][2]
-            * delta_t
-            * self._right_hand_side(self._stages[1])
-        )
-
-    def _calculate_fourth_stage(self, delta_t: float):
-        self._stages[3] = (
-            self._coefficients[3][0] * self.solution
-            + self._coefficients[3][1] * self._stages[2]
-            + self._coefficients[3][2]
-            * delta_t
-            * self._right_hand_side(self._stages[2])
-        )
-
-    def _calculate_new_solution(self, delta_t: float) -> np.ndarray:
-        return (
-            self._coefficients[4][0] * self._stages[1]
-            + self._coefficients[4][1] * self._stages[2]
-            + self._coefficients[4][2]
-            * delta_t
-            * self._right_hand_side(self._stages[2])
-            + self._coefficients[4][3] * self._stages[3]
-            + self._coefficients[4][4]
-            * delta_t
-            * self._right_hand_side(self._stages[3])
-        )
+    _nodes = np.array([0.0, 1.0, 1 / 2])
 
 
 class RungeKutta8(ExplicitRungeKuttaMethod):
@@ -197,11 +122,12 @@ class RungeKutta8(ExplicitRungeKuttaMethod):
     """
 
     def __init__(
-        self, right_hand_side: Callable[[T], T], initial_value: T, start_time=0
+        self, right_hand_side: Callable[[float, T], T], initial_value: T, start_time=0
     ):
         super().__init__(right_hand_side, initial_value, start_time)
         self._build_runge_kutta_matrix()
         self._build_weights()
+        self._build_nodes()
 
     def _build_runge_kutta_matrix(self):
         self._runge_kutta_matrix = np.zeros((11, 11))
@@ -282,3 +208,97 @@ class RungeKutta8(ExplicitRungeKuttaMethod):
         self._weights[8] = 16 / 45
         self._weights[9] = 49 / 180
         self._weights[10] = 1 / 20
+
+    def _build_nodes(self):
+        self._nodes = np.sum(self._runge_kutta_matrix, axis=1)
+
+
+# DEPRECATED: Nodes are unknown
+# class StrongStabilityPreservingRungeKutta4(ExplicitRungeKuttaMethod):
+#     """Class of an optimal fourth order SSP Runge-Kutta method.
+
+#     The coefficients are taken from 'Optimal explicit strong stability
+#     preserving Runge-Kutta methods with high linear order and optimal nonlinear
+#     order', Gottlieb et al., 2015.
+
+#     """
+
+#     _coefficients = [
+#         [0.391752226571890],
+#         [0.444370493651235, 0.555629506348765, 0.368410593050371],
+#         [0.620101851488403, 0.379898148511597, 0.251891774271694],
+#         [0.178079954393132, 0.821920045606868, 0.544974750228521],
+#         [
+#             0.517231671970585,
+#             0.096059710526147,
+#             0.063692468666290,
+#             0.386708617503269,
+#             0.226007483236906,
+#         ],
+#     ]
+#     _stages: List[np.ndarray]
+
+#     def execute(self, delta_t: float):
+#         self._build_empty_stages()
+#         self._calculate_stages(delta_t)
+
+#         self._solution = self._calculate_new_solution(delta_t)
+#         self._time += delta_t
+
+#     def _build_empty_stages(self):
+#         self._stages = []
+#         for _ in range(4):
+#             self._stages.append(np.array(0))
+
+#     def _calculate_stages(self, delta_t: float):
+#         self._calculate_first_stage(delta_t)
+#         self._calculate_second_stage(delta_t)
+#         self._calculate_third_stage(delta_t)
+#         self._calculate_fourth_stage(delta_t)
+
+#     def _calculate_first_stage(self, delta_t: float):
+#         self._stages[0] = self.solution + (
+#             self._coefficients[0][0]
+#             * delta_t
+#             * self._right_hand_side(self._time, self.solution)
+#         )
+
+#     def _calculate_second_stage(self, delta_t: float):
+#         self._stages[1] = (
+#             self._coefficients[1][0] * self.solution
+#             + self._coefficients[1][1] * self._stages[0]
+#             + self._coefficients[1][2]
+#             * delta_t
+#             * self._right_hand_side(self._time, self._stages[0])
+#         )
+
+#     def _calculate_third_stage(self, delta_t: float):
+#         self._stages[2] = (
+#             self._coefficients[2][0] * self.solution
+#             + self._coefficients[2][1] * self._stages[1]
+#             + self._coefficients[2][2]
+#             * delta_t
+#             * self._right_hand_side(self._time, self._stages[1])
+#         )
+
+#     def _calculate_fourth_stage(self, delta_t: float):
+#         self._stages[3] = (
+#             self._coefficients[3][0] * self.solution
+#             + self._coefficients[3][1] * self._stages[2]
+#             + self._coefficients[3][2]
+#             * delta_t
+#             * self._right_hand_side(self._time, self._stages[2])
+#         )
+
+#     def _calculate_new_solution(self, delta_t: float) -> np.ndarray:
+#         return (
+#             self._coefficients[4][0] * self._stages[1]
+#             + self._coefficients[4][1] * self._stages[2]
+#             + self._coefficients[4][2]
+#             * delta_t
+#             * self._right_hand_side(self._stages[2])
+#             + self._coefficients[4][3] * self._stages[3]
+#             + self._coefficients[4][4]
+#             * delta_t
+#             * self._right_hand_side(self._stages[3])
+#         )

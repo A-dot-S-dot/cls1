@@ -37,6 +37,7 @@ class SteadyStateBenchmark(ShallowWaterBenchmark):
     gravitational_acceleration = 1.0
     domain = Interval(-2, 2)
     end_time: float
+    boundary_conditions = "periodic"
 
     def __init__(self, end_time=None):
         self.end_time = end_time or 1
@@ -62,6 +63,7 @@ class BumpSteadyStateBenchmark(ShallowWaterBenchmark):
 
     domain = Interval(-2, 2)
     end_time: float
+    boundary_conditions = "periodic"
     K1: float
     K2: float
 
@@ -91,6 +93,7 @@ class BumpSteadyStateBenchmark(ShallowWaterBenchmark):
 
 class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
     domain = Interval(0, LENGTH)
+    boundary_conditions = "periodic"
     height_average: float
     height_amplitude: float
     height_phase_shift: float
@@ -140,7 +143,7 @@ class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
 
 class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
     domain = Interval(0, LENGTH)
-    end_time = 40
+    boundary_conditions = "periodic"
 
     def __init__(
         self,

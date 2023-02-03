@@ -3,12 +3,13 @@ from typing import Callable, Iterator, List, Sequence
 import numpy as np
 from core.benchmark import Benchmark
 from core.discrete_solution import DiscreteSolution, DiscreteSolutionWithHistory
-from core.index_mapping import DOFNeighbourIndicesMapping, GlobalIndexMapping
 from core.interpolate import NodeValuesInterpolator
 from core.mesh import AffineTransformation, Mesh, UniformMesh
 from core.quadrature import LocalElementQuadrature
 from core.space import CellDependentFunction, FastFunction, SolverSpace
 from scipy.interpolate import lagrange
+
+from .index_mapping import DOFNeighbourIndicesMapping, GlobalIndexMapping
 
 
 class LocalLagrangeElement:
@@ -94,10 +95,8 @@ class LagrangeSpace(SolverSpace[float]):
     def __init__(self, mesh: Mesh, polynomial_degree: int):
         self.mesh = mesh
         self.polynomial_degree = polynomial_degree
-        self.global_index = GlobalIndexMapping(mesh, polynomial_degree)
-        self.dof_neighbours = DOFNeighbourIndicesMapping(
-            mesh, polynomial_degree, self.dimension
-        )
+        self.global_index = GlobalIndexMapping(mesh, polynomial_degree, periodic=True)
+        self.dof_neighbours = DOFNeighbourIndicesMapping(self.global_index)
         self._build_basis_nodes()
 
     def _build_basis_nodes(self):

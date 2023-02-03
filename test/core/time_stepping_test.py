@@ -14,7 +14,7 @@ class TestTimeStep:
 
 
 class OptimalTimeStep:
-    def __call__(self, dof_vector: np.ndarray) -> float:
+    def __call__(self, time: float, dof_vector: np.ndarray) -> float:
         return np.abs(np.max(dof_vector))
 
 
@@ -23,9 +23,14 @@ class TestCFLChecker(TestCase):
 
     def test_violate_cfl_condition_one_argument(self):
         time_step = 1.0
+        time_nodes = [0]
         dof_vector = np.array([0.5, 0.2])
         self.assertRaises(
-            ts.CFLConditionViolatedError, self.cfl_checker, time_step, dof_vector
+            ts.CFLConditionViolatedError,
+            self.cfl_checker,
+            time_step,
+            time_nodes,
+            dof_vector,
         )
 
     def test_violate_cfl_condition_several_arguments(self):
