@@ -16,12 +16,11 @@ class GMCNumericalFlux:
 
     """
 
-    _periodic: bool
     _local_maximum: Callable[[np.ndarray], np.ndarray]
     _local_minimum: Callable[[np.ndarray], np.ndarray]
     _riemann_solver: core.RiemannSolver
-    _low_order_flux: NUMERICAL_FLUX
     _high_order_flux: NUMERICAL_FLUX
+    _periodic: bool
     _eps: float
     _gamma: float
 
@@ -33,14 +32,13 @@ class GMCNumericalFlux:
         gamma=0.1,
         eps=1e-12,
     ):
-        self._riemann_solver = riemann_solver
-        self._periodic = self._riemann_solver.periodic_boundary_condition
-        self._high_order_flux = high_order_flux
-        self._gamma = gamma
-        self._eps = eps
-
         self._local_minimum = LocalMinimum(volume_space)
         self._local_maximum = LocalMaximum(volume_space)
+        self._riemann_solver = riemann_solver
+        self._high_order_flux = high_order_flux
+        self._periodic = self._riemann_solver.periodic_boundary_condition
+        self._gamma = gamma
+        self._eps = eps
 
     @property
     def riemann_solver(self) -> core.RiemannSolver:
@@ -92,38 +90,26 @@ class GMCNumericalFlux:
             -antidiffusive_flux[1:], 0.0
         )
 
-        if self._periodic:
-            return (
-                self._adjust_periodic_boundary_condition(P_minus),
-                self._adjust_periodic_boundary_condition(P_plus),
-            )
-        else:
-            return self._add_signed_antidiffusive_flux_boundary_values(
-                antidiffusive_flux, P_minus, P_plus
-            )
-
-    def _adjust_periodic_boundary_condition(self, values: np.ndarray) -> np.ndarray:
-        return np.array([values[-1], *values, values[0]])
-
-    def _add_signed_antidiffusive_flux_boundary_values(
-        self, antidiffusive_flux: np.ndarray, P_minus: np.ndarray, P_plus: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        P_minus_star = np.array(
-            [
+        return (
+            self._apply_boundary_conditions(
+                P_minus,
                 np.minimum(-antidiffusive_flux[0], 0.0),
-                *P_minus,
                 np.minimum(antidiffusive_flux[-1], 0.0),
-            ]
-        )
-        P_plus_star = np.array(
-            [
+            ),
+            self._apply_boundary_conditions(
+                P_plus,
                 np.maximum(-antidiffusive_flux[0], 0.0),
-                *P_plus,
                 np.maximum(antidiffusive_flux[-1], 0.0),
-            ]
+            ),
         )
 
-        return P_minus_star, P_plus_star
+    def _apply_boundary_conditions(
+        self, values: np.ndarray, left_value, right_value
+    ) -> np.ndarray:
+        if self._periodic:
+            return np.array([values[-1], *values, values[0]])
+        else:
+            return np.array([left_value, *values, right_value])
 
     def _calculate_local_antidiffusive_flux_bounds(
         self, dof_vector: np.ndarray
@@ -131,7 +117,12 @@ class GMCNumericalFlux:
         u_min, u_max = self._local_minimum(dof_vector[1:-1]), self._local_maximum(
             dof_vector[1:-1]
         )
-        u_min, u_max = self._adjust_local_bounds(dof_vector, u_min, u_max)
+        u_min = self._apply_boundary_conditions(
+            u_min, np.amin(dof_vector[0:2], axis=0), np.amin(dof_vector[-2:], axis=0)
+        )
+        u_max = self._apply_boundary_conditions(
+            u_max, np.amax(dof_vector[0:2], axis=0), np.amax(dof_vector[-2:], axis=0)
+        )
         di = self._calculate_di()
         u_bar = self._calculate_u_bar(di)
 
@@ -143,50 +134,21 @@ class GMCNumericalFlux:
 
         return Q_minus, Q_plus
 
-    def _adjust_local_bounds(
-        self, dof_vector: np.ndarray, u_min: np.ndarray, u_max: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        if self._periodic:
-            return (
-                self._adjust_periodic_boundary_condition(u_min),
-                self._adjust_periodic_boundary_condition(u_max),
-            )
-        else:
-            return (
-                np.array(
-                    [
-                        np.amin(dof_vector[0:2], axis=0),
-                        *u_min,
-                        np.amin(dof_vector[-2:], axis=0),
-                    ]
-                ),
-                np.array(
-                    [
-                        np.amax(dof_vector[0:2], axis=0),
-                        *u_max,
-                        np.amax(dof_vector[-2:], axis=0),
-                    ]
-                ),
-            )
-
     def _calculate_di(self) -> np.ndarray:
         wave_speed = self._riemann_solver.wave_speed_right
         di = wave_speed[:-1] + wave_speed[1:]
 
-        if self._periodic:
-            return self._adjust_periodic_boundary_condition(di)
-        else:
-            return np.array([wave_speed[0], *di, wave_speed[-1]])
+        return self._apply_boundary_conditions(di, wave_speed[0], wave_speed[-1])
 
     def _calculate_u_bar(self, di: np.ndarray) -> np.ndarray:
         wave_speed = self._riemann_solver.wave_speed_right
         product = wave_speed[:, None] * self._riemann_solver.intermediate_state
         summand = product[:-1] + product[1:]
 
-        if self._periodic:
-            return self._adjust_periodic_boundary_condition(summand) / di[:, None]
-        else:
-            return np.array([product[0], *summand, product[-1]]) / di[:, None]
+        return (
+            self._apply_boundary_conditions(summand, product[0], product[-1])
+            / di[:, None]
+        )
 
     def _calculate_R(
         self,
