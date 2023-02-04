@@ -5,7 +5,7 @@ import defaults
 import numpy as np
 import shallow_water
 from lib import NumericalFluxDependentRightHandSide
-from shallow_water import finite_volume
+from shallow_water.finite_volume import build_boundary_conditions_applier
 
 from .lax_friedrichs import OptimalTimeStep
 
@@ -205,9 +205,7 @@ def build_godunov_numerical_flux(
 
     return GodunovNumericalFlux(
         benchmark.gravitational_acceleration,
-        boundary_conditions=finite_volume.build_boundary_conditions_applier(
-            benchmark, (1, 1)
-        ),
+        boundary_conditions=build_boundary_conditions_applier(benchmark, (1, 1)),
         bottom=topography,
         source_term=source_term,
     )
