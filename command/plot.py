@@ -22,10 +22,11 @@ class Plotter(ABC, Generic[T]):
     _benchmark: Benchmark
     _figure: plt.Figure
     _grid: np.ndarray
-    _save: Optional[str] = None
+    _save: Optional[str]
+    _show: bool
     _plot_available = False
 
-    def __init__(self, benchmark: Benchmark, mesh_size=None, save=None):
+    def __init__(self, benchmark: Benchmark, mesh_size=None, save=None, show=True):
         self._benchmark = benchmark
         self._grid = np.linspace(
             self._benchmark.domain.a,
@@ -33,6 +34,7 @@ class Plotter(ABC, Generic[T]):
             mesh_size or defaults.PLOT_MESH_SIZE,
         )
         self._save = save
+        self._show = show
 
     def set_suptitle(self, suptitle: str):
         self._figure.suptitle(suptitle, fontsize=14, fontweight="bold")
@@ -79,8 +81,8 @@ class ScalarPlotter(Plotter[float]):
     _benchmark: Benchmark
     _axes: plt.Axes
 
-    def __init__(self, benchmark: Benchmark, mesh_size=None, save=None):
-        super().__init__(benchmark, mesh_size, save)
+    def __init__(self, benchmark: Benchmark, **kwargs):
+        super().__init__(benchmark, **kwargs)
         self._figure, self._axes = plt.subplots()
 
     def add_initial_data(self):
@@ -116,8 +118,8 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
     _height_axes: plt.Axes
     _discharge_axes: plt.Axes
 
-    def __init__(self, benchmark: ShallowWaterBenchmark, mesh_size=None, save=None):
-        Plotter.__init__(self, benchmark, mesh_size, save)
+    def __init__(self, benchmark: ShallowWaterBenchmark, **kwargs):
+        Plotter.__init__(self, benchmark, **kwargs)
         self._figure, (self._height_axes, self._discharge_axes) = plt.subplots(1, 2)
 
     def set_suptitle(self, suptitle: str):

@@ -192,6 +192,7 @@ class CustomArgumentParser:
             argument.add_plot_mesh_size(problem_parser)
             argument.add_initial_data(problem_parser)
             argument.add_save(problem_parser, defaults.PLOT_TARGET)
+            argument.add_hide(problem_parser)
             argument.add_profile(problem_parser)
             argument.add_print_args(problem_parser)
 
@@ -217,6 +218,7 @@ class CustomArgumentParser:
             argument.add_start_time(problem_parser)
             argument.add_save(problem_parser, defaults.ANIMATION_TARGET)
             argument.add_duration(problem_parser)
+            argument.add_hide(problem_parser)
             argument.add_profile(problem_parser)
             argument.add_print_args(problem_parser)
 

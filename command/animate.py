@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 from core.benchmark import Benchmark, NoExactSolutionError
-from core.discrete_solution import DiscreteSolution
+from core.discrete_solution import DiscreteSolutionWithHistory
 from core.interpolate import TemporalInterpolator
 from core.solver import Solver
 from matplotlib import animation
@@ -30,8 +30,9 @@ class Animator(ABC, Generic[T]):
     _save: Optional[str] = None
     _start_time: float
     _duration: float
+    _show: bool
 
-    _animatables: List[DiscreteSolution | Callable]
+    _animatables: List[DiscreteSolutionWithHistory | Callable]
     _values: List[np.ndarray]
     _spatial_grids: List[np.ndarray]
     _temporal_grids: List[np.ndarray]
@@ -48,6 +49,7 @@ class Animator(ABC, Generic[T]):
         save=None,
         start_time=None,
         duration=None,
+        show=True,
     ):
         self._benchmark = benchmark
         self._spatial_grid = np.linspace(
@@ -63,6 +65,7 @@ class Animator(ABC, Generic[T]):
         self._save = save
         self._start_time = start_time or self._benchmark.start_time
         self._duration = duration or defaults.DURATION
+        self._show = show
 
         self._animatables = []
         self._spatial_grids = []
@@ -96,13 +99,13 @@ class Animator(ABC, Generic[T]):
 
     def add_animatable(
         self,
-        animatable: DiscreteSolution | Callable,
+        animatable: DiscreteSolutionWithHistory | Callable,
         *label: str,
     ):
         self._labels.append(label)
         self._animatables.append(animatable)
 
-        if isinstance(animatable, DiscreteSolution):
+        if isinstance(animatable, DiscreteSolutionWithHistory):
             self._spatial_grids.append(animatable.grid)
             self._temporal_grids.append(np.array(animatable.time_history))
         else:
@@ -112,7 +115,9 @@ class Animator(ABC, Generic[T]):
     def show(self):
         if len(self._animatables) > 0:
             self._setup()
-            plt.show()
+
+            if self._show:
+                plt.show()
 
             if self._save:
                 self._animation.save(
@@ -134,7 +139,7 @@ class Animator(ABC, Generic[T]):
         interpolator = TemporalInterpolator()
 
         for animatable in self._animatables:
-            if isinstance(animatable, DiscreteSolution):
+            if isinstance(animatable, DiscreteSolutionWithHistory):
                 self._values.append(
                     interpolator(
                         animatable.time_history,
@@ -180,16 +185,8 @@ class ScalarAnimator(Animator[float]):
     _axes: ...
     _time_info: ...
 
-    def __init__(
-        self,
-        benchmark: Benchmark,
-        mesh_size=None,
-        time_steps=None,
-        save=None,
-        start_time=None,
-        duration=None,
-    ):
-        super().__init__(benchmark, mesh_size, time_steps, save, start_time, duration)
+    def __init__(self, benchmark: Benchmark, **kwargs):
+        super().__init__(benchmark, **kwargs)
         self._values, self._lines = [], []
         self._figure, self._axes = plt.subplots()
         self._time_info = self._axes.text(
@@ -240,16 +237,8 @@ class ShallowWaterAnimator(Animator[np.ndarray]):
     _discharge_axes: ...
     _time_info: ...
 
-    def __init__(
-        self,
-        benchmark: ShallowWaterBenchmark,
-        mesh_size=None,
-        time_steps=None,
-        save=None,
-        start_time=None,
-        duration=None,
-    ):
-        super().__init__(benchmark, mesh_size, time_steps, save, start_time, duration)
+    def __init__(self, benchmark: ShallowWaterBenchmark, **kwargs):
+        super().__init__(benchmark, **kwargs)
         self._benchmark = benchmark
         self._height_lines, self._discharge_lines = ([], [])
         self._figure, (self._height_axes, self._discharge_axes) = plt.subplots(1, 2)

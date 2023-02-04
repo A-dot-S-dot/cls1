@@ -109,6 +109,12 @@ def add_save(parser, target: str):
     )
 
 
+def add_hide(parser):
+    parser.add_argument(
+        "--hide", help=f"Do not show any figures.", action="store_false", dest="show"
+    )
+
+
 # ANIMATE
 def add_time_steps(parser):
     parser.add_argument(

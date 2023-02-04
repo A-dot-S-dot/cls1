@@ -68,11 +68,15 @@ def build_plotter(arguments):
     }
 
     arguments.plotter = plotter[arguments.problem](
-        arguments.benchmark, arguments.mesh_size, arguments.save
+        arguments.benchmark,
+        mesh_size=arguments.mesh_size,
+        save=arguments.save,
+        show=arguments.show,
     )
 
     del arguments.mesh_size
     del arguments.save
+    del arguments.show
 
 
 ################################################################################
@@ -92,6 +96,7 @@ def build_animator(arguments):
         save=arguments.save,
         start_time=arguments.start_time,
         duration=arguments.duration,
+        show=arguments.show,
     )
 
     del arguments.mesh_size
@@ -99,6 +104,7 @@ def build_animator(arguments):
     del arguments.save
     del arguments.start_time
     del arguments.duration
+    del arguments.show
 
 
 def add_save_history_argument(arguments):
