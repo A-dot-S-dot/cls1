@@ -172,11 +172,36 @@ class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
         )
 
 
+class CylindricalDammBreakWithOutflowBenchmark(ShallowWaterBenchmark):
+    domain = Interval(-1, 1)
+    gravitational_acceleration = 1.0
+    boundary_conditions = ("outflow", "outflow")
+
+    def __init__(self, end_time=None):
+        self.end_time = end_time or 0.2
+
+    def topography(self, x: float) -> float:
+        return 0
+
+    def initial_data(self, x: float) -> np.ndarray:
+        height = 2.0 if x in Interval(-0.5, 0.5) else 1.0
+
+        return np.array([height, 0.0])
+
+
+class CylindricalDammBreakWithReflectingBoundaryBenchmark(
+    CylindricalDammBreakWithOutflowBenchmark
+):
+    boundary_conditions = ("wall", "wall")
+
+
 BENCHMARKS = [
     SteadyStateBenchmark,
     BumpSteadyStateBenchmark,
     OscillationNoTopographyBenchmark,
     RandomOscillationNoTopographyBenchmark,
+    CylindricalDammBreakWithOutflowBenchmark,
+    CylindricalDammBreakWithReflectingBoundaryBenchmark,
 ]
 BENCHMARK_DEFAULTS = {
     "plot": BumpSteadyStateBenchmark,
