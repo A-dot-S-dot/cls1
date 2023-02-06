@@ -36,7 +36,6 @@ class SteadyStateBenchmark(ShallowWaterBenchmark):
 
     gravitational_acceleration = 1.0
     domain = Interval(-2, 2)
-    end_time: float
     boundary_conditions = "periodic"
 
     def __init__(self, end_time=None):
@@ -62,7 +61,6 @@ class BumpSteadyStateBenchmark(ShallowWaterBenchmark):
     """
 
     domain = Interval(-2, 2)
-    end_time: float
     boundary_conditions = "periodic"
     K1: float
     K2: float
@@ -195,6 +193,25 @@ class CylindricalDammBreakWithReflectingBoundaryBenchmark(
     boundary_conditions = ("wall", "wall")
 
 
+class SinusInflowBenchmark(ShallowWaterBenchmark):
+    domain = Interval(0, 100)
+    boundary_conditions = ("inflow", "wall")
+
+    def __init__(self, end_time=None):
+        self.end_time = end_time or 40
+
+    def inflow_left(self, t: float) -> np.ndarray:
+        return np.array([2 + 0.2 * np.sin(t), 0.0])
+
+    def topography(self, x: float) -> float:
+        return 0
+
+    def initial_data(self, x: float) -> np.ndarray:
+        height = 2.0
+
+        return np.array([height, 0.0])
+
+
 BENCHMARKS = [
     SteadyStateBenchmark,
     BumpSteadyStateBenchmark,
@@ -202,9 +219,11 @@ BENCHMARKS = [
     RandomOscillationNoTopographyBenchmark,
     CylindricalDammBreakWithOutflowBenchmark,
     CylindricalDammBreakWithReflectingBoundaryBenchmark,
+    SinusInflowBenchmark,
 ]
 BENCHMARK_DEFAULTS = {
     "plot": BumpSteadyStateBenchmark,
     "animate": OscillationNoTopographyBenchmark,
     "calculate": OscillationNoTopographyBenchmark,
+    "plot-error-evolution": OscillationNoTopographyBenchmark,
 }

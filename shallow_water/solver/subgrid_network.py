@@ -230,7 +230,7 @@ class LimitedSubgridNetworkSolver(Solver):
         cfl_number = cfl_number or defaults.GODUNOV_CFL_NUMBER / coarsening_degree
         network = network or NeuralNetwork()
         network_path = network_path or defaults.NETWORK_PATH
-        gamma = gamma or defaults.GAMMA
+        gamma = gamma or defaults.LIMITING_GAMMA
         ode_solver_type = os.ForwardEuler
 
         solution = finite_volume.build_finite_volume_solution(

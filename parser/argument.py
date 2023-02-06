@@ -283,12 +283,24 @@ def add_network_load_path(parser):
 
 
 # LIMITER
-def add_gamma(parser):
+def add_limiting_gamma(parser):
     parser.add_argument(
         "+g",
         "++gamma",
         help="Specify limiter parameter",
         type=float,
         metavar="<gamma>",
-        default=defaults.GAMMA,
+        default=defaults.LIMITING_GAMMA,
+    )
+
+
+# ANTIDIFFUSION
+def add_antidiffusion_gamma(parser):
+    parser.add_argument(
+        "+g",
+        "++gamma",
+        help="Specify antidiffusion parameter",
+        type=float,
+        metavar="<gamma>",
+        default=defaults.ANTIDIFFUSION_GAMMA,
     )

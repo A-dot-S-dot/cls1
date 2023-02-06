@@ -47,7 +47,8 @@ COARSENING_DEGREE = 8
 
 NETWORK_PATH = "data/subgrid-network.pth"
 LOSS_GRAPH_PATH = "data/loss.png"
-GAMMA = 1.0
+LIMITING_GAMMA = 1.0
+ANTIDIFFUSION_GAMMA = 0.1
 
 ################################################################################
 # GENERATE-DATA

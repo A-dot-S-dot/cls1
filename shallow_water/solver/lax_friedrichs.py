@@ -3,10 +3,10 @@ from typing import Tuple
 import core
 import core.ode_solver as os
 import defaults
+import lib
 import numpy as np
 import shallow_water
 from core import finite_volume
-from lib import NumericalFluxDependentRightHandSide
 
 from ..benchmark import ShallowWaterBenchmark
 from ..core import *
@@ -117,8 +117,81 @@ class LocalLaxFriedrichsSolver(core.Solver):
             conditions_applier, benchmark.gravitational_acceleration
         )
         numerical_flux = LLFNumericalFLux(riemann_solver)
-        right_hand_side = NumericalFluxDependentRightHandSide(
+        right_hand_side = lib.NumericalFluxDependentRightHandSide(
             solution.space, numerical_flux
+        )
+
+        optimal_time_step = OptimalTimeStep(
+            riemann_solver, solution.space.mesh.step_length
+        )
+        time_stepping = core.build_adaptive_time_stepping(
+            benchmark, solution, optimal_time_step, cfl_number, adaptive
+        )
+        cfl_checker = core.CFLChecker(optimal_time_step)
+
+        core.Solver.__init__(
+            self,
+            solution,
+            right_hand_side,
+            ode_solver_type,
+            time_stepping,
+            name=name,
+            short=short,
+            cfl_checker=cfl_checker,
+        )
+
+
+class CoarseLocalLaxFriedrichsSolver(LocalLaxFriedrichsSolver, core.CoarseSolver):
+    def __init__(self, *args, coarsening_degree=None, **kwargs):
+        self._coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
+        LocalLaxFriedrichsSolver.__init__(self, *args, **kwargs)
+
+
+class AntidiffusiveLocalLaxFriedrichsSolver(LocalLaxFriedrichsSolver):
+    def __init__(
+        self,
+        benchmark: ShallowWaterBenchmark,
+        name=None,
+        short=None,
+        mesh_size=None,
+        cfl_number=None,
+        adaptive=False,
+        save_history=False,
+        gamma=None,
+    ):
+        name = name or "Local Lax-Friedrichs finite volume scheme "
+        short = short or "llf"
+        mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE
+        cfl_number = cfl_number or defaults.LOCAL_LAX_FRIEDRICHS_CFL_NUMBER
+        adaptive = adaptive
+        ode_solver_type = os.ForwardEuler
+        gamma = gamma or defaults.ANTIDIFFUSION_GAMMA
+
+        solution = finite_volume.build_finite_volume_solution(
+            benchmark,
+            mesh_size,
+            save_history=save_history,
+            periodic=benchmark.boundary_conditions == "periodic",
+        )
+
+        bottom = build_topography_discretization(benchmark, len(solution.space.mesh))
+        if not is_constant(bottom):
+            raise ValueError("Bottom must be constant.")
+
+        conditions_applier = build_boundary_conditions_applier(
+            benchmark, cells_to_add_numbers=(1, 1)
+        )
+        riemann_solver = RiemannSolver(
+            conditions_applier, benchmark.gravitational_acceleration
+        )
+        numerical_flux = LLFNumericalFLux(riemann_solver)
+        antidiffusive_flux = lib.LinearAntidiffusiveFlux(
+            gamma, solution.space.mesh.step_length, conditions_applier
+        )
+
+        right_hand_side = lib.NumericalFluxDependentRightHandSide(
+            solution.space,
+            lib.CorrectedNumericalFlux(numerical_flux, antidiffusive_flux),
         )
 
         optimal_time_step = OptimalTimeStep(

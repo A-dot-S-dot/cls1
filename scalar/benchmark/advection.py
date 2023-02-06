@@ -6,7 +6,6 @@ from numpy import cos, exp, pi, sqrt
 class AdvectionBenchmark(Benchmark[float]):
     problem = "advection"
     domain = Interval(0, 1)
-    end_time: float
 
     def __init__(self, end_time=None):
         self.end_time = end_time or 1.0

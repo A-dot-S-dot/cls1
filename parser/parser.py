@@ -44,6 +44,13 @@ class CustomArgumentParser:
             ppr.BuildCommand(cmd.CalculateEOC),
             ppr.DeleteArguments("problem"),
         ],
+        "plot-error-evolution": [
+            ppr.adjust_end_time,
+            ppr.add_save_history_argument,
+            ppr.build_solver,
+            ppr.BuildCommand(cmd.PlotShallowWaterErrorEvolution),
+            ppr.DeleteArguments("problem", "benchmark"),
+        ],
     }
 
     def __init__(self):
@@ -73,6 +80,7 @@ class CustomArgumentParser:
         self._add_plot_parser(parsers)
         self._add_animate_parser(parsers)
         self._add_eoc_parser(parsers)
+        self._add_plot_error_evolution_parser(parsers)
 
     def _add_test_parser(self, parsers):
         test_parser = parsers.add_parser(
@@ -233,6 +241,22 @@ class CustomArgumentParser:
             problem_parser = parser_func(problem_parsers, "eoc")
             argument.add_eoc_mesh_size(problem_parser)
             argument.add_refine(problem_parser)
+            argument.add_profile(problem_parser)
+            argument.add_print_args(problem_parser)
+
+    def _add_plot_error_evolution_parser(self, parsers):
+        parser = parsers.add_parser(
+            "plot-error-evolution",
+            help="Plot error between two solutions.",
+            description="Plot error between two solutions. Note, two solutions are required. The second one should be the reference solution.",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+        problem_parsers = self._add_problem_parsers(parser)
+        for parser_func in [self._add_shallow_water_parser]:
+            problem_parser = parser_func(problem_parsers, "plot-error-evolution")
+            argument.add_save(problem_parser, defaults.ERROR_EVOLUTION_PATH)
+            argument.add_hide(problem_parser)
             argument.add_profile(problem_parser)
             argument.add_print_args(problem_parser)
 

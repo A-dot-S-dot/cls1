@@ -95,6 +95,34 @@ class LocalLaxFriedrichsParser(SolverParser):
         argument.add_adaptive_time_stepping(self)
 
 
+class AntidiffusiveLocalLaxFriedrichsParser(SolverParser):
+    prog = "antidiffusive-llf"
+    name = "Local Lax-Friedrichs finite volume scheme with Antidiffusion"
+    solver = AntidiffusiveLocalLaxFriedrichsSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+        argument.add_antidiffusion_gamma(self)
+
+
+class CoarseLocalLaxFriedrichsParser(SolverParser):
+    prog = "coarse-llf"
+    name = "Coarse Local Lax-Friedrichs finite volume scheme"
+    solver = CoarseLocalLaxFriedrichsSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+        argument.add_coarsening_degree(self)
+
+
 class GodunovParser(SolverParser):
     prog = "godunov"
     name = "Godunov's finite volume scheme"
@@ -106,6 +134,34 @@ class GodunovParser(SolverParser):
         argument.add_mesh_size(self)
         argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
         argument.add_adaptive_time_stepping(self)
+
+
+class CoarseGodunovParser(SolverParser):
+    prog = "coarse-godunov"
+    name = "Coarse Godunov's finite volume scheme"
+    solver = CoarseGodunovSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+        argument.add_coarsening_degree(self)
+
+
+class AntidiffusiveGodunovParser(SolverParser):
+    prog = "antidiffusive-godunov"
+    name = "Godunov's finite volume scheme with Antidiffusion"
+    solver = AntidiffusiveGodunovSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+        argument.add_antidiffusion_gamma(self)
 
 
 class SubgridNetworkParser(SolverParser):
@@ -142,7 +198,7 @@ class LimitedSubgridNetworkParser(SolverParser):
             self, defaults.GODUNOV_CFL_NUMBER / defaults.COARSENING_DEGREE
         )
         argument.add_network_load_path(self)
-        argument.add_gamma(self)
+        argument.add_limiting_gamma(self)
 
 
 SCALAR_SOLVER_PARSERS = {
@@ -152,7 +208,11 @@ SCALAR_SOLVER_PARSERS = {
 }
 SHALLOW_WATER_SOLVER_PARSERS = {
     "llf": LocalLaxFriedrichsParser,
+    "coarse-llf": CoarseLocalLaxFriedrichsParser,
+    "antidiffusive-llf": AntidiffusiveLocalLaxFriedrichsParser,
     "godunov": GodunovParser,
+    "coarse-godunov": CoarseGodunovParser,
+    "antidiffusive-godunov": AntidiffusiveGodunovParser,
     "subgrid-network": SubgridNetworkParser,
     "limited-subgrid-network": LimitedSubgridNetworkParser,
 }

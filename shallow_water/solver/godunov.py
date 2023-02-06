@@ -1,13 +1,15 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TypeVar
 
 import core
 import defaults
+import lib
 import numpy as np
 import shallow_water
-from lib import NumericalFluxDependentRightHandSide
 from shallow_water.finite_volume import build_boundary_conditions_applier
 
 from .lax_friedrichs import OptimalTimeStep
+
+T = TypeVar("T", bound=core.DiscreteSolution)
 
 
 class GodunovNumericalFlux:
@@ -237,11 +239,76 @@ class GodunovSolver(core.Solver):
         )
 
         godunov_flux = build_godunov_numerical_flux(benchmark, solution.space.mesh)
-        right_hand_side = NumericalFluxDependentRightHandSide(
+        right_hand_side = lib.NumericalFluxDependentRightHandSide(
             solution.space, godunov_flux
         )
         optimal_time_step = OptimalTimeStep(
             godunov_flux.riemann_solver,
+            solution.space.mesh.step_length,
+        )
+        time_stepping = core.build_adaptive_time_stepping(
+            benchmark, solution, optimal_time_step, cfl_number, adaptive
+        )
+        cfl_checker = core.CFLChecker(optimal_time_step)
+
+        core.Solver.__init__(
+            self,
+            solution,
+            right_hand_side,
+            ode_solver_type,
+            time_stepping,
+            name=name,
+            short=short,
+            cfl_checker=cfl_checker,
+        )
+
+
+class CoarseGodunovSolver(GodunovSolver, core.CoarseSolver):
+    def __init__(self, *args, coarsening_degree=None, **kwargs):
+        self._coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
+        GodunovSolver.__init__(self, *args, **kwargs)
+
+
+class AntidiffusiveGodunovSolver(core.Solver):
+    def __init__(
+        self,
+        benchmark: shallow_water.ShallowWaterBenchmark,
+        name=None,
+        short=None,
+        mesh_size=None,
+        cfl_number=None,
+        adaptive=False,
+        save_history=False,
+        gamma=None,
+    ):
+        name = name or "Godunov's finite volume scheme "
+        short = short or "godunov"
+        mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE
+        cfl_number = cfl_number or defaults.GODUNOV_CFL_NUMBER
+        adaptive = adaptive
+        ode_solver_type = core.ForwardEuler
+        gamma = gamma or defaults.ANTIDIFFUSION_GAMMA
+
+        solution = core.finite_volume.build_finite_volume_solution(
+            benchmark,
+            mesh_size,
+            save_history=save_history,
+            periodic=benchmark.boundary_conditions == "periodic",
+        )
+
+        conditions_applier = build_boundary_conditions_applier(
+            benchmark, cells_to_add_numbers=(1, 1)
+        )
+        numerical_flux = build_godunov_numerical_flux(benchmark, solution.space.mesh)
+        antidiffusive_flux = lib.LinearAntidiffusiveFlux(
+            gamma, solution.space.mesh.step_length, conditions_applier
+        )
+        right_hand_side = lib.NumericalFluxDependentRightHandSide(
+            solution.space,
+            lib.CorrectedNumericalFlux(numerical_flux, antidiffusive_flux),
+        )
+        optimal_time_step = OptimalTimeStep(
+            numerical_flux.riemann_solver,
             solution.space.mesh.step_length,
         )
         time_stepping = core.build_adaptive_time_stepping(

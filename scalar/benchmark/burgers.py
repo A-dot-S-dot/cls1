@@ -6,7 +6,6 @@ from scipy.optimize import newton
 
 class BurgersBenchmark(Benchmark[float]):
     problem = "burgers"
-    end_time: float
 
     _critical_time: float
     _warn = True

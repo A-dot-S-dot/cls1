@@ -3,6 +3,7 @@ data/
 
 todo.org
 test.py
+parameter-variation-test.py
 *.mp4
 *.png
 *.csv

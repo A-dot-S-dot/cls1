@@ -1,8 +1,7 @@
 from typing import Callable, Tuple
 
 import numpy as np
-from core import VectorCoarsener
-from core.finite_volume import FiniteVolumeSpace
+from core import VectorCoarsener, finite_volume
 
 NUMERICAL_FLUX = Callable[[float, np.ndarray], Tuple[np.ndarray, np.ndarray]]
 
@@ -103,13 +102,41 @@ class SubgridFlux:
         return subgrid_flux_left, subgrid_flux_right
 
 
+class LinearAntidiffusiveFlux:
+    _gamma: float
+    _step_length: float
+    _conditions_applier: finite_volume.BoundaryConditionsApplier
+
+    def __init__(
+        self,
+        gamma: float,
+        step_length: float,
+        conditions_applier: finite_volume.BoundaryConditionsApplier,
+    ):
+        self._gamma = gamma
+        self._step_length = step_length
+
+        assert conditions_applier.cells_to_add_numbers == (1, 1)
+        self._conditions_applier = conditions_applier
+
+    def __call__(
+        self, time: float, dof_vector: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        dof_vector_star = self._conditions_applier.add_conditions(time, dof_vector)
+        dof_left, dof_right = dof_vector_star[:-1], dof_vector_star[1:]
+
+        flux = self._gamma * (dof_right + -dof_left) / self._step_length
+
+        return flux[:-1], -flux[1:]
+
+
 class NumericalFluxDependentRightHandSide:
-    _volume_space: FiniteVolumeSpace
+    _volume_space: finite_volume.FiniteVolumeSpace
     _numerical_flux: NUMERICAL_FLUX
 
     def __init__(
         self,
-        volume_space: FiniteVolumeSpace,
+        volume_space: finite_volume.FiniteVolumeSpace,
         numerical_flux: NUMERICAL_FLUX,
     ):
         self._volume_space = volume_space
