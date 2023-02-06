@@ -2,10 +2,15 @@ from typing import Generic, Optional, Tuple, TypeVar
 
 import numpy as np
 
-from .vector_coarsener import VectorCoarsener
+from .error import CustomError
 from .space import SolverSpace
+from .vector_coarsener import VectorCoarsener
 
 T = TypeVar("T", bound=SolverSpace)
+
+
+class NotFiniteError(CustomError):
+    ...
 
 
 class DiscreteSolution(Generic[T]):
@@ -57,6 +62,9 @@ class DiscreteSolution(Generic[T]):
         return self._value.copy()
 
     def update(self, time_step: float, solution: np.ndarray):
+        if not np.isfinite(solution).all():
+            raise NotFiniteError("Solution is not finite.")
+
         self._time += time_step
         self._value = solution
 

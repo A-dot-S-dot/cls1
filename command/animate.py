@@ -2,18 +2,16 @@ from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Callable, Generic, List, Optional, Sequence, Tuple, TypeVar
 
+import core
 import defaults
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-from core.benchmark import Benchmark, NoExactSolutionError
-from core.discrete_solution import DiscreteSolutionWithHistory
-from core.interpolate import TemporalInterpolator
-from core.solver import Solver
 from matplotlib import animation
 from shallow_water.benchmark import ShallowWaterBenchmark
 from tqdm.auto import tqdm
 
+from .calculate import Calculate
 from .command import Command
 
 T = TypeVar("T", float, np.ndarray)
@@ -24,7 +22,7 @@ class NothingToAnimateError(Exception):
 
 
 class Animator(ABC, Generic[T]):
-    _benchmark: Benchmark
+    _benchmark: core.Benchmark
     _spatial_grid: np.ndarray
     _temporal_grid: np.ndarray
     _save: Optional[str] = None
@@ -32,7 +30,7 @@ class Animator(ABC, Generic[T]):
     _duration: float
     _show: bool
 
-    _animatables: List[DiscreteSolutionWithHistory | Callable]
+    _animatables: List[core.DiscreteSolutionWithHistory | Callable]
     _values: List[np.ndarray]
     _spatial_grids: List[np.ndarray]
     _temporal_grids: List[np.ndarray]
@@ -43,7 +41,7 @@ class Animator(ABC, Generic[T]):
 
     def __init__(
         self,
-        benchmark: Benchmark,
+        benchmark: core.Benchmark,
         mesh_size=None,
         time_steps=None,
         save=None,
@@ -99,13 +97,13 @@ class Animator(ABC, Generic[T]):
 
     def add_animatable(
         self,
-        animatable: DiscreteSolutionWithHistory | Callable,
+        animatable: core.DiscreteSolutionWithHistory | Callable,
         *label: str,
     ):
         self._labels.append(label)
         self._animatables.append(animatable)
 
-        if isinstance(animatable, DiscreteSolutionWithHistory):
+        if isinstance(animatable, core.DiscreteSolutionWithHistory):
             self._spatial_grids.append(animatable.grid)
             self._temporal_grids.append(np.array(animatable.time_history))
         else:
@@ -116,15 +114,13 @@ class Animator(ABC, Generic[T]):
         if len(self._animatables) > 0:
             self._setup()
 
-            if self._show:
-                plt.show()
-
             if self._save:
                 self._animation.save(
                     self._save, writer="ffmpeg", fps=self.frames_per_second
                 )
                 tqdm.write(f"Animation is saved in '{self._save}'.")
 
+            plt.show() if self._show else plt.close()
         else:
             raise NothingToAnimateError
 
@@ -136,10 +132,10 @@ class Animator(ABC, Generic[T]):
 
     def _adjust_values(self):
         self._values = []
-        interpolator = TemporalInterpolator()
+        interpolator = core.TemporalInterpolator()
 
         for animatable in self._animatables:
-            if isinstance(animatable, DiscreteSolutionWithHistory):
+            if isinstance(animatable, core.DiscreteSolutionWithHistory):
                 self._values.append(
                     interpolator(
                         animatable.time_history,
@@ -185,7 +181,7 @@ class ScalarAnimator(Animator[float]):
     _axes: ...
     _time_info: ...
 
-    def __init__(self, benchmark: Benchmark, **kwargs):
+    def __init__(self, benchmark: core.Benchmark, **kwargs):
         super().__init__(benchmark, **kwargs)
         self._values, self._lines = [], []
         self._figure, self._axes = plt.subplots()
@@ -333,34 +329,51 @@ class ShallowWaterAnimator(Animator[np.ndarray]):
 
 
 class Animate(Command):
-    _benchmark: Benchmark
-    _solver: Sequence[Solver]
+    _benchmark: core.Benchmark
+    _solver: Sequence[core.Solver]
     _animator: Animator
     _initial: bool
+    _solver_executed: bool
 
     def __init__(
         self,
-        benchmark: Benchmark,
-        solver: Solver | Sequence[Solver],
+        benchmark: core.Benchmark,
+        solver: core.Solver | Sequence[core.Solver],
         animator: Animator,
         initial=False,
+        solver_executed=False,
     ):
         self._benchmark = benchmark
         self._animator = animator
         self._initial = initial
+        self._solver_executed = solver_executed
 
-        if isinstance(solver, Solver):
+        if isinstance(solver, core.Solver):
             self._solver = [solver]
         else:
             self._solver = solver
 
     def execute(self):
+        if not self._solver_executed:
+            self._calculate_solutions()
+
         self._add_animations()
 
         try:
             self._animator.show()
         except NothingToAnimateError:
             tqdm.write("WARNING: Nothing to animate...")
+
+    def _calculate_solutions(self):
+        tqdm.write("\nCalculate solutions")
+        tqdm.write("-------------------")
+        for solver in tqdm(self._solver, desc="Calculate", unit="solver", leave=False):
+            try:
+                Calculate(solver).execute()
+            except core.CustomError as error:
+                tqdm.write(
+                    f"WARNING: {str(error)} Solution could not be calculated until T={self._benchmark.end_time}. Freeze solution after t={solver.solution.time:.3e}."
+                )
 
     def _add_animations(self):
         self._add_discrete_solutions()
@@ -373,7 +386,7 @@ class Animate(Command):
         try:
             self._benchmark.exact_solution(0, 0)
             self._animator.add_exact_solution()
-        except NoExactSolutionError as error:
+        except core.NoExactSolutionError as error:
             tqdm.write("WARNING: " + str(error))
 
     def _add_discrete_solutions(self):

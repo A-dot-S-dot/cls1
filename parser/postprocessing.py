@@ -51,12 +51,6 @@ def build_solver(arguments):
     arguments.solver = solver_list
 
 
-def calculate_solutions(arguments):
-    tqdm.write("\nCalculate solutions")
-    tqdm.write("-------------------")
-    cmd.Calculate(arguments.solver).execute()
-
-
 ################################################################################
 # PLOT
 ################################################################################

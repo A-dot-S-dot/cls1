@@ -1,11 +1,11 @@
 import numpy as np
 
-from core import CellAverageInterpolator, UniformMesh
+from core import CellAverageInterpolator, CustomError, UniformMesh
 
 from .benchmark import ShallowWaterBenchmark
 
 
-class NegativeHeightError(Exception):
+class NegativeHeightError(CustomError):
     ...
 
 
@@ -66,7 +66,7 @@ class Flux:
         discharge = dof_vector[:, 1].copy()
 
         if (height < 0).any():
-            raise NegativeHeightError
+            raise NegativeHeightError("Height is negative.")
 
         height[height < self._eps] = np.nan
 

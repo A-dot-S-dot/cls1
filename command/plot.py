@@ -1,32 +1,32 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Generic, Optional, Sequence, TypeVar
+from typing import Callable, Generic, List, Optional, TypeVar
 
+import core
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
-from core.benchmark import Benchmark, NoExactSolutionError
-from core.solver import Solver
 from shallow_water.benchmark import ShallowWaterBenchmark
 from tqdm.auto import tqdm
 
+from .calculate import Calculate
 from .command import Command
 
 T = TypeVar("T", float, np.ndarray)
 
 
-class NothingToPlotError(Exception):
+class NothingToPlotError(core.CustomError):
     ...
 
 
 class Plotter(ABC, Generic[T]):
-    _benchmark: Benchmark
+    _benchmark: core.Benchmark
     _figure: plt.Figure
     _grid: np.ndarray
     _save: Optional[str]
     _show: bool
     _plot_available = False
 
-    def __init__(self, benchmark: Benchmark, mesh_size=None, save=None, show=True):
+    def __init__(self, benchmark: core.Benchmark, mesh_size=None, save=None, show=True):
         self._benchmark = benchmark
         self._grid = np.linspace(
             self._benchmark.domain.a,
@@ -62,10 +62,10 @@ class Plotter(ABC, Generic[T]):
             self._setup()
 
             if self._save:
-                tqdm.write(f"Plot is saved in '{self._save}'.")
                 self._figure.savefig(self._save)
+                tqdm.write(f"Plot is saved in '{self._save}'.")
 
-            plt.show()
+            plt.show() if self._show else plt.close()
         else:
             raise NothingToPlotError
 
@@ -78,10 +78,10 @@ class Plotter(ABC, Generic[T]):
 
 
 class ScalarPlotter(Plotter[float]):
-    _benchmark: Benchmark
+    _benchmark: core.Benchmark
     _axes: plt.Axes
 
-    def __init__(self, benchmark: Benchmark, **kwargs):
+    def __init__(self, benchmark: core.Benchmark, **kwargs):
         super().__init__(benchmark, **kwargs)
         self._figure, self._axes = plt.subplots()
 
@@ -184,28 +184,34 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
 
 
 class Plot(Command):
-    _benchmark: Benchmark
-    _solver: Sequence[Solver]
+    _benchmark: core.Benchmark
+    _solver: List[core.Solver]
     _plotter: Plotter
     _initial: bool
+    _solver_executed: bool
 
     def __init__(
         self,
-        benchmark: Benchmark,
-        solver: Solver | Sequence[Solver],
+        benchmark: core.Benchmark,
+        solver: core.Solver | List[core.Solver],
         plotter: Plotter,
         initial=False,
+        solver_executed=False,
     ):
         self._benchmark = benchmark
         self._plotter = plotter
         self._initial = initial
+        self._solver_executed = solver_executed
 
-        if isinstance(solver, Solver):
+        if isinstance(solver, core.Solver):
             self._solver = [solver]
         else:
             self._solver = solver
 
     def execute(self):
+        if not self._solver_executed:
+            self._calculate_solutions()
+
         self._add_plots()
         self._plotter.set_suptitle(f"T={self._benchmark.end_time}")
 
@@ -213,6 +219,27 @@ class Plot(Command):
             self._plotter.show()
         except NothingToPlotError:
             tqdm.write("WARNING: Nothing to plot...")
+
+    def _calculate_solutions(self):
+        tqdm.write("\nCalculate solutions")
+        tqdm.write("-------------------")
+        for solver in tqdm(self._solver, desc="Calculate", unit="solver", leave=False):
+            try:
+                Calculate(solver).execute()
+            except core.CustomError as error:
+                tqdm.write(
+                    f"WARNING: {str(error)} Solution could not be calculated. Last available solution at t={solver.solution.time:.3e} plotted."
+                )
+
+        self._delete_not_solved_solutions()
+
+    def _delete_not_solved_solutions(self):
+        accepted_solver = []
+        for solver in self._solver:
+            if solver.solution.time == self._benchmark.end_time:
+                accepted_solver.append(solver)
+
+        self._solver = accepted_solver
 
     def _add_plots(self):
         self._add_exact_solution()
@@ -224,7 +251,7 @@ class Plot(Command):
     def _add_exact_solution(self):
         try:
             self._plotter.add_exact_solution()
-        except NoExactSolutionError as error:
+        except core.NoExactSolutionError as error:
             tqdm.write("WARNING: " + str(error))
 
     def _add_discrete_solutions(self):

@@ -26,7 +26,6 @@ class CustomArgumentParser:
         "plot": [
             ppr.adjust_end_time,
             ppr.build_solver,
-            ppr.calculate_solutions,
             ppr.build_plotter,
             ppr.BuildCommand(cmd.Plot),
             ppr.DeleteArguments("problem"),
@@ -35,7 +34,6 @@ class CustomArgumentParser:
             ppr.adjust_end_time,
             ppr.add_save_history_argument,
             ppr.build_solver,
-            ppr.calculate_solutions,
             ppr.build_animator,
             ppr.BuildCommand(cmd.Animate),
             ppr.DeleteArguments("problem"),
