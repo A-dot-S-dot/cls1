@@ -376,6 +376,7 @@ class PlotShallowWaterErrorEvolution(Command):
 
         if self._save:
             plt.savefig(self._save)
+            tqdm.write(f"Error plot is saved in '{self._save}'.")
 
         plt.show() if self._show else plt.close()
 
@@ -477,13 +478,17 @@ class GenerateShallowWaterErrorEvolutionSeries(Command):
             plotter = ShallowWaterPlotter(
                 benchmark, show=False, save=f"{self._directory}/plot_{index}.png"
             )
-            Plot(benchmark, solver, plotter, solver_executed=True).execute()
+            Plot(
+                benchmark, solver, plotter, solver_executed=True, write_warnings=False
+            ).execute()
 
         if self._save_animation:
             animator = ShallowWaterAnimator(
                 benchmark, show=False, save=f"{self._directory}/animation_{index}.mp4"
             )
-            Animate(benchmark, solver, animator, solver_executed=True).execute()
+            Animate(
+                benchmark, solver, animator, solver_executed=True, write_warnings=False
+            ).execute()
 
 
 class PlotShallowWaterAverageErrorEvolution(Command):

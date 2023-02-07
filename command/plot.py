@@ -189,6 +189,7 @@ class Plot(Command):
     _plotter: Plotter
     _initial: bool
     _solver_executed: bool
+    _write_warnings: bool
 
     def __init__(
         self,
@@ -197,11 +198,13 @@ class Plot(Command):
         plotter: Plotter,
         initial=False,
         solver_executed=False,
+        write_warnings=True,
     ):
         self._benchmark = benchmark
         self._plotter = plotter
         self._initial = initial
         self._solver_executed = solver_executed
+        self._write_warnings = write_warnings
 
         if isinstance(solver, core.Solver):
             self._solver = [solver]
@@ -218,7 +221,8 @@ class Plot(Command):
         try:
             self._plotter.show()
         except NothingToPlotError:
-            tqdm.write("WARNING: Nothing to plot...")
+            if self._write_warnings:
+                tqdm.write("WARNING: Nothing to plot...")
 
     def _calculate_solutions(self):
         tqdm.write("\nCalculate solutions")
@@ -227,9 +231,10 @@ class Plot(Command):
             try:
                 Calculate(solver).execute()
             except core.CustomError as error:
-                tqdm.write(
-                    f"WARNING: {str(error)} Solution could not be calculated. Last available solution at t={solver.solution.time:.3e} plotted."
-                )
+                if self._write_warnings:
+                    tqdm.write(
+                        f"WARNING: {str(error)} Solution could not be calculated. Last available solution at t={solver.solution.time:.3e} plotted."
+                    )
 
         self._delete_not_solved_solutions()
 
@@ -252,7 +257,8 @@ class Plot(Command):
         try:
             self._plotter.add_exact_solution()
         except core.NoExactSolutionError as error:
-            tqdm.write("WARNING: " + str(error))
+            if self._write_warnings:
+                tqdm.write("WARNING: " + str(error))
 
     def _add_discrete_solutions(self):
         for solver in self._solver:

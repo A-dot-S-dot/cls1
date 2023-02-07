@@ -334,6 +334,7 @@ class Animate(Command):
     _animator: Animator
     _initial: bool
     _solver_executed: bool
+    _write_warnings: bool
 
     def __init__(
         self,
@@ -342,11 +343,13 @@ class Animate(Command):
         animator: Animator,
         initial=False,
         solver_executed=False,
+        write_warnings=True,
     ):
         self._benchmark = benchmark
         self._animator = animator
         self._initial = initial
         self._solver_executed = solver_executed
+        self._write_warnings = write_warnings
 
         if isinstance(solver, core.Solver):
             self._solver = [solver]
@@ -362,7 +365,8 @@ class Animate(Command):
         try:
             self._animator.show()
         except NothingToAnimateError:
-            tqdm.write("WARNING: Nothing to animate...")
+            if self._write_warnings:
+                tqdm.write("WARNING: Nothing to animate...")
 
     def _calculate_solutions(self):
         tqdm.write("\nCalculate solutions")
@@ -371,9 +375,10 @@ class Animate(Command):
             try:
                 Calculate(solver).execute()
             except core.CustomError as error:
-                tqdm.write(
-                    f"WARNING: {str(error)} Solution could not be calculated until T={self._benchmark.end_time}. Freeze solution after t={solver.solution.time:.3e}."
-                )
+                if self._write_warnings:
+                    tqdm.write(
+                        f"WARNING: {str(error)} Solution could not be calculated until T={self._benchmark.end_time}. Freeze solution after t={solver.solution.time:.3e}."
+                    )
 
     def _add_animations(self):
         self._add_discrete_solutions()
@@ -387,7 +392,8 @@ class Animate(Command):
             self._benchmark.exact_solution(0, 0)
             self._animator.add_exact_solution()
         except core.NoExactSolutionError as error:
-            tqdm.write("WARNING: " + str(error))
+            if self._write_warnings:
+                tqdm.write("WARNING: " + str(error))
 
     def _add_discrete_solutions(self):
         for solver in self._solver:
