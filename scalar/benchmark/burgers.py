@@ -56,10 +56,10 @@ class SmoothBenchmark(BurgersBenchmark):
         return cos(x)
 
 
-BENCHMARKS = [
-    SchockBenchmark,
-    SmoothBenchmark,
-]
+BENCHMARKS = {
+    "shock": SchockBenchmark,
+    "smooth": SmoothBenchmark,
+}
 BENCHMARK_DEFAULTS = {
     "plot": SchockBenchmark,
     "animate": SchockBenchmark,

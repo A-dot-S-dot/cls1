@@ -140,7 +140,7 @@ class CustomArgumentParser:
             advection.BENCHMARK_DEFAULTS[command],
         )
         argument.add_end_time(parser)
-        argument.add_solver_argument(parser, action.ScalarSolverAction)
+        argument.add_solver(parser, action.ScalarSolverAction)
 
         return parser
 
@@ -158,7 +158,7 @@ class CustomArgumentParser:
             burgers.BENCHMARK_DEFAULTS[command],
         )
         argument.add_end_time(parser)
-        argument.add_solver_argument(parser, action.ScalarSolverAction)
+        argument.add_solver(parser, action.ScalarSolverAction)
 
         return parser
 
@@ -170,15 +170,20 @@ class CustomArgumentParser:
             information use 'cls1 help SOLVER'.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
+        self._add_shallow_water_benchmark_group(parser, command)
+        argument.add_end_time(parser)
+        argument.add_solver(parser, action.ShallowWaterSolverAction)
+
+        return parser
+
+    def _add_shallow_water_benchmark_group(self, parser, command):
+        benchmark_group = parser.add_mutually_exclusive_group()
         argument.add_benchmark(
-            parser,
+            benchmark_group,
             shallow_water.BENCHMARKS,
             shallow_water.BENCHMARK_DEFAULTS[command],
         )
-        argument.add_end_time(parser)
-        argument.add_solver_argument(parser, action.ShallowWaterSolverAction)
-
-        return parser
+        argument.add_random_shallow_water_benchmark(benchmark_group)
 
     def _add_plot_parser(self, parsers):
         parser = parsers.add_parser(

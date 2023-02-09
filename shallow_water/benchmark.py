@@ -31,11 +31,26 @@ class ShallowWaterBenchmark(Benchmark[np.ndarray]):
         raise NotImplementedError
 
 
-class SteadyStateBenchmark(ShallowWaterBenchmark):
-    """Steady state benchmark with no flow and constant topography."""
-
+class LakeAtRestNoBathymetryBenchmark(ShallowWaterBenchmark):
     gravitational_acceleration = 1.0
-    domain = Interval(-2, 2)
+    domain = Interval(0, 1)
+    boundary_conditions = "periodic"
+
+    def __init__(self, end_time=None):
+        self.end_time = end_time or 100
+
+    def topography(self, x: float) -> float:
+        return 0
+
+    def initial_data(self, x: float) -> np.ndarray:
+        return np.array([0.2, 0])
+
+    def exact_solution(self, x: float, t: float) -> np.ndarray:
+        return self.initial_data(x)
+
+
+class MovingWaterNoBathymetryEquilibriumBenchmark(ShallowWaterBenchmark):
+    domain = Interval(0, 100)
     boundary_conditions = "periodic"
 
     def __init__(self, end_time=None):
@@ -212,15 +227,16 @@ class SinusInflowBenchmark(ShallowWaterBenchmark):
         return np.array([height, 0.0])
 
 
-BENCHMARKS = [
-    SteadyStateBenchmark,
-    BumpSteadyStateBenchmark,
-    OscillationNoTopographyBenchmark,
-    RandomOscillationNoTopographyBenchmark,
-    CylindricalDammBreakWithOutflowBenchmark,
-    CylindricalDammBreakWithReflectingBoundaryBenchmark,
-    SinusInflowBenchmark,
-]
+BENCHMARKS = {
+    "lake-at-rest": LakeAtRestNoBathymetryBenchmark,
+    "moving-water": MovingWaterNoBathymetryEquilibriumBenchmark,
+    "bump": BumpSteadyStateBenchmark,
+    "oscillation": OscillationNoTopographyBenchmark,
+    "random": RandomOscillationNoTopographyBenchmark,
+    "damm-break": CylindricalDammBreakWithOutflowBenchmark,
+    "damm-break-with-wall": CylindricalDammBreakWithReflectingBoundaryBenchmark,
+    "sinus-inflow": SinusInflowBenchmark,
+}
 BENCHMARK_DEFAULTS = {
     "plot": BumpSteadyStateBenchmark,
     "animate": OscillationNoTopographyBenchmark,

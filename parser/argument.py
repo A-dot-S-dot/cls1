@@ -1,5 +1,6 @@
 import defaults
 from core import ode_solver
+from shallow_water import RandomOscillationNoTopographyBenchmark
 
 from . import parser_type
 
@@ -48,17 +49,30 @@ def add_page(parser, solver_parsers):
 
 
 ################################################################################
-# CALCULATE, PLOT, ANIMATE, EOC
+# COMMANDS
 ################################################################################
 def add_benchmark(parser, benchmarks, default):
     parser.add_argument(
         "-b",
         "--benchmark",
-        help="""Benchmark number for the chosen problem. Checkout
-        'defaults.py' for available benchmarks.""",
+        help="""Choose benchmark by key. Available keys are: """
+        + ", ".join([*benchmarks.keys()]),
         type=lambda input: benchmarks[int(input)](),
         metavar="<number>",
         default=default(),
+    )
+
+
+def add_random_shallow_water_benchmark(parser):
+    parser.add_argument(
+        "-r",
+        "--random-benchmark",
+        help="Choose random benchmark.",
+        type=lambda input: RandomOscillationNoTopographyBenchmark(seed=int(input)),
+        nargs="?",
+        const=RandomOscillationNoTopographyBenchmark(),
+        metavar="<seed>",
+        dest="benchmark",
     )
 
 
@@ -72,7 +86,7 @@ def add_end_time(parser):
     )
 
 
-def add_solver_argument(parser, action):
+def add_solver(parser, action):
     parser.add_argument(
         "-s",
         "--solver",
@@ -83,7 +97,6 @@ def add_solver_argument(parser, action):
     )
 
 
-# PLOT, ANIMATE
 def add_plot_mesh_size(parser):
     parser.add_argument(
         "-m",
@@ -115,7 +128,6 @@ def add_hide(parser):
     )
 
 
-# ANIMATE
 def add_time_steps(parser):
     parser.add_argument(
         "--time_steps",
@@ -146,7 +158,6 @@ def add_duration(parser):
     )
 
 
-# EOC
 def add_eoc_mesh_size(parser):
     parser.add_argument(
         "-m",

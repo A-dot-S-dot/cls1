@@ -65,13 +65,13 @@ class GaussianBellBenchmark(AdvectionBenchmark):
         return exp(-100 * (x - 0.5) ** 2)
 
 
-BENCHMARKS = [
-    ThreeHillsBenchmark,
-    TwoHillsBenchmark,
-    OneHillBenchmark,
-    CosineBenchmark,
-    GaussianBellBenchmark,
-]
+BENCHMARKS = {
+    "three-hills": ThreeHillsBenchmark,
+    "two-hills": TwoHillsBenchmark,
+    "one-hill": OneHillBenchmark,
+    "cos": CosineBenchmark,
+    "gauss": GaussianBellBenchmark,
+}
 BENCHMARK_DEFAULTS = {
     "plot": TwoHillsBenchmark,
     "animate": TwoHillsBenchmark,
