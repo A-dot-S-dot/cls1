@@ -54,8 +54,8 @@ class LowOrderFlux(lib.NumericalFlux):
 
         h_HLL, q_HLL = shallow_water.get_height_and_discharge(bar_state)
 
-        modified_height_left, modified_height_right = self._modify_height(h_HLL)
-        modified_discharge_left, modified_discharge_right = self._modify_discharge(
+        hl, hr = self._modify_height(h_HLL)
+        ql, qr = self._modify_discharge(
             q_HLL,
             np.average(shallow_water.get_velocities(value_left, value_right), axis=0),
         )
@@ -64,8 +64,8 @@ class LowOrderFlux(lib.NumericalFlux):
             np.average(shallow_water.get_heights(value_left, value_right), axis=0)
         )
 
-        left_state = np.array([modified_height_left, q_HLL + source_term]).T
-        right_state = np.array([modified_height_right, q_HLL + source_term]).T
+        left_state = np.array([hl, ql + source_term]).T
+        right_state = np.array([hr, qr + source_term]).T
 
         flux_left = self._riemann_solver.flux_left
         flux_right = self._riemann_solver.flux_right
