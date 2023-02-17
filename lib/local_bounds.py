@@ -1,5 +1,5 @@
+import core
 import numpy as np
-from core import SolverSpace
 
 
 class LocalMaximum:
@@ -10,14 +10,14 @@ class LocalMaximum:
 
     """
 
-    _space: SolverSpace
+    _neighbour_indices: np.ndarray
 
-    def __init__(self, space: SolverSpace):
-        self._space = space
+    def __init__(self, neighbour_indices: core.NeighbourIndicesMapping):
+        self._neighbour_indices = neighbour_indices.array
 
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         return np.amax(
-            dof_vector[self._space.dof_neighbours.array],
+            dof_vector[self._neighbour_indices],
             axis=1,
         )
 
@@ -30,13 +30,13 @@ class LocalMinimum(LocalMaximum):
 
     """
 
-    _space: SolverSpace
+    _neighbour_indices: np.ndarray
 
-    def __init__(self, space: SolverSpace):
-        self._space = space
+    def __init__(self, neighbour_indices: core.NeighbourIndicesMapping):
+        self._neighbour_indices = neighbour_indices.array
 
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
         return np.amin(
-            dof_vector[self._space.dof_neighbours.array],
+            dof_vector[self._neighbour_indices],
             axis=1,
         )

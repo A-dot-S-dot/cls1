@@ -56,8 +56,8 @@ class MCLRightHandSide:
         self._flux_approximation = flux_approximation
         self._mass = lib.MassMatrix(element_space)
         self._discrete_gradient = lib.DiscreteGradient(element_space)
-        self._local_maximum = lib.LocalMaximum(element_space)
-        self._local_minimum = lib.LocalMinimum(element_space)
+        self._local_maximum = lib.LocalMaximum(element_space.dof_neighbours)
+        self._local_minimum = lib.LocalMinimum(element_space.dof_neighbours)
 
     def __call__(self, time: float, dof_vector: np.ndarray) -> np.ndarray:
         corrected_flux = np.zeros(len(dof_vector))
