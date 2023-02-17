@@ -25,6 +25,14 @@ class LowOrderFlux(lib.NumericalFlux):
 
     _riemann_solver: shallow_water.RiemannSolver
 
+    @property
+    def g(self) -> float:
+        return self._riemann_solver.gravitational_acceleration
+
+    @property
+    def wave_speed(self) -> np.ndarray:
+        return self._riemann_solver.wave_speed_right
+
     def __init__(self, gravitational_acceleration: float, bathymetry=None):
         self._riemann_solver = shallow_water.RiemannSolver(
             gravitational_acceleration=gravitational_acceleration,
@@ -47,8 +55,14 @@ class LowOrderFlux(lib.NumericalFlux):
         h_HLL, q_HLL = shallow_water.get_height_and_discharge(bar_state)
 
         modified_height_left, modified_height_right = self._modify_height(h_HLL)
+        modified_discharge_left, modified_discharge_right = self._modify_discharge(
+            q_HLL,
+            np.average(shallow_water.get_velocities(value_left, value_right), axis=0),
+        )
 
-        source_term = self._calculate_source_term(value_left[:, 0], value_right[:, 0])
+        source_term = self.get_source_term(
+            np.average(shallow_water.get_heights(value_left, value_right), axis=0)
+        )
 
         left_state = np.array([modified_height_left, q_HLL + source_term]).T
         right_state = np.array([modified_height_right, q_HLL + source_term]).T
@@ -68,26 +82,21 @@ class LowOrderFlux(lib.NumericalFlux):
 
         return h_HLL + self.height_positivity_fix, h_HLL - self.height_positivity_fix
 
-    def _calculate_source_term(
-        self, height_left: np.ndarray, height_right: np.ndarray
-    ) -> np.ndarray:
+    def _modify_discharge(
+        self, q_HLL: np.ndarray, velocity_average: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        return (
+            q_HLL + velocity_average * self.height_positivity_fix,
+            q_HLL + -velocity_average * self.height_positivity_fix,
+        )
+
+    def get_source_term(self, height_average: np.ndarray) -> np.ndarray:
         if self.bathymetry_step is None:
             return np.array([0.0])
         else:
             return -(
-                self.g
-                * (height_left + height_right)
-                * self.height_positivity_fix
-                / (2 * self.wave_speed)
+                self.g * height_average * self.height_positivity_fix / self.wave_speed
             )
-
-    @property
-    def g(self) -> float:
-        return self._riemann_solver.gravitational_acceleration
-
-    @property
-    def wave_speed(self) -> np.ndarray:
-        return self._riemann_solver.wave_speed_right
 
 
 class LowOrderFluxBuilder(lib.NumericalFluxBuilder):
