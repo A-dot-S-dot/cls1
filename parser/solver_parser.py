@@ -49,7 +49,7 @@ class CGParser(SolverParser):
         argument.add_mesh_size(self)
         argument.add_polynomial_degree(self)
         argument.add_exact_flux(self)
-        argument.add_cfl_number(self, defaults.CFL_NUMBER)
+        argument.add_cfl_number(self, defaults.FINITE_ELEMENT_CFL_NUMBER)
 
 
 class LowCGParser(SolverParser):
@@ -85,13 +85,13 @@ class MCLParser(SolverParser):
 class LocalLaxFriedrichsParser(SolverParser):
     prog = "llf"
     name = "Local Lax-Friedrichs finite volume scheme"
-    solver = LocalLaxFriedrichsSolver
+    solver = LaxFriedrichsSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
-        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
         argument.add_adaptive_time_stepping(self)
 
 
@@ -104,12 +104,12 @@ class AntidiffusiveLocalLaxFriedrichsParser(SolverParser):
         argument.add_name(self, self.name)
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
-        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
         argument.add_adaptive_time_stepping(self)
         argument.add_antidiffusion_gamma(self)
 
 
-class CoarseLocalLaxFriedrichsParser(SolverParser):
+class CoarseLaxFriedrichsParser(SolverParser):
     prog = "coarse-llf"
     name = "Coarse Local Lax-Friedrichs finite volume scheme"
     solver = CoarseLocalLaxFriedrichsSolver
@@ -118,48 +118,61 @@ class CoarseLocalLaxFriedrichsParser(SolverParser):
         argument.add_name(self, self.name)
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
-        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
         argument.add_adaptive_time_stepping(self)
         argument.add_coarsening_degree(self)
 
 
-class GodunovParser(SolverParser):
-    prog = "godunov"
-    name = "Godunov's finite volume scheme"
-    solver = GodunovSolver
+class CentralFluxParser(SolverParser):
+    prog = "central"
+    name = "Simple high order central scheme"
+    solver = CentralFluxSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
-        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
         argument.add_adaptive_time_stepping(self)
 
 
-class CoarseGodunovParser(SolverParser):
-    prog = "coarse-godunov"
-    name = "Coarse Godunov's finite volume scheme"
-    solver = CoarseGodunovSolver
+class LowOrderParser(SolverParser):
+    prog = "low-order"
+    name = "Low order finite volume scheme"
+    solver = LowOrderSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
-        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+
+
+class CoarseLowOrderParser(SolverParser):
+    prog = "coarse-low-order"
+    name = "Coarse low order finite volume scheme"
+    solver = CoarseLowOrderSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
         argument.add_adaptive_time_stepping(self)
         argument.add_coarsening_degree(self)
 
 
-class AntidiffusiveGodunovParser(SolverParser):
-    prog = "antidiffusive-godunov"
-    name = "Godunov's finite volume scheme with Antidiffusion"
-    solver = AntidiffusiveGodunovSolver
+class AntidiffusiveLowOrderParser(SolverParser):
+    prog = "antidiffusive-low-order"
+    name = "Low order finite volume scheme with Antidiffusion"
+    solver = AntidiffusiveLowOrderSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
-        argument.add_cfl_number(self, defaults.GODUNOV_CFL_NUMBER)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
         argument.add_adaptive_time_stepping(self)
         argument.add_antidiffusion_gamma(self)
 
@@ -177,28 +190,9 @@ class SubgridNetworkParser(SolverParser):
         )
         argument.add_coarsening_degree(self)
         argument.add_cfl_number(
-            self, defaults.GODUNOV_CFL_NUMBER / defaults.COARSENING_DEGREE
+            self, defaults.FINITE_VOLUME_CFL_NUMBER / defaults.COARSENING_DEGREE
         )
         argument.add_network_load_path(self)
-
-
-class LimitedSubgridNetworkParser(SolverParser):
-    prog = "limited-subgrid-network"
-    name = """Limited Solver with NN corrected flux"""
-    solver = LimitedSubgridNetworkSolver
-
-    def _add_arguments(self):
-        argument.add_name(self, self.name)
-        argument.add_short(self, self.prog)
-        argument.add_mesh_size(
-            self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
-        )
-        argument.add_coarsening_degree(self)
-        argument.add_cfl_number(
-            self, defaults.GODUNOV_CFL_NUMBER / defaults.COARSENING_DEGREE
-        )
-        argument.add_network_load_path(self)
-        argument.add_limiting_gamma(self)
 
 
 SCALAR_SOLVER_PARSERS = {
@@ -208,13 +202,13 @@ SCALAR_SOLVER_PARSERS = {
 }
 SHALLOW_WATER_SOLVER_PARSERS = {
     "llf": LocalLaxFriedrichsParser,
-    "coarse-llf": CoarseLocalLaxFriedrichsParser,
+    "coarse-llf": CoarseLaxFriedrichsParser,
     "antidiffusive-llf": AntidiffusiveLocalLaxFriedrichsParser,
-    "godunov": GodunovParser,
-    "coarse-godunov": CoarseGodunovParser,
-    "antidiffusive-godunov": AntidiffusiveGodunovParser,
+    "low-order": LowOrderParser,
+    "coarse-low-order": CoarseLowOrderParser,
+    "antidiffusive-low-order": AntidiffusiveLowOrderParser,
+    "central": CentralFluxParser,
     "subgrid-network": SubgridNetworkParser,
-    "limited-subgrid-network": LimitedSubgridNetworkParser,
 }
 
 SOLVER_PARSERS = {}

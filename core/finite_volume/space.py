@@ -15,7 +15,7 @@ class FiniteVolumeSpace(SolverSpace, Generic[T]):
     mesh: Mesh
     dof_neighbours: NeighbourIndicesMapping
 
-    _cell_centers: np.ndarray
+    cell_centers: np.ndarray
 
     def __init__(self, mesh: Mesh, periodic=False):
         self.mesh = mesh
@@ -24,7 +24,7 @@ class FiniteVolumeSpace(SolverSpace, Generic[T]):
         self._build_cell_centers()
 
     def _build_cell_centers(self):
-        self._cell_centers = np.array([(cell.a + cell.b) / 2 for cell in self.mesh])
+        self.cell_centers = np.array([(cell.a + cell.b) / 2 for cell in self.mesh])
 
     @property
     def dimension(self):
@@ -33,10 +33,6 @@ class FiniteVolumeSpace(SolverSpace, Generic[T]):
     @property
     def node_number(self):
         return self.dimension
-
-    @property
-    def cell_centers(self) -> np.ndarray:
-        return self._cell_centers
 
     @property
     def grid(self) -> np.ndarray:

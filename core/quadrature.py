@@ -1,11 +1,34 @@
+from abc import ABC, abstractmethod
 from typing import Callable, List, Tuple
 
 import numpy as np
-from core.mesh import Interval
+from .mesh import Interval
 
-from .abstracts import Quadrature
 
-ScalarFunction = Callable[[float], float]
+class Quadrature(ABC):
+    _domain: Interval
+    _nodes: List[float]
+    _weights: np.ndarray
+
+    @property
+    def domain(self):
+        return self._domain
+
+    @property
+    def nodes(self) -> List[float]:
+        return self._nodes
+
+    @property
+    def weights(self) -> np.ndarray:
+        return self._weights
+
+    @property
+    def degree(self) -> int:
+        return len(self._nodes)
+
+    @abstractmethod
+    def integrate(self, f: Callable[[float], float]):
+        ...
 
 
 class SpecificGaussianQuadrature(Quadrature):
@@ -49,7 +72,7 @@ class SpecificGaussianQuadrature(Quadrature):
     def nodes(self) -> List[float]:
         return self._nodes
 
-    def integrate(self, function: ScalarFunction) -> float:
+    def integrate(self, function: Callable[[float], float]) -> float:
         quadrature_nodes_values = np.array([function(node) for node in self.nodes])
 
         return np.dot(self.weights, quadrature_nodes_values)
@@ -90,3 +113,11 @@ class GaussianQuadrature(SpecificGaussianQuadrature):
             transformed_weights.append(transformed_weight)
 
         self._weights = np.array(transformed_weights)
+
+
+class LocalElementQuadrature(GaussianQuadrature):
+    """Gaussian Quadrature on the standard element [0,1]."""
+
+    def __init__(self, quadrature_degree: int):
+        """The quadrature is 2*NODES_NUMBER-1 exact."""
+        GaussianQuadrature.__init__(self, quadrature_degree, Interval(0, 1))

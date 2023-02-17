@@ -233,7 +233,7 @@ class Plot(Command):
             except core.CustomError as error:
                 if self._write_warnings:
                     tqdm.write(
-                        f"WARNING: {str(error)} Solution could not be calculated. Last available solution at t={solver.solution.time:.3e} plotted."
+                        f"WARNING: {str(error)} Solution could not be calculated."
                     )
 
         self._delete_not_solved_solutions()

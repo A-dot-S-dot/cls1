@@ -36,13 +36,12 @@ CALCULATE_MESH_SIZE = 400
 # finite element based solver
 POLYNOMIAL_DEGREE = 1
 ODE_SOLVER = "heun"
-CFL_NUMBER = 0.1
+FINITE_ELEMENT_CFL_NUMBER = 0.1
 MCL_CFL_NUMBER = 1
 FLUX_APPROXIMATION = True
 
 # finite volume based solver
-GODUNOV_CFL_NUMBER = 0.5
-LOCAL_LAX_FRIEDRICHS_CFL_NUMBER = 0.4
+FINITE_VOLUME_CFL_NUMBER = 0.5
 COARSENING_DEGREE = 8
 
 NETWORK_PATH = "data/subgrid-network.pth"
@@ -53,7 +52,7 @@ ANTIDIFFUSION_GAMMA = 0.1
 ################################################################################
 # GENERATE-DATA
 ################################################################################
-INPUT_RADIUS = 2
+INPUT_DIMENSION = 2
 SKIP = 40  # Determines how many subgrid fluxes should be skipped
 SUBGRID_FLUX_DATA_PATH = "data/data.csv"
 BENCHMARK_DATA_PATH = "data/benchmark_data.csv"
@@ -74,3 +73,9 @@ NETWORK_PATH = "data/subgrid-network.pth"
 # PLOW ERROR EVOLUTION
 ################################################################################
 ERROR_EVOLUTION_PATH = "data/error.png"
+
+
+################################################################################
+# OTHER
+################################################################################
+EPSILON = 1e-15

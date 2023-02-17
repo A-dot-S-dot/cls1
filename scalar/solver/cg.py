@@ -60,7 +60,7 @@ class ContinuousGalerkinSolver(Solver):
         short = short or "cg"
         mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE
         polynomial_degree = polynomial_degree or defaults.POLYNOMIAL_DEGREE
-        cfl_number = cfl_number or defaults.CFL_NUMBER
+        cfl_number = cfl_number or defaults.FINITE_ELEMENT_CFL_NUMBER
         exact_flux = exact_flux
 
         solution = finite_element.build_finite_element_solution(

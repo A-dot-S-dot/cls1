@@ -14,21 +14,21 @@ from .command import Command
 
 
 class SubgridFluxDataBuilder:
-    _subgrid_flux: lib.NUMERICAL_FLUX
-    _coarsener: lib.VectorCoarsener
+    _subgrid_flux: lib.NumericalFlux
+    _coarsener: core.VectorCoarsener
     _skip: int
     _update_coarse_solution: Callable[[np.ndarray, np.ndarray], np.ndarray]
     _print_output: bool
 
     def __init__(
         self,
-        subgrid_flux: lib.NUMERICAL_FLUX,
+        subgrid_flux: lib.NumericalFlux,
         coarsening_degree: int,
         skip: int,
         print_output=True,
     ):
         self._subgrid_flux = subgrid_flux
-        self._coarsener = lib.VectorCoarsener(coarsening_degree)
+        self._coarsener = core.VectorCoarsener(coarsening_degree)
         self._skip = skip
         self._update_coarse_solution = self._initialize_coarse_solution
         self._print_output = print_output
@@ -226,17 +226,19 @@ class GenerateData(Command):
         **solver_kwargs,
     ):
         self._solution_number = solution_number
-        self._solver_builder = solver_builder or lax_friedrichs.LocalLaxFriedrichsSolver
+        self._solver_builder = solver_builder or lax_friedrichs.LaxFriedrichsSolver
         self._create_benchmark = create_benchmark or (
             lambda: shallow_water.RandomOscillationNoTopographyBenchmark(
                 height_average=shallow_water.HEIGHT_AVERAGE
             )
         )
-        fine_flux_builder = fine_flux_builder or lax_friedrichs.build_llf_numerical_flux
+        fine_flux_builder = (
+            fine_flux_builder or lax_friedrichs.build_lax_friedrichs_flux
+        )
         coarse_flux_builder = coarse_flux_builder or fine_flux_builder
         coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
         skip = skip or defaults.SKIP
-        input_radius = input_radius or defaults.INPUT_RADIUS
+        input_radius = input_radius or defaults.INPUT_DIMENSION
         node_index = node_index or input_radius
         self._subgrid_flux_data_path = (
             subgrid_flux_data_path or defaults.SUBGRID_FLUX_DATA_PATH
@@ -276,13 +278,13 @@ class GenerateData(Command):
     def _create_subgrid_flux(
         self,
         fine_flux_builder: Callable[
-            [shallow_water.ShallowWaterBenchmark, core.Mesh], lib.NUMERICAL_FLUX
+            [shallow_water.ShallowWaterBenchmark, core.Mesh], lib.NumericalFlux
         ],
         coarse_flux_builder: Callable[
-            [shallow_water.ShallowWaterBenchmark, core.Mesh], lib.NUMERICAL_FLUX
+            [shallow_water.ShallowWaterBenchmark, core.Mesh], lib.NumericalFlux
         ],
         coarsening_degree: int,
-    ) -> lib.NUMERICAL_FLUX:
+    ) -> lib.NumericalFlux:
         benchmark = self._create_benchmark()
         solver = self._create_solver(benchmark)
         fine_flux = fine_flux_builder(benchmark, solver.solution.space.mesh)

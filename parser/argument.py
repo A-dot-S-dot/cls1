@@ -57,8 +57,8 @@ def add_benchmark(parser, benchmarks, default):
         "--benchmark",
         help="""Choose benchmark by key. Available keys are: """
         + ", ".join([*benchmarks.keys()]),
-        type=lambda input: benchmarks[int(input)](),
-        metavar="<number>",
+        type=lambda input: benchmarks[input](),
+        metavar="<name>",
         default=default(),
     )
 

@@ -2,11 +2,9 @@ from typing import List
 from unittest import TestCase
 
 from numpy import sqrt
+
 from core.mesh import Interval
-from core.quadrature.gauss import (
-    SpecificGaussianQuadrature,
-    GaussianQuadrature,
-)
+from core.quadrature import *
 
 
 class TestGaussianQuadrature(TestCase):
@@ -79,3 +77,20 @@ class TestGaussianQuadratureGeneralized(TestCase):
 
         for f, integral in test_functions_integrals:
             self.assertAlmostEqual(quadrature.integrate(f), integral)
+
+
+class TestLocalElementQuadrature(TestCase):
+    def test_local_quadrature(self):
+        local_element_quadrature = LocalElementQuadrature(2)
+
+        functions = [
+            lambda _: 1,
+            lambda x: x,
+            lambda x: x**2,
+            lambda x: x**3,
+        ]
+
+        integrals = [1, 1 / 2, 1 / 3, 1 / 4]
+
+        for f, integral in zip(functions, integrals):
+            self.assertAlmostEqual(local_element_quadrature.integrate(f), integral)

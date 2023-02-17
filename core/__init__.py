@@ -1,5 +1,5 @@
-from . import finite_element, finite_volume
 from .benchmark import *
+from .boundary import *
 from .discrete_solution import *
 from .error import *
 from .index_mapping import *

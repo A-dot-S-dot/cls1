@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from .core import DischargeToVelocityTransformer
+from .core import get_heights, get_velocities
 
 
 class WaveSpeed:
@@ -14,22 +14,15 @@ class WaveSpeed:
     """
 
     _gravitational_acceleration: float
-    _discharge_to_velocity_transformer: DischargeToVelocityTransformer
 
     def __init__(self, gravitational_acceleration: float):
         self._gravitational_acceleration = gravitational_acceleration
-        self._discharge_to_velocity_transformer = DischargeToVelocityTransformer()
 
     def __call__(
         self, value_left: np.ndarray, value_right: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        height_velocity_left = self._discharge_to_velocity_transformer(value_left)
-        height_velocity_right = self._discharge_to_velocity_transformer(value_right)
-
-        height_left = height_velocity_left[:, 0]
-        height_right = height_velocity_right[:, 0]
-        velocity_left = height_velocity_left[:, 1]
-        velocity_right = height_velocity_right[:, 1]
+        height_left, height_right = get_heights(value_left, value_right)
+        velocity_left, velocity_right = get_velocities(value_left, value_right)
 
         return self._build_wave_speed_left(
             height_left, height_right, velocity_left, velocity_right
@@ -79,22 +72,15 @@ class MaximumWaveSpeed:
     """
 
     _gravitational_acceleration: float
-    _discharge_to_velocity_transformer: DischargeToVelocityTransformer
 
     def __init__(self, gravitational_acceleration: float):
         self._gravitational_acceleration = gravitational_acceleration
-        self._discharge_to_velocity_transformer = DischargeToVelocityTransformer()
 
     def __call__(
         self, value_left: np.ndarray, value_right: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        height_velocity_left = self._discharge_to_velocity_transformer(value_left)
-        height_velocity_right = self._discharge_to_velocity_transformer(value_right)
-
-        height_left = height_velocity_left[:, 0]
-        height_right = height_velocity_right[:, 0]
-        velocity_left = height_velocity_left[:, 1]
-        velocity_right = height_velocity_right[:, 1]
+        height_left, height_right = get_heights(value_left, value_right)
+        velocity_left, velocity_right = get_velocities(value_left, value_right)
 
         wave_speed = self._build_wave_speed(
             height_left, height_right, velocity_left, velocity_right

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import shallow_water
-from shallow_water.solver import godunov, subgrid_network
+from shallow_water import solver
 from tqdm.auto import tqdm, trange
 
 from .animate import Animate, ShallowWaterAnimator
@@ -435,10 +435,10 @@ class GenerateShallowWaterErrorEvolutionSeries(Command):
             benchmark = shallow_water.RandomOscillationNoTopographyBenchmark(
                 seed=self._seed + i, **self._benchmark_parameters
             )
-            approximated_solver = subgrid_network.SubgridNetworkSolver(
+            approximated_solver = solver.SubgridNetworkSolver(
                 benchmark, save_history=True
             )
-            exact_solver = godunov.CoarseGodunovSolver(benchmark, save_history=True)
+            exact_solver = sovler.CoarseLowOrderSolver(benchmark, save_history=True)
 
             try:
                 Calculate([exact_solver, approximated_solver], leave=False).execute()

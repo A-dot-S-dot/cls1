@@ -18,7 +18,7 @@ class TestSubgridFlux:
 
 class TestSubgridFluxDataBuilder(TestCase):
     def test_builder(self):
-        solver = llf.LocalLaxFriedrichsSolver(
+        solver = llf.LaxFriedrichsSolver(
             shallow_water.OscillationNoTopographyBenchmark(end_time=4.0),
             mesh_size=4,
             save_history=True,

@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Tuple, TypeVar
+from typing import Generic, TypeVar
 
 import numpy as np
 
+from .boundary import BOUNDARY_CONDITIONS
 from .error import CustomError
 from .mesh import Interval
 
@@ -18,7 +19,7 @@ class Benchmark(ABC, Generic[T]):
     domain: Interval
     start_time = 0.0
     end_time: float
-    boundary_conditions: str | Tuple[str, str]
+    boundary_conditions: BOUNDARY_CONDITIONS
 
     @abstractmethod
     def __init__(self, end_time=None, **benchmark_parameters):

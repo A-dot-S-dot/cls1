@@ -1,27 +1,25 @@
-# DEPRECATED
 from typing import Callable, Tuple
 
 import core
 import numpy as np
 from core import finite_volume
-from lib import NUMERICAL_FLUX, LocalMaximum, LocalMinimum
+import lib
 
 
-class GMCNumericalFlux:
+class MCLFlux(lib.NumericalFlux):
     """Calculates flux by adding to a diffusive flux a limited antidiffusive
     flux, which can be specified independently.
 
-    Note, the bottom must be constant. For more information see 'Bound-preserving
-    flux limiting for high-order explicit Runge-Kutta time discretizations of
-    hyperbolic conservation laws' by D.Kuzmin et al.
+    A finite element version is discussed in 'Bound-preserving and
+    entropy-stable algebraic flux correction schemes for the shallow water
+    equations with topography.
 
     """
 
     _local_maximum: Callable[[np.ndarray], np.ndarray]
     _local_minimum: Callable[[np.ndarray], np.ndarray]
     _riemann_solver: core.RiemannSolver
-    _high_order_flux: NUMERICAL_FLUX
-    _periodic: bool
+    _high_order_flux: lib.NumericalFlux
     _eps: float
     _gamma: float
 
@@ -29,15 +27,14 @@ class GMCNumericalFlux:
         self,
         volume_space: finite_volume.FiniteVolumeSpace,
         riemann_solver: core.RiemannSolver,
-        high_order_flux: NUMERICAL_FLUX,
+        high_order_flux: lib.NumericalFlux,
         gamma=0.1,
         eps=1e-12,
     ):
-        self._local_minimum = LocalMinimum(volume_space)
-        self._local_maximum = LocalMaximum(volume_space)
+        self._local_minimum = lib.LocalMinimum(volume_space)
+        self._local_maximum = lib.LocalMaximum(volume_space)
         self._riemann_solver = riemann_solver
-        self._high_order_flux = high_order_flux
-        self._periodic = self._riemann_solver.periodic_boundary_condition
+        self._high_order_flux = lib.NumericalFluxWithArbitraryInput(high_order_flux)
         self._gamma = gamma
         self._eps = eps
 
@@ -45,15 +42,10 @@ class GMCNumericalFlux:
     def riemann_solver(self) -> core.RiemannSolver:
         return self._riemann_solver
 
-    def __call__(
-        self, time: float, dof_vector: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         self._riemann_solver.solve(time, dof_vector)
 
-        low_order_flux = self._riemann_solver.intermediate_flux
-        high_order_flux_left, high_order_flux_right = self._high_order_flux(
-            time, dof_vector
-        )
+        high_order_flux_left, high_order_flux_right = self._high_order_flux(*values)
         high_order_flux = np.array([*high_order_flux_left, -high_order_flux_right[-1]])
 
         antidiffusive_flux = high_order_flux + -low_order_flux
@@ -136,13 +128,13 @@ class GMCNumericalFlux:
         return Q_minus, Q_plus
 
     def _calculate_di(self) -> np.ndarray:
-        wave_speed = self._riemann_solver.wave_speed_right
+        wave_speed = self._riemann_solver._wave_speed_right
         di = wave_speed[:-1] + wave_speed[1:]
 
         return self._apply_boundary_conditions(di, wave_speed[0], wave_speed[-1])
 
     def _calculate_u_bar(self, di: np.ndarray) -> np.ndarray:
-        wave_speed = self._riemann_solver.wave_speed_right
+        wave_speed = self._riemann_solver._wave_speed_right
         product = wave_speed[:, None] * self._riemann_solver.intermediate_state
         summand = product[:-1] + product[1:]
 

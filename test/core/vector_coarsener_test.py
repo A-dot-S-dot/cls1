@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from lib import VectorCoarsener
+from core import VectorCoarsener
 
 
 class TestVectorCoarsener(TestCase):

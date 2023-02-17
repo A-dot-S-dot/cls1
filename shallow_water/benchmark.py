@@ -5,6 +5,7 @@ import numpy as np
 from scipy.optimize import newton
 
 from core import Benchmark, Interval
+from .boundary import BOUNDARY_CONDITIONS
 
 # No topography benchmark
 LENGTH = 100.0
@@ -26,6 +27,7 @@ class ShallowWaterBenchmark(Benchmark[np.ndarray]):
 
     problem = "shallow_water"
     gravitational_acceleration = defaults.GRAVITATIONAL_ACCELERATION
+    boundary_conditions: BOUNDARY_CONDITIONS
 
     def topography(self, x: float) -> float:
         raise NotImplementedError
@@ -238,7 +240,7 @@ BENCHMARKS = {
     "sinus-inflow": SinusInflowBenchmark,
 }
 BENCHMARK_DEFAULTS = {
-    "plot": BumpSteadyStateBenchmark,
+    "plot": OscillationNoTopographyBenchmark,
     "animate": OscillationNoTopographyBenchmark,
     "calculate": OscillationNoTopographyBenchmark,
     "plot-error-evolution": OscillationNoTopographyBenchmark,
