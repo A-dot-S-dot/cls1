@@ -17,7 +17,9 @@ class EnergyStableFlux(lib.NumericalFlux):
         self._gravitational_acceleration = gravitational_acceleration
 
     def __call__(self, value_left: np.ndarray, value_right: np.ndarray):
-        height_average = np.average(shallow_water.get_heights(value_left, value_right))
+        height_average = np.average(
+            shallow_water.get_heights(value_left, value_right), axis=0
+        )
         velocity_average = np.average(
             shallow_water.get_velocities(value_left, value_right), axis=0
         )
@@ -36,6 +38,8 @@ class EnergyStableFlux(lib.NumericalFlux):
 def get_energy_stable_flux(
     benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
 ) -> EnergyStableFlux:
+    shallow_water.assert_constant_bathymetry(benchmark, len(mesh))
+
     return EnergyStableFlux(benchmark.gravitational_acceleration)
 
 
