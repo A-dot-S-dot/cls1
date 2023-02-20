@@ -1,3 +1,8 @@
+"""A finite element version of the implemented solvers are discussed in
+'Bound-preserving and entropy-stable algebraic flux correction schemes for the
+shallow water equations with topography' by H. Hajduk and D. Kuzmin.
+
+"""
 from typing import Tuple
 
 import core
@@ -20,10 +25,6 @@ SHALLOW_WATER_FLUX_GETTER = {
 class MCLFlux(LowOrderFlux, lib.NumericalFluxWithArbitraryInput):
     """Calculates flux by adding to a diffusive flux a limited antidiffusive
     flux, which can be specified independently.
-
-    A finite element version is discussed in 'Bound-preserving and
-    entropy-stable algebraic flux correction schemes for the shallow water
-    equations with topography.
 
     """
 
