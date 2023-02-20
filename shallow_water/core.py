@@ -50,6 +50,10 @@ def nullify(dof_vector: np.ndarray, eps=defaults.EPSILON) -> np.ndarray:
     return dof_vector * (dof_vector[:, 0] > eps)[:, None]
 
 
+def get_average(value_left: np.ndarray, value_right: np.ndarray) -> np.ndarray:
+    return np.average((value_left, value_right), axis=0)
+
+
 def get_height(dof_vector: np.ndarray) -> np.ndarray:
     return dof_vector[:, 0]
 

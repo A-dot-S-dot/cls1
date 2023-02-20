@@ -1,7 +1,7 @@
 from typing import Dict
 
 import core
-import shallow_water
+import shallow_water as swe
 import defaults
 
 from .lax_friedrichs import get_lax_friedrichs_flux
@@ -13,7 +13,7 @@ class CoarseSolver(ShallowWaterSolver):
 
     def _build_args(
         self,
-        benchmark: shallow_water.ShallowWaterBenchmark,
+        benchmark: swe.ShallowWaterBenchmark,
         coarsening_degree=None,
         flux_getter=None,
         **kwargs

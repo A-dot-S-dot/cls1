@@ -8,7 +8,7 @@ from typing import Dict, Tuple
 import core
 import lib
 import numpy as np
-import shallow_water
+import shallow_water as swe
 
 from .central import get_central_flux
 from .low_order import LowOrderFlux
@@ -238,17 +238,17 @@ class EntropyStableMCLFlux(MCLFlux):
 
 
 def get_mcl_flux(
-    benchmark: shallow_water.ShallowWaterBenchmark,
+    benchmark: swe.ShallowWaterBenchmark,
     mesh: core.Mesh,
-    high_order_flux_getter: lib.FLUX_GETTER[shallow_water.ShallowWaterBenchmark],
+    high_order_flux_getter: lib.FLUX_GETTER[swe.ShallowWaterBenchmark],
 ) -> MCLFlux:
     high_order_flux = high_order_flux_getter(benchmark, mesh)
-    boundary_conditions = shallow_water.get_boundary_conditions(
+    boundary_conditions = swe.get_boundary_conditions(
         benchmark.boundary_conditions,
         inflow_left=benchmark.inflow_left,
         inflow_right=benchmark.inflow_right,
     )
-    bathymetry = shallow_water.build_bathymetry_discretization(benchmark, len(mesh))
+    bathymetry = swe.build_bathymetry_discretization(benchmark, len(mesh))
 
     return MCLFlux(
         benchmark.gravitational_acceleration,
@@ -259,15 +259,15 @@ def get_mcl_flux(
 
 
 class MCLSolver(ShallowWaterSolver):
-    _high_order_flux_getter: lib.FLUX_GETTER[shallow_water.ShallowWaterBenchmark]
+    _high_order_flux_getter: lib.FLUX_GETTER[swe.ShallowWaterBenchmark]
 
     def _build_args(
-        self, benchmark: shallow_water.ShallowWaterBenchmark, flux_getter=None, **kwargs
+        self, benchmark: swe.ShallowWaterBenchmark, flux_getter=None, **kwargs
     ) -> Dict:
         self._high_order_flux_getter = flux_getter or get_central_flux
         return super()._build_args(benchmark, **kwargs)
 
     def _get_flux(
-        self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
+        self, benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh
     ) -> lib.NumericalFlux:
         return get_mcl_flux(benchmark, mesh, self._high_order_flux_getter)

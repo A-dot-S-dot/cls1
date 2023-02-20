@@ -1,23 +1,41 @@
-from typing import Dict
+from typing import Dict, Optional
 
 import core
 import defaults
 import lib
-import shallow_water
+import numpy as np
+import shallow_water as swe
 from core import finite_volume
 
 
-class ShallowWaterSolver(core.Solver):
-    _get_flux: lib.FLUX_GETTER[shallow_water.ShallowWaterBenchmark]
+class ShallowWaterNumericalFlux(lib.NumericalFlux):
+    _gravitational_acceleration: float
+    _bathymetry_step: np.ndarray
 
-    def __init__(self, benchmark: shallow_water.ShallowWaterBenchmark, **kwargs):
+    def __init__(self, gravitational_acceleration: float, bathymetry=None):
+        self._gravitational_acceleration = gravitational_acceleration
+
+        self._build_bathymetry_step(bathymetry)
+
+    def _build_bathymetry_step(self, bathymetry: Optional[np.ndarray]):
+        if bathymetry is None or swe.is_constant(bathymetry):
+            self._bathymetry_step = np.array([0])
+        else:
+            bathymetry = np.array([bathymetry[0], *bathymetry, bathymetry[-1]])
+            self._bathymetry_step = np.diff(bathymetry)
+
+
+class ShallowWaterSolver(core.Solver):
+    _get_flux: lib.FLUX_GETTER[swe.ShallowWaterBenchmark]
+
+    def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
         args = self._build_args(benchmark, **kwargs)
 
         core.Solver.__init__(self, **args)
 
     def _build_args(
         self,
-        benchmark: shallow_water.ShallowWaterBenchmark,
+        benchmark: swe.ShallowWaterBenchmark,
         name=None,
         short=None,
         mesh_size=None,
@@ -32,7 +50,7 @@ class ShallowWaterSolver(core.Solver):
         step_length = solution.space.mesh.step_length
 
         numerical_flux = self._get_flux(benchmark, solution.space.mesh)
-        boundary_conditions = shallow_water.get_boundary_conditions(
+        boundary_conditions = swe.get_boundary_conditions(
             benchmark.boundary_conditions,
             inflow_left=benchmark.inflow_left,
             inflow_right=benchmark.inflow_right,
@@ -42,7 +60,7 @@ class ShallowWaterSolver(core.Solver):
         )
 
         optimal_time_step = finite_volume.OptimalTimeStep(
-            shallow_water.RiemannSolver(benchmark.gravitational_acceleration),
+            swe.RiemannSolver(benchmark.gravitational_acceleration),
             boundary_conditions,
             step_length,
         )

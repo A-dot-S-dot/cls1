@@ -6,7 +6,7 @@ import core
 import defaults
 import lib
 import numpy as np
-import shallow_water
+import shallow_water as swe
 import torch
 from torch import nn
 
@@ -124,7 +124,7 @@ class SubgridNetworkSolver(ShallowWaterSolver):
 
     def _build_args(
         self,
-        benchmark: shallow_water.ShallowWaterBenchmark,
+        benchmark: swe.ShallowWaterBenchmark,
         network_path=None,
         mesh_size=None,
         cfl_number=None,
@@ -140,9 +140,9 @@ class SubgridNetworkSolver(ShallowWaterSolver):
         return super()._build_args(benchmark, kwargs)
 
     def _get_flux(
-        self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
+        self, benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh
     ) -> lib.NumericalFlux:
-        numerical_flux = low_order.LowOrderFluxBuilder.build_flux(benchmark, mesh)
+        numerical_flux = low_order.get_low_order_flux(benchmark, mesh)
 
         subgrid_flux = NetworkSubgridFlux(
             NeuralNetwork(),
