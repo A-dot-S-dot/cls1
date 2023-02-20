@@ -159,7 +159,7 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
         self._plot_available = True
 
     def add_height(self, grid: np.ndarray, height: np.ndarray, label: str):
-        total_height = height + [self._benchmark.topography(x) for x in grid]
+        total_height = height + [self._benchmark.bathymetry(x) for x in grid]
         self._height_axes.plot(grid, total_height, label=label)
 
     def add_discharge(self, grid: np.ndarray, discharge: np.ndarray, label: str):
@@ -178,7 +178,7 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
 
     def _add_topography(self):
         topography_values = np.array(
-            [self._benchmark.topography(x) for x in self._grid]
+            [self._benchmark.bathymetry(x) for x in self._grid]
         )
         self._height_axes.plot(self._grid, topography_values, label="$b$")
 

@@ -29,7 +29,7 @@ class ShallowWaterBenchmark(Benchmark[np.ndarray]):
     gravitational_acceleration = defaults.GRAVITATIONAL_ACCELERATION
     boundary_conditions: BOUNDARY_CONDITIONS
 
-    def topography(self, x: float) -> float:
+    def bathymetry(self, x: float) -> float:
         raise NotImplementedError
 
 
@@ -41,7 +41,7 @@ class LakeAtRestNoBathymetryBenchmark(ShallowWaterBenchmark):
     def __init__(self, end_time=None):
         self.end_time = end_time or 100
 
-    def topography(self, x: float) -> float:
+    def bathymetry(self, x: float) -> float:
         return 0
 
     def initial_data(self, x: float) -> np.ndarray:
@@ -58,7 +58,7 @@ class MovingWaterNoBathymetryEquilibriumBenchmark(ShallowWaterBenchmark):
     def __init__(self, end_time=None):
         self.end_time = end_time or 1
 
-    def topography(self, x: float) -> float:
+    def bathymetry(self, x: float) -> float:
         return 0
 
     def initial_data(self, x: float) -> np.ndarray:
@@ -87,7 +87,7 @@ class BumpSteadyStateBenchmark(ShallowWaterBenchmark):
         self.K1 = K1 or 1.0
         self.K2 = K2 or 25.0
 
-    def topography(self, x: float) -> float:
+    def bathymetry(self, x: float) -> float:
         if x in Interval(-0.1, 0.1):
             return (np.cos(10 * np.pi * (x + 1)) + 1) / 4
         else:
@@ -97,7 +97,7 @@ class BumpSteadyStateBenchmark(ShallowWaterBenchmark):
         # calculate root for h after inserting the first mentioned equation in the second one
         f = (
             lambda h: self.K1**2 / (2 * h**2)
-            + self.gravitational_acceleration * (h + self.topography(x))
+            + self.gravitational_acceleration * (h + self.bathymetry(x))
             - self.K2
         )
         return np.array([newton(f, 2.5), self.K1])
@@ -140,7 +140,7 @@ class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
         self.velocity_phase_shift = velocity_phase_shift or VELOCITY_PHASE_SHIFT
         self.velocity_wave_number = velocity_wave_number or VELOCITY_WAVE_NUMBER
 
-    def topography(self, x: float) -> float:
+    def bathymetry(self, x: float) -> float:
         return 0
 
     def initial_data(self, x: float) -> np.ndarray:
@@ -195,7 +195,7 @@ class CylindricalDammBreakWithOutflowBenchmark(ShallowWaterBenchmark):
     def __init__(self, end_time=None):
         self.end_time = end_time or 0.2
 
-    def topography(self, x: float) -> float:
+    def bathymetry(self, x: float) -> float:
         return 0
 
     def initial_data(self, x: float) -> np.ndarray:
@@ -220,7 +220,7 @@ class SinusInflowBenchmark(ShallowWaterBenchmark):
     def inflow_left(self, t: float) -> np.ndarray:
         return np.array([2 + 0.2 * np.sin(t), 0.0])
 
-    def topography(self, x: float) -> float:
+    def bathymetry(self, x: float) -> float:
         return 0
 
     def initial_data(self, x: float) -> np.ndarray:

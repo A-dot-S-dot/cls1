@@ -269,7 +269,7 @@ class ShallowWaterAnimator(Animator[np.ndarray]):
 
     def _get_total_height(self, grid: np.ndarray, heights: np.ndarray) -> np.ndarray:
         return np.array(
-            [heights[i] + self._benchmark.topography(x) for i, x in enumerate(grid)]
+            [heights[i] + self._benchmark.bathymetry(x) for i, x in enumerate(grid)]
         )
 
     def _adjust_axes(self):
@@ -323,7 +323,7 @@ class ShallowWaterAnimator(Animator[np.ndarray]):
 
     def _add_topography(self):
         topography_values = np.array(
-            [self._benchmark.topography(x) for x in self._spatial_grid]
+            [self._benchmark.bathymetry(x) for x in self._spatial_grid]
         )
         self._height_axes.plot(self._spatial_grid, topography_values, label="$b$")
 

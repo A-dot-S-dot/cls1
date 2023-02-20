@@ -105,7 +105,7 @@ def build_bathymetry_discretization(
 ) -> np.ndarray:
     mesh = UniformMesh(benchmark.domain, mesh_size)
     interpolator = CellAverageInterpolator(mesh, 2)
-    return interpolator.interpolate(benchmark.topography)
+    return interpolator.interpolate(benchmark.bathymetry)
 
 
 def assert_constant_bathymetry(benchmark: ShallowWaterBenchmark, mesh_size: int):
