@@ -1,6 +1,7 @@
 import defaults
 from core import ode_solver
 from shallow_water import RandomOscillationNoTopographyBenchmark
+from shallow_water.solver import SHALLOW_WATER_FLUX_GETTER
 
 from . import parser_type
 
@@ -51,7 +52,7 @@ def add_page(parser, solver_parsers):
 ################################################################################
 # COMMANDS
 ################################################################################
-def add_benchmark(parser, benchmarks, default):
+def add_benchmark(parser, benchmarks, default_benchmark):
     parser.add_argument(
         "-b",
         "--benchmark",
@@ -59,7 +60,7 @@ def add_benchmark(parser, benchmarks, default):
         + ", ".join([*benchmarks.keys()]),
         type=lambda input: benchmarks[input](),
         metavar="<name>",
-        default=default(),
+        default=default_benchmark(),
     )
 
 
@@ -294,14 +295,16 @@ def add_network_load_path(parser):
 
 
 # LIMITER
-def add_limiting_gamma(parser):
+def add_high_order_flux_getter(parser):
     parser.add_argument(
-        "+g",
-        "++gamma",
-        help="Specify limiter parameter",
-        type=float,
-        metavar="<gamma>",
-        default=defaults.LIMITING_GAMMA,
+        "+f",
+        "++high-order-flux",
+        help="""Choose high order flux by key. Available keys are: """
+        + ", ".join([*SHALLOW_WATER_FLUX_GETTER.keys()]),
+        type=lambda input: SHALLOW_WATER_FLUX_GETTER[input],
+        metavar="<flux>",
+        dest="high_order_flux_getter",
+        default=SHALLOW_WATER_FLUX_GETTER["central"],
     )
 
 

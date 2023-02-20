@@ -1,12 +1,23 @@
-from typing import Callable, Tuple
+from typing import Tuple
 
 import core
-import numpy as np
-from core import finite_volume
 import lib
+import numpy as np
+import shallow_water
+
+from .central import get_central_flux
+from .lax_friedrichs import get_lax_friedrichs_flux
+from .low_order import LowOrderFlux, get_low_order_flux
+from .solver import ShallowWaterSolver
+
+SHALLOW_WATER_FLUX_GETTER = {
+    "central": get_central_flux,
+    "llf": get_lax_friedrichs_flux,
+    "low-order": get_low_order_flux,
+}
 
 
-class MCLFlux(lib.NumericalFlux):
+class MCLFlux(LowOrderFlux, lib.NumericalFluxWithArbitraryInput):
     """Calculates flux by adding to a diffusive flux a limited antidiffusive
     flux, which can be specified independently.
 
@@ -16,169 +27,268 @@ class MCLFlux(lib.NumericalFlux):
 
     """
 
-    _local_maximum: Callable[[np.ndarray], np.ndarray]
-    _local_minimum: Callable[[np.ndarray], np.ndarray]
-    _riemann_solver: core.RiemannSolver
     _high_order_flux: lib.NumericalFlux
-    _eps: float
-    _gamma: float
+    _boundary_conditions: core.BoundaryConditions
+
+    _low_order_flux_left: np.ndarray
+    _low_order_flux_right: np.ndarray
+    _antidiffusive_height_flux_left: np.ndarray
+    _antidiffusive_height_flux_right: np.ndarray
+    _antidiffusive_discharge_flux_left: np.ndarray
+    _antidiffusive_discharge_flux_right: np.ndarray
+    _height_minimum_left: np.ndarray
+    _height_minimum_right: np.ndarray
+    _height_maximum_left: np.ndarray
+    _height_maximum_right: np.ndarray
+    _limited_height_flux_left: np.ndarray
+    _limited_height_flux_right: np.ndarray
+    _limited_discharge_flux_left: np.ndarray
+    _limited_discharge_flux_right: np.ndarray
+    _limited_height_left: np.ndarray
+    _limited_height_right: np.ndarray
+    _velocity_bar_state: np.ndarray
+    _velocity_minimum_left: np.ndarray
+    _velocity_minimum_right: np.ndarray
+    _velocity_maximum_left: np.ndarray
+    _velocity_maximum_right: np.ndarray
 
     def __init__(
         self,
-        volume_space: finite_volume.FiniteVolumeSpace,
-        riemann_solver: core.RiemannSolver,
+        gravitational_acceleration: float,
         high_order_flux: lib.NumericalFlux,
-        gamma=0.1,
-        eps=1e-12,
+        boundary_conditions: core.BoundaryConditions,
+        bathymetry=None,
     ):
-        self._local_minimum = lib.LocalMinimum(volume_space)
-        self._local_maximum = lib.LocalMaximum(volume_space)
-        self._riemann_solver = riemann_solver
-        self._high_order_flux = lib.NumericalFluxWithArbitraryInput(high_order_flux)
-        self._gamma = gamma
-        self._eps = eps
+        LowOrderFlux.__init__(self, gravitational_acceleration, bathymetry)
 
-    @property
-    def riemann_solver(self) -> core.RiemannSolver:
-        return self._riemann_solver
+        self.input_dimension = high_order_flux.input_dimension
+
+        self._high_order_flux = high_order_flux
+        self._boundary_conditions = boundary_conditions
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        self._riemann_solver.solve(time, dof_vector)
+        self._low_order_flux_left, self._low_order_flux_right = LowOrderFlux.__call__(
+            self, *self._get_required_values(2, *values)
+        )
+        self._build_antidiffusive_fluxes(*values)
+        self._build_limited_height_fluxes()
+        self._build_limited_discharge_fluxes()
 
+        flux_left = (
+            self._low_order_flux_left
+            + np.array(
+                [
+                    self._limited_height_flux_left,
+                    self._limited_discharge_flux_left,
+                ]
+            ).T
+        )
+        flux_right = (
+            self._low_order_flux_right
+            + np.array(
+                [
+                    self._limited_height_flux_right,
+                    self._limited_discharge_flux_right,
+                ]
+            ).T
+        )
+        return flux_left, flux_right
+
+    def _build_antidiffusive_fluxes(self, *values: np.ndarray):
         high_order_flux_left, high_order_flux_right = self._high_order_flux(*values)
-        high_order_flux = np.array([*high_order_flux_left, -high_order_flux_right[-1]])
 
-        antidiffusive_flux = high_order_flux + -low_order_flux
-        limited_flux = self._limit_fluxes(antidiffusive_flux)
+        antidiffusive_flux_left = high_order_flux_left + -self._low_order_flux_left
+        antidiffusive_flux_right = high_order_flux_right + -self._low_order_flux_right
 
-        return (
-            low_order_flux[:-1] + limited_flux[:-1],
-            -low_order_flux[1:] + -limited_flux[1:],
+        self._antidiffusive_height_flux_left = antidiffusive_flux_left[:, 0]
+        self._antidiffusive_height_flux_right = antidiffusive_flux_right[:, 0]
+        self._antidiffusive_discharge_flux_left = antidiffusive_flux_left[:, 1]
+        self._antidiffusive_discharge_flux_right = antidiffusive_flux_right[:, 1]
+
+    def _build_limited_height_fluxes(self):
+        self._build_height_bounds()
+
+        self._limited_height_flux_left = self._limit_antidiffusive_flux(
+            self._antidiffusive_height_flux_left,
+            inflow_value=self._modified_height_right,
+            outflow_value=self._modified_height_left,
+            inflow_min=self._height_minimum_right,
+            inflow_max=self._height_maximum_right,
+            outflow_min=self._height_minimum_left,
+            outflow_max=self._height_maximum_left,
+        )
+        self._limited_height_flux_right = self._limit_antidiffusive_flux(
+            self._antidiffusive_height_flux_right,
+            inflow_value=self._modified_height_left,
+            outflow_value=self._modified_height_right,
+            inflow_min=self._height_minimum_left,
+            inflow_max=self._height_maximum_left,
+            outflow_min=self._height_minimum_right,
+            outflow_max=self._height_maximum_right,
         )
 
-    def _limit_fluxes(
+    def _build_height_bounds(self):
+        hl, hr = self._boundary_conditions.get_cell_neighbours(
+            self._modified_height_left, self._modified_height_right
+        )
+
+        self._replace_nans(hl, hr)
+
+        height_minimum = np.minimum(hl, hr)
+        height_maximum = np.maximum(hl, hr)
+
+        self._height_minimum_left = height_minimum[:-1]
+        self._height_minimum_right = height_minimum[1:]
+        self._height_maximum_left = height_maximum[:-1]
+        self._height_maximum_right = height_maximum[1:]
+
+    def _replace_nans(self, *values: np.ndarray):
+        for x in values:
+            if np.isnan(x[0]):
+                x[0] = x[1].copy()
+
+            if np.isnan(x[-1]):
+                x[-1] = x[-2].copy()
+
+    def _limit_antidiffusive_flux(
         self,
         antidiffusive_flux: np.ndarray,
+        inflow_value: np.ndarray,
+        inflow_min: np.ndarray,
+        inflow_max: np.ndarray,
+        outflow_value: np.ndarray,
+        outflow_max: np.ndarray,
+        outflow_min: np.ndarray,
     ) -> np.ndarray:
-        P_minus, P_plus = self._calculate_signed_antidiffusive_fluxes(
-            antidiffusive_flux
-        )
-        Q_minus, Q_plus = self._calculate_local_antidiffusive_flux_bounds(
-            self._riemann_solver.dof_vector_with_applied_boundary_conditions
-        )
-        R_minus, R_plus = self._calculate_R(P_minus, P_plus, Q_minus, Q_plus)
-        alpha = self._calculate_alpha(R_minus, R_plus, antidiffusive_flux)
+        limited_flux = np.zeros(len(antidiffusive_flux))
 
-        limited_flux = alpha * antidiffusive_flux
+        positive_flux_case = antidiffusive_flux >= 0
+        negative_flux_case = antidiffusive_flux < 0
+
+        limited_flux[positive_flux_case] = np.minimum(
+            antidiffusive_flux[positive_flux_case],
+            self._wave_speed[positive_flux_case]
+            * np.maximum(
+                inflow_max[positive_flux_case] - inflow_value[positive_flux_case],
+                outflow_value[positive_flux_case] - outflow_min[positive_flux_case],
+            ),
+        )
+
+        limited_flux[negative_flux_case] = np.maximum(
+            antidiffusive_flux[negative_flux_case],
+            self._wave_speed[negative_flux_case]
+            * np.maximum(
+                inflow_min[negative_flux_case] - inflow_value[negative_flux_case],
+                outflow_value[negative_flux_case] - outflow_max[negative_flux_case],
+            ),
+        )
 
         return limited_flux
 
-    def _calculate_signed_antidiffusive_fluxes(
-        self, antidiffusive_flux: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        P_minus = np.minimum(antidiffusive_flux[:-1], 0.0) + np.minimum(
-            -antidiffusive_flux[1:], 0.0
+    def _build_limited_discharge_fluxes(self):
+        self._build_limited_heights()
+        self._build_velocity_bounds()
+
+        self._limited_discharge_flux_left = self._limit_antidiffusive_flux(
+            self._antidiffusive_discharge_flux_left,
+            inflow_value=self._modified_discharge_right,
+            outflow_value=self._modified_discharge_left,
+            inflow_min=self._velocity_minimum_right * self._limited_height_right,
+            inflow_max=self._velocity_maximum_right * self._limited_height_right,
+            outflow_min=self._velocity_minimum_left * self._limited_height_left,
+            outflow_max=self._velocity_maximum_left * self._limited_height_left,
         )
-        P_plus = np.maximum(antidiffusive_flux[:-1], 0.0) + np.maximum(
-            -antidiffusive_flux[1:], 0.0
-        )
-
-        return (
-            self._apply_boundary_conditions(
-                P_minus,
-                np.minimum(-antidiffusive_flux[0], 0.0),
-                np.minimum(antidiffusive_flux[-1], 0.0),
-            ),
-            self._apply_boundary_conditions(
-                P_plus,
-                np.maximum(-antidiffusive_flux[0], 0.0),
-                np.maximum(antidiffusive_flux[-1], 0.0),
-            ),
-        )
-
-    def _apply_boundary_conditions(
-        self, values: np.ndarray, left_value, right_value
-    ) -> np.ndarray:
-        if self._periodic:
-            return np.array([values[-1], *values, values[0]])
-        else:
-            return np.array([left_value, *values, right_value])
-
-    def _calculate_local_antidiffusive_flux_bounds(
-        self, dof_vector: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        u_min, u_max = self._local_minimum(dof_vector[1:-1]), self._local_maximum(
-            dof_vector[1:-1]
-        )
-        u_min = self._apply_boundary_conditions(
-            u_min, np.amin(dof_vector[0:2], axis=0), np.amin(dof_vector[-2:], axis=0)
-        )
-        u_max = self._apply_boundary_conditions(
-            u_max, np.amax(dof_vector[0:2], axis=0), np.amax(dof_vector[-2:], axis=0)
-        )
-        di = self._calculate_di()
-        u_bar = self._calculate_u_bar(di)
-
-        u_min = np.minimum(u_bar, u_min)
-        u_max = np.maximum(u_bar, u_max)
-
-        Q_minus = di[:, None] * (u_min + -u_bar + self._gamma * (u_min + -dof_vector))
-        Q_plus = di[:, None] * (u_max + -u_bar + self._gamma * (u_max + -dof_vector))
-
-        return Q_minus, Q_plus
-
-    def _calculate_di(self) -> np.ndarray:
-        wave_speed = self._riemann_solver._wave_speed_right
-        di = wave_speed[:-1] + wave_speed[1:]
-
-        return self._apply_boundary_conditions(di, wave_speed[0], wave_speed[-1])
-
-    def _calculate_u_bar(self, di: np.ndarray) -> np.ndarray:
-        wave_speed = self._riemann_solver._wave_speed_right
-        product = wave_speed[:, None] * self._riemann_solver.intermediate_state
-        summand = product[:-1] + product[1:]
-
-        return (
-            self._apply_boundary_conditions(summand, product[0], product[-1])
-            / di[:, None]
+        self._limited_discharge_flux_right = self._limit_antidiffusive_flux(
+            self._antidiffusive_discharge_flux_right,
+            inflow_value=self._modified_discharge_left,
+            outflow_value=self._modified_discharge_right,
+            inflow_min=self._velocity_minimum_left * self._limited_height_left,
+            inflow_max=self._velocity_maximum_left * self._limited_height_left,
+            outflow_min=self._velocity_minimum_right * self._limited_height_right,
+            outflow_max=self._velocity_maximum_right * self._limited_height_right,
         )
 
-    def _calculate_R(
+    def _build_limited_heights(self):
+        self._limited_height_left = (
+            self._height_HLL + self._limited_height_flux_left / self._wave_speed
+        )
+        self._limited_height_right = (
+            self._height_HLL + self._limited_height_flux_right / self._wave_speed
+        )
+
+    def _build_velocity_bounds(self):
+        self._build_velocity_bar_state()
+
+        hl, hr = self._boundary_conditions.get_cell_neighbours(self._height_HLL)
+        vl, vr = self._boundary_conditions.get_cell_neighbours(self._velocity_bar_state)
+        ql, qr = self._boundary_conditions.get_cell_neighbours(
+            self._modified_discharge_left, self._modified_discharge_right
+        )
+
+        velocity_minimum = np.minimum(np.minimum(vl, ql / hl), np.minimum(vr, qr / hr))
+        velocity_maximum = np.maximum(np.maximum(vl, ql / hl), np.maximum(vr, qr / hr))
+
+        self._velocity_minimum_left = velocity_minimum[:-1]
+        self._velocity_minimum_right = velocity_minimum[1:]
+        self._velocity_maximum_left = velocity_maximum[:-1]
+        self._velocity_maximum_right = velocity_maximum[1:]
+
+    def _build_velocity_bar_state(self):
+        self._velocity_bar_state = (
+            self._modified_discharge_left + self._modified_discharge_right
+        ) / (self._modified_height_left + self._modified_height_right)
+
+
+class EntropyStableMCLFlux(MCLFlux):
+    ...
+
+
+def get_mcl_flux(
+    benchmark: shallow_water.ShallowWaterBenchmark,
+    mesh: core.Mesh,
+    high_order_flux_getter: lib.FLUX_GETTER[shallow_water.ShallowWaterBenchmark],
+) -> MCLFlux:
+    high_order_flux = high_order_flux_getter(benchmark, mesh)
+    boundary_conditions = shallow_water.get_boundary_conditions(
+        benchmark.boundary_conditions,
+        inflow_left=benchmark.inflow_left,
+        inflow_right=benchmark.inflow_right,
+    )
+    bathymetry = shallow_water.build_bathymetry_discretization(benchmark, len(mesh))
+
+    return MCLFlux(
+        benchmark.gravitational_acceleration,
+        high_order_flux,
+        boundary_conditions,
+        bathymetry=bathymetry,
+    )
+
+
+def get_mcl_central_flux(
+    benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
+):
+    return get_mcl_flux(benchmark, mesh, get_central_flux)
+
+
+def get_sde_mcl_flux(
+    benchmar: shallow_water.Benchmark, mesh: core.Mesh
+) -> EntropyStableMCLFlux:
+    ...
+
+
+class MCLSolver(ShallowWaterSolver):
+    _high_order_flux_getter: lib.FLUX_GETTER[shallow_water.ShallowWaterBenchmark]
+
+    def __init__(
         self,
-        P_minus: np.ndarray,
-        P_plus: np.ndarray,
-        Q_minus: np.ndarray,
-        Q_plus: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        P_minus = P_minus.copy()
-        P_plus = P_plus.copy()
+        benchmark: shallow_water.ShallowWaterBenchmark,
+        high_order_flux_getter=None,
+        **kwargs
+    ):
+        self._high_order_flux_getter = high_order_flux_getter or get_central_flux
+        super().__init__(benchmark, **kwargs)
 
-        P_minus[np.abs(P_minus) < self._eps] = np.nan
-        P_plus[np.abs(P_plus) < self._eps] = np.nan
-
-        R_minus = np.minimum(Q_minus / P_minus, 1.0)
-        R_plus = np.minimum(Q_plus / P_plus, 1.0)
-
-        R_minus[np.isnan(R_minus)] = 1.0
-        R_plus[np.isnan(R_plus)] = 1.0
-
-        return R_minus, R_plus
-
-    def _calculate_alpha(
-        self,
-        R_minus: np.ndarray,
-        R_plus: np.ndarray,
-        antidiffusive_flux: np.ndarray,
-    ) -> np.ndarray:
-        R_minus_left = R_minus[:-1]
-        R_minus_right = R_minus[1:]
-        R_plus_left = R_plus[:-1]
-        R_plus_right = R_plus[1:]
-
-        alpha = np.ones(antidiffusive_flux.shape)
-        case_1 = antidiffusive_flux > 0
-        case_2 = antidiffusive_flux < 0
-        alpha[case_1] = np.minimum(R_plus_left, R_minus_right)[case_1]
-        alpha[case_2] = np.minimum(R_minus_left, R_plus_right)[case_2]
-
-        return alpha
+    def _get_flux(
+        self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
+    ) -> lib.NumericalFlux:
+        return get_mcl_flux(benchmark, mesh, self._high_order_flux_getter)

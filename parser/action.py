@@ -28,7 +28,11 @@ class SolverAction(argparse.Action):
         slice_index = None
 
         for i, value in enumerate(values):
-            if i > 0 and value in self._solver_parsers.keys():
+            if (
+                i > 0
+                and value in self._solver_parsers.keys()
+                and values[i - 1] not in ["+f"]
+            ):
                 slice_index = i
                 break
 

@@ -4,8 +4,8 @@ from typing import Type
 
 import defaults
 from core.solver import Solver
-from scalar.solver import *
-from shallow_water.solver import *
+from scalar import solver as scalar
+from shallow_water import solver as shallow_water
 
 from . import argument
 
@@ -41,7 +41,7 @@ class SolverParser(argparse.ArgumentParser, ABC):
 class CGParser(SolverParser):
     prog = "cg"
     name = "Continuous Galerkin"
-    solver = ContinuousGalerkinSolver
+    solver = scalar.ContinuousGalerkinSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -55,7 +55,7 @@ class CGParser(SolverParser):
 class LowCGParser(SolverParser):
     prog = "cg_low"
     name = "Low order Continuous Galerkin"
-    solver = LowOrderContinuousGalerkinSolver
+    solver = scalar.LowOrderContinuousGalerkinSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -70,10 +70,10 @@ class LowCGParser(SolverParser):
 class MCLParser(SolverParser):
     prog = "mcl"
     name = "MCL Solver"
-    solver = MCLSolver
+    solver = scalar.MCLSolver
 
     def _add_arguments(self):
-        argument.add_name(self, "MCL Solver")
+        argument.add_name(self, self.name)
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
         argument.add_polynomial_degree(self)
@@ -85,7 +85,7 @@ class MCLParser(SolverParser):
 class LocalLaxFriedrichsParser(SolverParser):
     prog = "llf"
     name = "Local Lax-Friedrichs finite volume scheme"
-    solver = LaxFriedrichsSolver
+    solver = shallow_water.LaxFriedrichsSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -98,7 +98,7 @@ class LocalLaxFriedrichsParser(SolverParser):
 class AntidiffusiveLocalLaxFriedrichsParser(SolverParser):
     prog = "antidiffusive-llf"
     name = "Local Lax-Friedrichs finite volume scheme with Antidiffusion"
-    solver = AntidiffusiveLocalLaxFriedrichsSolver
+    solver = shallow_water.AntidiffusiveLocalLaxFriedrichsSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -112,7 +112,7 @@ class AntidiffusiveLocalLaxFriedrichsParser(SolverParser):
 class CoarseLaxFriedrichsParser(SolverParser):
     prog = "coarse-llf"
     name = "Coarse Local Lax-Friedrichs finite volume scheme"
-    solver = CoarseLocalLaxFriedrichsSolver
+    solver = shallow_water.CoarseLocalLaxFriedrichsSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -126,7 +126,7 @@ class CoarseLaxFriedrichsParser(SolverParser):
 class CentralFluxParser(SolverParser):
     prog = "central"
     name = "Simple high order central scheme"
-    solver = CentralFluxSolver
+    solver = shallow_water.CentralFluxSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -139,7 +139,7 @@ class CentralFluxParser(SolverParser):
 class LowOrderParser(SolverParser):
     prog = "low-order"
     name = "Low order finite volume scheme"
-    solver = LowOrderSolver
+    solver = shallow_water.LowOrderSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -152,7 +152,7 @@ class LowOrderParser(SolverParser):
 class CoarseLowOrderParser(SolverParser):
     prog = "coarse-low-order"
     name = "Coarse low order finite volume scheme"
-    solver = CoarseLowOrderSolver
+    solver = shallow_water.CoarseLowOrderSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -166,7 +166,7 @@ class CoarseLowOrderParser(SolverParser):
 class AntidiffusiveLowOrderParser(SolverParser):
     prog = "antidiffusive-low-order"
     name = "Low order finite volume scheme with Antidiffusion"
-    solver = AntidiffusiveLowOrderSolver
+    solver = shallow_water.AntidiffusiveLowOrderSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -177,10 +177,25 @@ class AntidiffusiveLowOrderParser(SolverParser):
         argument.add_antidiffusion_gamma(self)
 
 
+class ShallowWaterMCLParser(SolverParser):
+    prog = "mcl"
+    name = "MCL Solver"
+    solver = shallow_water.MCLSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+        argument.add_ode_solver(self)
+        argument.add_high_order_flux_getter(self)
+
+
 class SubgridNetworkParser(SolverParser):
     prog = "subgrid-network"
     name = """Solver with NN corrected flux"""
-    solver = SubgridNetworkSolver
+    solver = shallow_water.SubgridNetworkSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -208,6 +223,7 @@ SHALLOW_WATER_SOLVER_PARSERS = {
     "coarse-low-order": CoarseLowOrderParser,
     "antidiffusive-low-order": AntidiffusiveLowOrderParser,
     "central": CentralFluxParser,
+    "mcl": ShallowWaterMCLParser,
     "subgrid-network": SubgridNetworkParser,
 }
 

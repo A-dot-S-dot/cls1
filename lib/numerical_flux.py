@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Tuple
+from typing import Callable, Tuple, TypeVar
 
 import numpy as np
 from core import finite_volume
 import core
+
+BENCHMARK = TypeVar("BENCHMARK", bound=core.Benchmark)
 
 
 class NumericalFlux(ABC):
@@ -14,10 +16,7 @@ class NumericalFlux(ABC):
         ...
 
 
-class NumericalFluxBuilder:
-    @staticmethod
-    def build_flux(benchmark: core.Benchmark, mesh: core.Mesh) -> NumericalFlux:
-        raise NotImplementedError
+FLUX_GETTER = Callable[[BENCHMARK, core.Mesh], NumericalFlux]
 
 
 class NumericalFluxWithHistory(NumericalFlux):
@@ -66,14 +65,19 @@ class NumericalFluxWithArbitraryInput(NumericalFlux):
         self._numerical_flux = numerical_flux
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        assert (
-            len(values) >= self.input_dimension
-        ), f"{self.input_dimension} inputs are needed."
+        return self._numerical_flux(
+            *self._get_required_values(self.input_dimension, *values)
+        )
+
+    def _get_required_values(
+        self, input_dimension: int, *values: np.ndarray
+    ) -> Tuple[np.ndarray, ...]:
+        assert len(values) >= input_dimension, f"{input_dimension} inputs are needed."
         assert len(values) % 2 == 0, "Even number of inputs needed."
 
-        delta = (len(values) - self.input_dimension) // 2
+        delta = (len(values) - input_dimension) // 2
 
-        return self._numerical_flux(*values[delta : len(values) - delta])
+        return values[delta : len(values) - delta]
 
 
 class CorrectedNumericalFlux(NumericalFlux):
