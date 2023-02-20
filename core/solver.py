@@ -82,14 +82,3 @@ class Solver(Generic[T]):
             self.__class__.__name__
             + f"(right_side={self._right_hand_side}, ode_solver={self._ode_solver}, time_stepping={self._time_stepping})"
         )
-
-
-class CoarseSolver(Solver):
-    _coarsening_degree: int
-
-    @property
-    def solution(self) -> DiscreteSolution:
-        if isinstance(self._solution, DiscreteSolutionWithHistory):
-            return CoarseSolutionWithHistory(self._solution, self._coarsening_degree)
-        else:
-            return CoarseSolution(self._solution, self._coarsening_degree)
