@@ -82,7 +82,7 @@ class MCLParser(SolverParser):
         argument.add_ode_solver(self)
 
 
-class LocalLaxFriedrichsParser(SolverParser):
+class LaxFriedrichsParser(SolverParser):
     prog = "llf"
     name = "Lax-Friedrichs finite volume scheme"
     solver = shallow_water.LaxFriedrichsSolver
@@ -112,6 +112,19 @@ class LowOrderParser(SolverParser):
     prog = "low-order"
     name = "Low order finite volume scheme"
     solver = shallow_water.LowOrderSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
+        argument.add_adaptive_time_stepping(self)
+
+
+class EnergyStableParser(SolverParser):
+    prog = "energy-stable"
+    name = "Energy stable finite volume scheme"
+    solver = shallow_water.EnergyStableSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
@@ -190,9 +203,10 @@ SCALAR_SOLVER_PARSERS = {
     "mcl": MCLParser,
 }
 SHALLOW_WATER_SOLVER_PARSERS = {
-    "llf": LocalLaxFriedrichsParser,
+    "llf": LaxFriedrichsParser,
     "low-order": LowOrderParser,
     "central": CentralFluxParser,
+    "energy-stable": EnergyStableParser,
     "subgrid-network": SubgridNetworkParser,
     "antidiffusion": AntidiffusionParser,
     "coarse": CoarseParser,
