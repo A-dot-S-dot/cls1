@@ -35,7 +35,6 @@ class CellDependentFunction(ABC, Generic[T]):
 
 class SolverSpace(ABC, Generic[T]):
     mesh: Mesh
-    dof_neighbours: NeighbourIndicesMapping
 
     @property
     @abstractmethod

@@ -3,7 +3,6 @@ from typing import Generic, TypeVar
 import numpy as np
 from core.benchmark import Benchmark
 from core.discrete_solution import DiscreteSolution, DiscreteSolutionWithHistory
-from .index_mapping import NeighbourIndicesMapping
 from core.interpolate import CellAverageInterpolator
 from core.mesh import Mesh, UniformMesh
 from core.space import CellDependentFunction, SolverSpace
@@ -13,13 +12,10 @@ T = TypeVar("T", float, np.ndarray)
 
 class FiniteVolumeSpace(SolverSpace, Generic[T]):
     mesh: Mesh
-    dof_neighbours: NeighbourIndicesMapping
-
     cell_centers: np.ndarray
 
-    def __init__(self, mesh: Mesh, periodic=False):
+    def __init__(self, mesh: Mesh):
         self.mesh = mesh
-        self.dof_neighbours = NeighbourIndicesMapping(len(mesh), periodic)
 
         self._build_cell_centers()
 
@@ -58,10 +54,9 @@ def build_finite_volume_solution(
     benchmark: Benchmark,
     mesh_size: int,
     save_history=False,
-    periodic=False,
 ) -> DiscreteSolution[FiniteVolumeSpace]:
     mesh = UniformMesh(benchmark.domain, mesh_size)
-    space = FiniteVolumeSpace(mesh, periodic=periodic)
+    space = FiniteVolumeSpace(mesh)
     interpolator = CellAverageInterpolator(mesh, 2)
     solution_type = DiscreteSolutionWithHistory if save_history else DiscreteSolution
 

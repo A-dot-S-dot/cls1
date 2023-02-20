@@ -28,7 +28,6 @@ class ShallowWaterSolver(core.Solver):
             benchmark,
             mesh_size or defaults.CALCULATE_MESH_SIZE,
             save_history,
-            benchmark.boundary_conditions == "periodic",
         )
         step_length = solution.space.mesh.step_length
 
