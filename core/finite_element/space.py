@@ -329,7 +329,7 @@ class AnchorNodesFastFiniteElement(FastFiniteElement):
         super().set_derivatives(*self._anchor_nodes)
 
 
-def build_finite_element_solution(
+def get_finite_element_solution(
     benchmark: Benchmark, mesh_size: int, polynomial_degree: int, save_history=False
 ) -> DiscreteSolution[LagrangeSpace]:
     mesh = UniformMesh(benchmark.domain, mesh_size)

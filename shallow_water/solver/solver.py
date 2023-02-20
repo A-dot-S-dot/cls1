@@ -24,14 +24,12 @@ class ShallowWaterSolver(core.Solver):
         adaptive=False,
         save_history=False,
     ) -> Dict:
-        solution = finite_volume.build_finite_volume_solution(
-            benchmark,
-            mesh_size or defaults.CALCULATE_MESH_SIZE,
-            save_history,
+        solution = finite_volume.get_finite_volume_solution(
+            benchmark, mesh_size or defaults.CALCULATE_MESH_SIZE, save_history
         )
         step_length = solution.space.mesh.step_length
 
-        numerical_flux = self._build_flux(benchmark, solution.space.mesh)
+        numerical_flux = self._get_flux(benchmark, solution.space.mesh)
         boundary_conditions = shallow_water.get_boundary_conditions(
             benchmark.boundary_conditions,
             inflow_left=benchmark.inflow_left,
@@ -46,7 +44,7 @@ class ShallowWaterSolver(core.Solver):
             boundary_conditions,
             step_length,
         )
-        time_stepping = core.build_adaptive_time_stepping(
+        time_stepping = core.get_adaptive_time_stepping(
             benchmark,
             solution,
             optimal_time_step,
@@ -65,7 +63,7 @@ class ShallowWaterSolver(core.Solver):
             "cfl_checker": cfl_checker,
         }
 
-    def _build_flux(
+    def _get_flux(
         self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
     ) -> lib.NumericalFlux:
         raise NotImplementedError

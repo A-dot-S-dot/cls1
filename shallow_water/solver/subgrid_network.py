@@ -139,7 +139,7 @@ class SubgridNetworkSolver(ShallowWaterSolver):
         self._network_path = network_path or defaults.NETWORK_PATH
         return super()._build_args(benchmark, kwargs)
 
-    def _build_flux(
+    def _get_flux(
         self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
     ) -> lib.NumericalFlux:
         numerical_flux = low_order.LowOrderFluxBuilder.build_flux(benchmark, mesh)

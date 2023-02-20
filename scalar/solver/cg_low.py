@@ -91,7 +91,7 @@ class LowOrderContinuousGalerkinSolver(core.Solver):
         cfl_number = cfl_number or defaults.MCL_CFL_NUMBER
         ode_solver_type = ode_solver_type or os.Heun
 
-        solution = finite_element.build_finite_element_solution(
+        solution = finite_element.get_finite_element_solution(
             benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
         right_hand_side = build_cg_low_right_hand_side(
@@ -101,7 +101,7 @@ class LowOrderContinuousGalerkinSolver(core.Solver):
             lib.LumpedMassVector(solution.space),
             lib.build_artificial_diffusion(benchmark.problem, solution.space),
         )
-        time_stepping = core.build_adaptive_time_stepping(
+        time_stepping = core.get_adaptive_time_stepping(
             benchmark, solution, optimal_time_step, cfl_number, adaptive
         )
         cfl_checker = core.CFLChecker(optimal_time_step)

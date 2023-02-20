@@ -7,7 +7,7 @@ from core import finite_element
 from core.benchmark import Benchmark
 from core.solver import Solver
 from core.system import SystemMatrix
-from core.time_stepping import build_mesh_dependent_time_stepping
+from core.time_stepping import get_mesh_dependent_time_stepping
 
 
 class CGRightHandSide:
@@ -63,7 +63,7 @@ class ContinuousGalerkinSolver(Solver):
         cfl_number = cfl_number or defaults.FINITE_ELEMENT_CFL_NUMBER
         exact_flux = exact_flux
 
-        solution = finite_element.build_finite_element_solution(
+        solution = finite_element.get_finite_element_solution(
             benchmark, mesh_size, polynomial_degree, save_history=save_history
         )
 
@@ -71,7 +71,7 @@ class ContinuousGalerkinSolver(Solver):
             benchmark.problem, solution.space, exact_flux=exact_flux
         )
         ode_solver = finite_element.build_optimal_ode_solver(solution.space)
-        time_stepping = build_mesh_dependent_time_stepping(
+        time_stepping = get_mesh_dependent_time_stepping(
             benchmark, solution.space.mesh, cfl_number
         )
 

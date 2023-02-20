@@ -232,9 +232,7 @@ class GenerateData(Command):
                 height_average=shallow_water.HEIGHT_AVERAGE
             )
         )
-        fine_flux_builder = (
-            fine_flux_builder or lax_friedrichs.build_lax_friedrichs_flux
-        )
+        fine_flux_builder = fine_flux_builder or lax_friedrichs.get_lax_friedrichs_flux
         coarse_flux_builder = coarse_flux_builder or fine_flux_builder
         coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
         skip = skip or defaults.SKIP

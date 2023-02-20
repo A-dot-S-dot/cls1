@@ -50,10 +50,8 @@ class FiniteVolumeElement(CellDependentFunction, Generic[T]):
         return self._dof_vector[cell_index]
 
 
-def build_finite_volume_solution(
-    benchmark: Benchmark,
-    mesh_size: int,
-    save_history=False,
+def get_finite_volume_solution(
+    benchmark: Benchmark, mesh_size: int, save_history=False
 ) -> DiscreteSolution[FiniteVolumeSpace]:
     mesh = UniformMesh(benchmark.domain, mesh_size)
     space = FiniteVolumeSpace(mesh)

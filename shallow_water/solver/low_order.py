@@ -127,25 +127,23 @@ class LowOrderFlux(lib.NumericalFlux):
             )
 
 
-class LowOrderFluxBuilder(lib.NumericalFluxBuilder):
-    @staticmethod
-    def build_flux(
-        benchmark: shallow_water.ShallowWaterBenchmark,
-        mesh: core.Mesh,
-    ) -> LowOrderFlux:
-        topography = shallow_water.build_bathymetry_discretization(benchmark, len(mesh))
+def get_low_order_flux(
+    benchmark: shallow_water.ShallowWaterBenchmark,
+    mesh: core.Mesh,
+) -> LowOrderFlux:
+    bathymetry = shallow_water.build_bathymetry_discretization(benchmark, len(mesh))
 
-        return LowOrderFlux(
-            benchmark.gravitational_acceleration,
-            bathymetry=topography,
-        )
+    return LowOrderFlux(
+        benchmark.gravitational_acceleration,
+        bathymetry=bathymetry,
+    )
 
 
 class LowOrderSolver(ShallowWaterSolver):
-    def _build_flux(
+    def _get_flux(
         self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
     ) -> lib.NumericalFlux:
-        return LowOrderFluxBuilder.build_flux(benchmark, mesh)
+        return get_low_order_flux(benchmark, mesh)
 
 
 class CoarseLowOrderSolver(LowOrderSolver, core.CoarseSolver):
@@ -162,12 +160,12 @@ class AntidiffusiveLowOrderSolver(ShallowWaterSolver):
 
         return super()._build_args(benchmark, **kwargs)
 
-    def _build_flux(
+    def _get_flux(
         self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
     ) -> lib.NumericalFlux:
         shallow_water.assert_constant_bathymetry(benchmark, len(mesh))
 
-        numerical_flux = LowOrderFluxBuilder.build_flux(benchmark, mesh)
+        numerical_flux = get_low_order_flux(benchmark, mesh)
         antidiffusive_flux = lib.LinearAntidiffusiveFlux(self._gamma, mesh.step_length)
 
         return lib.CorrectedNumericalFlux(numerical_flux, antidiffusive_flux)

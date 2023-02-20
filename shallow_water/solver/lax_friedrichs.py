@@ -9,23 +9,21 @@ from ..benchmark import ShallowWaterBenchmark
 from .solver import ShallowWaterSolver
 
 
-class LaxFriedrichsFluxBuilder(lib.NumericalFluxBuilder):
-    @staticmethod
-    def build_flux(
-        benchmark: shallow_water.ShallowWaterBenchmark,
-        mesh: core.Mesh,
-    ) -> lib.LaxFriedrichsFlux:
-        riemann_solver = shallow_water.RiemannSolver()
-        return lib.LaxFriedrichsFlux(riemann_solver)
+def get_lax_friedrichs_flux(
+    benchmark: shallow_water.ShallowWaterBenchmark,
+    mesh: core.Mesh,
+) -> lib.LaxFriedrichsFlux:
+    riemann_solver = shallow_water.RiemannSolver()
+    return lib.LaxFriedrichsFlux(riemann_solver)
 
 
 class LaxFriedrichsSolver(ShallowWaterSolver):
-    def _build_flux(
+    def _get_flux(
         self, benchmark: ShallowWaterBenchmark, mesh: core.Mesh
     ) -> lib.NumericalFlux:
         shallow_water.assert_constant_bathymetry(benchmark, len(mesh))
 
-        return LaxFriedrichsFluxBuilder.build_flux(benchmark, mesh)
+        return get_lax_friedrichs_flux(benchmark, mesh)
 
 
 class CoarseLocalLaxFriedrichsSolver(LaxFriedrichsSolver, core.CoarseSolver):
@@ -42,12 +40,12 @@ class AntidiffusiveLocalLaxFriedrichsSolver(ShallowWaterSolver):
 
         return super()._build_args(benchmark, **kwargs)
 
-    def _build_flux(
+    def _get_flux(
         self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
     ) -> lib.NumericalFlux:
         shallow_water.assert_constant_bathymetry(benchmark, len(mesh))
 
-        numerical_flux = LaxFriedrichsFluxBuilder.build_flux(benchmark, mesh)
+        numerical_flux = get_lax_friedrichs_flux(benchmark, mesh)
         antidiffusive_flux = lib.LinearAntidiffusiveFlux(self._gamma, mesh.step_length)
 
         return lib.CorrectedNumericalFlux(numerical_flux, antidiffusive_flux)

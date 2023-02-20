@@ -161,7 +161,7 @@ class TimeStepping:
         )
 
 
-def build_mesh_dependent_time_stepping(
+def get_mesh_dependent_time_stepping(
     benchmark: Benchmark, mesh: Mesh, cfl_number: float
 ) -> TimeStepping:
     return TimeStepping(
@@ -172,7 +172,7 @@ def build_mesh_dependent_time_stepping(
     )
 
 
-def build_adaptive_time_stepping(
+def get_adaptive_time_stepping(
     benchmark: Benchmark,
     solution: DiscreteSolution,
     optimal_time_step: Callable[[float, np.ndarray], float],
