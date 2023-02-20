@@ -140,32 +140,6 @@ def get_low_order_flux(
 
 
 class LowOrderSolver(ShallowWaterSolver):
-    def _get_flux(
-        self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
-    ) -> lib.NumericalFlux:
-        return get_low_order_flux(benchmark, mesh)
-
-
-class CoarseLowOrderSolver(LowOrderSolver, core.CoarseSolver):
-    def __init__(self, *args, coarsening_degree=None, **kwargs):
-        self._coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
-        LowOrderSolver.__init__(self, *args, **kwargs)
-
-
-class AntidiffusiveLowOrderSolver(ShallowWaterSolver):
-    def _build_args(
-        self, benchmark: shallow_water.ShallowWaterBenchmark, gamma=None, **kwargs
-    ) -> Dict:
-        self._gamma = gamma or defaults.ANTIDIFFUSION_GAMMA
-
-        return super()._build_args(benchmark, **kwargs)
-
-    def _get_flux(
-        self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
-    ) -> lib.NumericalFlux:
-        shallow_water.assert_constant_bathymetry(benchmark, len(mesh))
-
-        numerical_flux = get_low_order_flux(benchmark, mesh)
-        antidiffusive_flux = lib.LinearAntidiffusiveFlux(self._gamma, mesh.step_length)
-
-        return lib.CorrectedNumericalFlux(numerical_flux, antidiffusive_flux)
+    def __init__(self, benchmark: shallow_water.ShallowWaterBenchmark, **kwargs):
+        self._get_flux = get_low_order_flux
+        super().__init__(benchmark, **kwargs)

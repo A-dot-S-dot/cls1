@@ -3,7 +3,7 @@
 shallow water equations with topography' by H. Hajduk and D. Kuzmin.
 
 """
-from typing import Tuple
+from typing import Dict, Tuple
 
 import core
 import lib
@@ -258,29 +258,14 @@ def get_mcl_flux(
     )
 
 
-def get_mcl_central_flux(
-    benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
-):
-    return get_mcl_flux(benchmark, mesh, get_central_flux)
-
-
-def get_sde_mcl_flux(
-    benchmar: shallow_water.Benchmark, mesh: core.Mesh
-) -> EntropyStableMCLFlux:
-    ...
-
-
 class MCLSolver(ShallowWaterSolver):
     _high_order_flux_getter: lib.FLUX_GETTER[shallow_water.ShallowWaterBenchmark]
 
-    def __init__(
-        self,
-        benchmark: shallow_water.ShallowWaterBenchmark,
-        high_order_flux_getter=None,
-        **kwargs
-    ):
-        self._high_order_flux_getter = high_order_flux_getter or get_central_flux
-        super().__init__(benchmark, **kwargs)
+    def _build_args(
+        self, benchmark: shallow_water.ShallowWaterBenchmark, flux_getter=None, **kwargs
+    ) -> Dict:
+        self._high_order_flux_getter = flux_getter or get_central_flux
+        return super()._build_args(benchmark, **kwargs)
 
     def _get_flux(
         self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh

@@ -303,8 +303,7 @@ def add_flux_getter(parser):
         + ", ".join([*SHALLOW_WATER_FLUX_GETTER.keys()]),
         type=lambda input: SHALLOW_WATER_FLUX_GETTER[input],
         metavar="<flux>",
-        dest="high_getter",
-        default=SHALLOW_WATER_FLUX_GETTER["central"],
+        dest="flux_getter",
     )
 
 

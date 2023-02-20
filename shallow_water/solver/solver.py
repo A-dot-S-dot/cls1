@@ -8,6 +8,8 @@ from core import finite_volume
 
 
 class ShallowWaterSolver(core.Solver):
+    _get_flux: lib.FLUX_GETTER[shallow_water.ShallowWaterBenchmark]
+
     def __init__(self, benchmark: shallow_water.ShallowWaterBenchmark, **kwargs):
         args = self._build_args(benchmark, **kwargs)
 
@@ -62,8 +64,3 @@ class ShallowWaterSolver(core.Solver):
             "short": short,
             "cfl_checker": cfl_checker,
         }
-
-    def _get_flux(
-        self, benchmark: shallow_water.ShallowWaterBenchmark, mesh: core.Mesh
-    ) -> lib.NumericalFlux:
-        raise NotImplementedError
