@@ -2,6 +2,7 @@
 
 """
 from argparse import ArgumentParser
+from typing import Type
 
 from .command import Command
 
@@ -9,8 +10,8 @@ from .command import Command
 class Help(Command):
     parser: ArgumentParser
 
-    def __init__(self, parser: ArgumentParser):
-        self.parser = parser
+    def __init__(self, parser: Type[ArgumentParser]):
+        self.parser = parser()
 
     def execute(self):
         self.parser.print_help()
