@@ -295,15 +295,15 @@ def add_network_load_path(parser):
 
 
 # LIMITER
-def add_high_order_flux_getter(parser):
+def add_flux_getter(parser):
     parser.add_argument(
         "+f",
-        "++high-order-flux",
-        help="""Choose high order flux by key. Available keys are: """
+        "++flux",
+        help="""Choose flux by key. Available keys are: """
         + ", ".join([*SHALLOW_WATER_FLUX_GETTER.keys()]),
         type=lambda input: SHALLOW_WATER_FLUX_GETTER[input],
         metavar="<flux>",
-        dest="high_order_flux_getter",
+        dest="high_getter",
         default=SHALLOW_WATER_FLUX_GETTER["central"],
     )
 

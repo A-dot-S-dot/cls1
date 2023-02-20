@@ -189,7 +189,7 @@ class ShallowWaterMCLParser(SolverParser):
         argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
         argument.add_adaptive_time_stepping(self)
         argument.add_ode_solver(self)
-        argument.add_high_order_flux_getter(self)
+        argument.add_flux_getter(self)
 
 
 class SubgridNetworkParser(SolverParser):

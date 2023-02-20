@@ -11,15 +11,8 @@ import numpy as np
 import shallow_water
 
 from .central import get_central_flux
-from .lax_friedrichs import get_lax_friedrichs_flux
-from .low_order import LowOrderFlux, get_low_order_flux
+from .low_order import LowOrderFlux
 from .solver import ShallowWaterSolver
-
-SHALLOW_WATER_FLUX_GETTER = {
-    "central": get_central_flux,
-    "llf": get_lax_friedrichs_flux,
-    "low-order": get_low_order_flux,
-}
 
 
 class MCLFlux(LowOrderFlux, lib.NumericalFluxWithArbitraryInput):
