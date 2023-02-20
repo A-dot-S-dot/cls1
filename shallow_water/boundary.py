@@ -25,14 +25,14 @@ class RightReflectingCell(core.GhostCell):
         return value
 
 
-class NodeNeighboursBuilder(core.NodeNeighboursBuilder):
+class BoundaryConditionsBuilder(core.BoundaryConditionsBuilder):
     def __call__(
         self,
         conditions: BOUNDARY_CONDITIONS,
         radius=1,
         inflow_left=None,
         inflow_right=None,
-    ) -> core.NodeNeighbours:
+    ) -> core.BoundaryConditions:
         return super().__call__(conditions, radius, inflow_left, inflow_right)
 
     def _build_left_cell(
@@ -54,4 +54,4 @@ class NodeNeighboursBuilder(core.NodeNeighboursBuilder):
             )
 
 
-build_node_neighbours = NodeNeighboursBuilder()
+get_boundary_conditions = BoundaryConditionsBuilder()

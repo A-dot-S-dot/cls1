@@ -179,29 +179,34 @@ class CentralFlux(NumericalFlux):
 class NumericalFluxDependentRightHandSide:
     _numerical_flux: NumericalFlux
     _step_length: float
-    _neighbours: finite_volume.NodeNeighbours
+    _boundary_conditions: finite_volume.BoundaryConditions
 
     def __init__(
         self,
         numerical_flux: NumericalFlux,
         step_length: float,
-        neighbours: finite_volume.NodeNeighbours,
+        boundary_conditions: finite_volume.BoundaryConditions,
     ):
         self._numerical_flux = numerical_flux
         self._step_length = step_length
-        self._neighbours = neighbours
+        self._boundary_conditions = boundary_conditions
 
         self._adjust_neighbours()
 
     def _adjust_neighbours(self):
-        if not self._neighbours.periodic:
+        if not self._boundary_conditions.periodic:
             raise NotImplementedError(
                 "Must be shorten such that fluxes are calculated only for the inner nodes. "
             )
 
     def __call__(self, time: float, dof_vector: np.ndarray) -> np.ndarray:
         left_flux, right_flux = self._transform_node_to_cell_fluxes(
-            time, *self._numerical_flux(*self._neighbours(dof_vector))
+            time,
+            *self._numerical_flux(
+                *self._boundary_conditions.get_node_neighbours(
+                    dof_vector, radius=self._numerical_flux.input_dimension // 2
+                )
+            ),
         )
 
         return (left_flux + right_flux) / self._step_length
@@ -209,8 +214,7 @@ class NumericalFluxDependentRightHandSide:
     def _transform_node_to_cell_fluxes(
         self, time: float, node_flux_left: np.ndarray, node_flux_right: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        # print(node_flux_left, node_flux_right)
-        if self._neighbours.periodic:
+        if self._boundary_conditions.periodic:
             return node_flux_right[:-1], node_flux_left[1:]
         else:
             raise NotImplementedError(

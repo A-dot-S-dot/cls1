@@ -33,19 +33,18 @@ class ShallowWaterSolver(core.Solver):
         step_length = solution.space.mesh.step_length
 
         numerical_flux = self._build_flux(benchmark, solution.space.mesh)
-        neighbours = shallow_water.build_node_neighbours(
+        boundary_conditions = shallow_water.get_boundary_conditions(
             benchmark.boundary_conditions,
-            radius=numerical_flux.input_dimension // 2,
             inflow_left=benchmark.inflow_left,
             inflow_right=benchmark.inflow_right,
         )
         right_hand_side = lib.NumericalFluxDependentRightHandSide(
-            numerical_flux, step_length, neighbours
+            numerical_flux, step_length, boundary_conditions
         )
 
         optimal_time_step = finite_volume.OptimalTimeStep(
             shallow_water.RiemannSolver(benchmark.gravitational_acceleration),
-            neighbours,
+            boundary_conditions,
             step_length,
         )
         time_stepping = core.build_adaptive_time_stepping(
