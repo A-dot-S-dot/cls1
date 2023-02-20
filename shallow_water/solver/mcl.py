@@ -15,7 +15,7 @@ from .low_order import LowOrderFlux
 from .solver import ShallowWaterSolver
 
 
-class MCLFlux(LowOrderFlux, lib.NumericalFluxWithArbitraryInput):
+class MCLFlux(LowOrderFlux):
     """Calculates flux by adding to a diffusive flux a limited antidiffusive
     flux, which can be specified independently.
 
@@ -62,7 +62,7 @@ class MCLFlux(LowOrderFlux, lib.NumericalFluxWithArbitraryInput):
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         self._low_order_flux_left, self._low_order_flux_right = LowOrderFlux.__call__(
-            self, *self._get_required_values(2, *values)
+            self, *lib.get_required_values(2, *values)
         )
         self._build_antidiffusive_fluxes(*values)
         self._build_limited_height_fluxes()
@@ -163,8 +163,8 @@ class MCLFlux(LowOrderFlux, lib.NumericalFluxWithArbitraryInput):
             antidiffusive_flux[positive_flux_case],
             self._wave_speed[positive_flux_case]
             * np.maximum(
-                inflow_max[positive_flux_case] - inflow_value[positive_flux_case],
-                outflow_value[positive_flux_case] - outflow_min[positive_flux_case],
+                inflow_max[positive_flux_case] + -inflow_value[positive_flux_case],
+                outflow_value[positive_flux_case] + -outflow_min[positive_flux_case],
             ),
         )
 
@@ -172,8 +172,8 @@ class MCLFlux(LowOrderFlux, lib.NumericalFluxWithArbitraryInput):
             antidiffusive_flux[negative_flux_case],
             self._wave_speed[negative_flux_case]
             * np.maximum(
-                inflow_min[negative_flux_case] - inflow_value[negative_flux_case],
-                outflow_value[negative_flux_case] - outflow_max[negative_flux_case],
+                inflow_min[negative_flux_case] + -inflow_value[negative_flux_case],
+                outflow_value[negative_flux_case] + -outflow_max[negative_flux_case],
             ),
         )
 
@@ -244,7 +244,7 @@ def get_mcl_flux(
 ) -> MCLFlux:
     high_order_flux = high_order_flux_getter(benchmark, mesh)
     boundary_conditions = swe.get_boundary_conditions(
-        benchmark.boundary_conditions,
+        *benchmark.boundary_conditions,
         inflow_left=benchmark.inflow_left,
         inflow_right=benchmark.inflow_right,
     )

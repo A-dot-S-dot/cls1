@@ -1,11 +1,21 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Tuple, TypeVar
+from typing import Callable, Optional, Tuple, TypeVar
 
-import numpy as np
-from core import finite_volume
 import core
+import numpy as np
 
 BENCHMARK = TypeVar("BENCHMARK", bound=core.Benchmark)
+
+
+def get_required_values(
+    input_dimension: int, *values: np.ndarray
+) -> Tuple[np.ndarray, ...]:
+    assert len(values) >= input_dimension, f"{input_dimension} inputs are needed."
+    assert len(values) % 2 == 0, "Even number of inputs needed."
+
+    delta = (len(values) - input_dimension) // 2
+
+    return values[delta : len(values) - delta]
 
 
 class NumericalFlux(ABC):
@@ -65,19 +75,7 @@ class NumericalFluxWithArbitraryInput(NumericalFlux):
         self._numerical_flux = numerical_flux
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        return self._numerical_flux(
-            *self._get_required_values(self.input_dimension, *values)
-        )
-
-    def _get_required_values(
-        self, input_dimension: int, *values: np.ndarray
-    ) -> Tuple[np.ndarray, ...]:
-        assert len(values) >= input_dimension, f"{input_dimension} inputs are needed."
-        assert len(values) % 2 == 0, "Even number of inputs needed."
-
-        delta = (len(values) - input_dimension) // 2
-
-        return values[delta : len(values) - delta]
+        return self._numerical_flux(*get_required_values(self.input_dimension, *values))
 
 
 class CorrectedNumericalFlux(NumericalFlux):
@@ -100,38 +98,38 @@ class CorrectedNumericalFlux(NumericalFlux):
         return flux_left + flux_correction_left, flux_right + flux_correction_right
 
 
-class SubgridFlux(NumericalFlux):
-    _fine_flux: NumericalFlux
-    _coarse_flux: NumericalFlux
-    _coarsener: core.VectorCoarsener
+# class SubgridFlux(NumericalFlux):
+#     _fine_flux: NumericalFlux
+#     _coarse_flux: NumericalFlux
+#     _coarsener: core.VectorCoarsener
 
-    def __init__(
-        self,
-        fine_flux: NumericalFlux,
-        coarse_flux: NumericalFlux,
-        coarsening_degree: int,
-    ):
-        assert (
-            fine_flux.input_dimension == coarse_flux.input_dimension
-        ), "Input dimension of FINE_FLUX and COARSE_FLUX must be identical."
+#     def __init__(
+#         self,
+#         fine_flux: NumericalFlux,
+#         coarse_flux: NumericalFlux,
+#         coarsening_degree: int,
+#     ):
+#         assert (
+#             fine_flux.input_dimension == coarse_flux.input_dimension
+#         ), "Input dimension of FINE_FLUX and COARSE_FLUX must be identical."
 
-        self.input_dimension = fine_flux.input_dimension
-        self._fine_flux = fine_flux
-        self._coarse_flux = coarse_flux
-        self._coarsener = core.VectorCoarsener(coarsening_degree)
+#         self.input_dimension = fine_flux.input_dimension
+#         self._fine_flux = fine_flux
+#         self._coarse_flux = coarse_flux
+#         self._coarsener = core.VectorCoarsener(coarsening_degree)
 
-    def __call__(
-        self, fine_values: Tuple[np.ndarray, ...], coarse_values: Tuple[np.ndarray, ...]
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        N = self._coarsener.coarsening_degree
+#     def __call__(
+#         self, fine_values: Tuple[np.ndarray, ...], coarse_values: Tuple[np.ndarray, ...]
+#     ) -> Tuple[np.ndarray, np.ndarray]:
+#         N = self._coarsener.coarsening_degree
 
-        fine_flux_left, fine_flux_right = self._fine_flux(*fine_values)
-        coarse_flux_left, coarse_flux_right = self._coarse_flux(*coarse_values)
+#         fine_flux_left, fine_flux_right = self._fine_flux(*fine_values)
+#         coarse_flux_left, coarse_flux_right = self._coarse_flux(*coarse_values)
 
-        subgrid_flux_left = fine_flux_left[::N] + -coarse_flux_left
-        subgrid_flux_right = fine_flux_right[N - 1 :: N] + -coarse_flux_right
+#         subgrid_flux_left = fine_flux_left[::N] + -coarse_flux_left
+#         subgrid_flux_right = fine_flux_right[N - 1 :: N] + -coarse_flux_right
 
-        return subgrid_flux_left, subgrid_flux_right
+#         return subgrid_flux_left, subgrid_flux_right
 
 
 class LinearAntidiffusiveFlux(NumericalFlux):
@@ -152,60 +150,40 @@ class LinearAntidiffusiveFlux(NumericalFlux):
         return -flux, flux
 
 
-class LaxFriedrichsFlux(NumericalFlux):
-    input_dimension = 2
-    riemann_solver: core.RiemannSolver
-
-    def __init__(self, riemann_solver: core.RiemannSolver):
-        self.riemann_solver = riemann_solver
-
-    def __call__(self, value_left, value_right) -> Tuple[np.ndarray, np.ndarray]:
-        _, flux = self.riemann_solver.solve(value_left, value_right)
-
-        return -flux, flux
-
-
-class CentralFlux(NumericalFlux):
-    input_dimension = 2
-    _flux: Callable
-
-    def __init__(self, flux: Callable):
-        self._flux = flux
-
-    def __call__(
-        self, value_left: np.ndarray, value_right: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        node_flux = (self._flux(value_left) + self._flux(value_right)) / 2
-
-        return -node_flux, node_flux
-
-
 class NumericalFluxDependentRightHandSide:
     _numerical_flux: NumericalFlux
     _step_length: float
-    _boundary_conditions: finite_volume.BoundaryConditions
+    _boundary_conditions: core.BoundaryConditions
+    _cell_left: core.GhostCell
+    _cell_right: core.GhostCell
+    _riemann_solver: Optional[core.RiemannSolver]
 
     def __init__(
         self,
         numerical_flux: NumericalFlux,
         step_length: float,
-        boundary_conditions: finite_volume.BoundaryConditions,
+        boundary_conditions: core.BoundaryConditions,
+        riemann_solver=None,
     ):
         self._numerical_flux = numerical_flux
         self._step_length = step_length
         self._boundary_conditions = boundary_conditions
+        self._riemann_solver = riemann_solver
 
-        self._adjust_neighbours()
+        self._adjust_boundary_conditions()
 
-    def _adjust_neighbours(self):
+    def _adjust_boundary_conditions(self):
         if not self._boundary_conditions.periodic:
-            raise NotImplementedError(
-                "Must be shorten such that fluxes are calculated only for the inner nodes. "
-            )
+            self._cell_left = self._boundary_conditions.cells_left[-1]
+            self._cell_right = self._boundary_conditions.cells_right[0]
+
+            del self._boundary_conditions.cells_left[0]
+            del self._boundary_conditions.cells_right[-1]
 
     def __call__(self, time: float, dof_vector: np.ndarray) -> np.ndarray:
         left_flux, right_flux = self._transform_node_to_cell_fluxes(
             time,
+            dof_vector,
             *self._numerical_flux(
                 *self._boundary_conditions.get_node_neighbours(
                     dof_vector, radius=self._numerical_flux.input_dimension // 2
@@ -216,11 +194,24 @@ class NumericalFluxDependentRightHandSide:
         return (left_flux + right_flux) / self._step_length
 
     def _transform_node_to_cell_fluxes(
-        self, time: float, node_flux_left: np.ndarray, node_flux_right: np.ndarray
+        self,
+        time: float,
+        dof_vector: np.ndarray,
+        node_flux_left: np.ndarray,
+        node_flux_right: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
         if self._boundary_conditions.periodic:
             return node_flux_right[:-1], node_flux_left[1:]
+        elif self._riemann_solver is None:
+            raise ValueError("Riemann Solver is needed to realize boundary conditions.")
         else:
-            raise NotImplementedError(
-                "Also Weak boundary conditions must be implemented with a Riemann Solver."
+            flux_left, _ = self._riemann_solver.solve(
+                self._cell_left(dof_vector, time), dof_vector[0]
+            )
+            flux_right, _ = self._riemann_solver.solve(
+                dof_vector[-1], self._cell_right(dof_vector, time)
+            )
+
+            return np.array([flux_left, *node_flux_right]), np.array(
+                [*node_flux_left, -flux_right]
             )

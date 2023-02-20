@@ -28,14 +28,15 @@ class RiemannSolver(core.RiemannSolver):
             self.gravitational_acceleration
         )
 
-    def wave_speed(
-        self, value_left: np.ndarray, value_right: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def wave_speed(self, value_left: np.ndarray, value_right: np.ndarray) -> Tuple:
         wave_speed_left, wave_speed_right = self._scalar_wave_speed(
             value_left, value_right
         )
 
-        return wave_speed_left[:, None], wave_speed_right[:, None]
+        if isinstance(wave_speed_left, float):
+            return wave_speed_left, wave_speed_right
+        else:
+            return wave_speed_left[:, None], wave_speed_right[:, None]
 
     @property
     def wave_speed_left(self) -> np.ndarray:

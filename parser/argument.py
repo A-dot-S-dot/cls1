@@ -91,7 +91,8 @@ def add_solver(parser, action):
     parser.add_argument(
         "-s",
         "--solver",
-        help="Solver on which the task is applied.",
+        help="Solver on which the task is applied. Available solver are: "
+        + ", ".join([*action.solver_parsers.keys()]),
         nargs="+",
         action=action,
         metavar="<solver> [options]",
@@ -265,7 +266,8 @@ def add_ode_solver(parser):
 
     parser.add_argument(
         "++ode-solver",
-        help="Specify ode solver.",
+        help="Specify ode solver. Available solver are:"
+        + ", ".join([*_ode_solver.keys()]),
         type=lambda input: _ode_solver[input],
         metavar="<solver>",
         dest="ode_solver_type",
@@ -299,7 +301,7 @@ def add_flux_getter(parser):
     parser.add_argument(
         "+f",
         "++flux",
-        help="""Choose flux by key. Available keys are: """
+        help="""Choose flux by key. Available fluxes are: """
         + ", ".join([*SHALLOW_WATER_FLUX_GETTER.keys()]),
         type=lambda input: SHALLOW_WATER_FLUX_GETTER[input],
         metavar="<flux>",

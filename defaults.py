@@ -1,7 +1,7 @@
 ################################################################################
 # BENCHMARK
 ################################################################################
-GRAVITATIONAL_ACCELERATION = 9.81
+GRAVITATIONAL_ACCELERATION = 9.812
 
 ################################################################################
 # PLOT
@@ -38,7 +38,7 @@ MCL_CFL_NUMBER = 1
 FLUX_APPROXIMATION = True
 
 # finite volume based solver
-FINITE_VOLUME_CFL_NUMBER = 0.5
+FINITE_VOLUME_CFL_NUMBER = 0.1
 COARSENING_DEGREE = 8
 
 NETWORK_PATH = "data/subgrid-network.pth"

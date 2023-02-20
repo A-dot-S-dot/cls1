@@ -92,7 +92,6 @@ class LaxFriedrichsParser(SolverParser):
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
         argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
-        argument.add_adaptive_time_stepping(self)
 
 
 class CentralFluxParser(SolverParser):
@@ -105,7 +104,6 @@ class CentralFluxParser(SolverParser):
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
         argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
-        argument.add_adaptive_time_stepping(self)
 
 
 class LowOrderParser(SolverParser):
@@ -118,11 +116,10 @@ class LowOrderParser(SolverParser):
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
         argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
-        argument.add_adaptive_time_stepping(self)
 
 
 class EnergyStableParser(SolverParser):
-    prog = "energy-stable"
+    prog = "es"
     name = "Energy stable finite volume scheme"
     solver = shallow_water.EnergyStableSolver
 
@@ -131,7 +128,7 @@ class EnergyStableParser(SolverParser):
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
         argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
-        argument.add_adaptive_time_stepping(self)
+        argument.add_ode_solver(self)
 
 
 class SubgridNetworkParser(SolverParser):
@@ -162,7 +159,6 @@ class ShallowWaterMCLParser(SolverParser):
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
         argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
-        argument.add_adaptive_time_stepping(self)
         argument.add_ode_solver(self)
         argument.add_flux_getter(self)
 
@@ -177,7 +173,6 @@ class AntidiffusionParser(SolverParser):
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
         argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
-        argument.add_adaptive_time_stepping(self)
         argument.add_ode_solver(self)
         argument.add_flux_getter(self)
 
@@ -192,7 +187,6 @@ class CoarseParser(SolverParser):
         argument.add_short(self, self.prog)
         argument.add_mesh_size(self)
         argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
-        argument.add_adaptive_time_stepping(self)
         argument.add_ode_solver(self)
         argument.add_flux_getter(self)
 
@@ -206,7 +200,7 @@ SHALLOW_WATER_SOLVER_PARSERS = {
     "llf": LaxFriedrichsParser,
     "low-order": LowOrderParser,
     "central": CentralFluxParser,
-    "energy-stable": EnergyStableParser,
+    "es": EnergyStableParser,
     "subgrid-network": SubgridNetworkParser,
     "antidiffusion": AntidiffusionParser,
     "coarse": CoarseParser,

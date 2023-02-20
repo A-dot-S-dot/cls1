@@ -57,7 +57,7 @@ class TestNodeNeighbours(TestCase):
 
     def test_periodic_condition_radius_two_and_scalar_input(self):
         input = np.array([1, 2, 3, 4])
-        conditions = get_boundary_conditions("periodic", 2)
+        conditions = get_boundary_conditions("periodic", radius=2)
         ul, uL, uR, ur = conditions.get_node_neighbours(input, radius=2)
 
         assert_equal(ul, np.array([3, 4, 1, 2, 3]))
@@ -75,7 +75,7 @@ class TestNodeNeighbours(TestCase):
 
     def test_periodic_condition_radius_two_and_system_input(self):
         input = np.array([[1, 1], [2, 2], [3, 3], [4, 4]])
-        conditions = get_boundary_conditions("periodic", 2)
+        conditions = get_boundary_conditions("periodic", radius=2)
         ul, uL, uR, ur = conditions.get_node_neighbours(input, radius=2)
 
         assert_equal(ul, np.array([[3, 3], [4, 4], [1, 1], [2, 2], [3, 3]]))
@@ -98,7 +98,7 @@ class TestCellNeighbours(TestCase):
 
     def test_periodic_neighbours_radius_2(self):
         node_values = np.array([4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0])
-        conditions = get_boundary_conditions("periodic", 2)
+        conditions = get_boundary_conditions("periodic", radius=2)
 
         values_left, values_right = conditions.get_cell_neighbours(node_values)
         expected_values_left = np.array([3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0])

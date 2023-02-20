@@ -5,7 +5,7 @@ import numpy as np
 import shallow_water as swe
 from shallow_water.core import get_height_positivity_fix
 
-from .solver import ShallowWaterSolver, ShallowWaterNumericalFlux
+from .solver import ShallowWaterNumericalFlux, ShallowWaterSolver
 
 T = TypeVar("T", bound=core.DiscreteSolution)
 
@@ -51,7 +51,7 @@ class LowOrderFlux(ShallowWaterNumericalFlux):
     def __call__(
         self, value_left: np.ndarray, value_right: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        bar_state, _ = self._riemann_solver.solve(value_left, value_right)
+        _, bar_state = self._riemann_solver.solve(value_left, value_right)
         self._value_left, self._value_right = value_left, value_right
 
         self._height_HLL, self._discharge_HLL = swe.get_height_and_discharge(bar_state)
@@ -73,10 +73,10 @@ class LowOrderFlux(ShallowWaterNumericalFlux):
 
     def _build_modified_heights(self):
         self._height_positivity_fix = get_height_positivity_fix(
-            self._height_HLL, self._bathymetry_step
+            self._height_HLL, self.bathymetry_step
         )
         self._modified_height_left = self._height_HLL + self._height_positivity_fix
-        self._modified_height_right = self._height_HLL - self._height_positivity_fix
+        self._modified_height_right = self._height_HLL + -self._height_positivity_fix
 
     def _modify_discharge(self):
         source_term = self.get_source_term(
@@ -98,11 +98,11 @@ class LowOrderFlux(ShallowWaterNumericalFlux):
         )
 
     def get_source_term(self, height_average: np.ndarray) -> np.ndarray:
-        if self._bathymetry_step is None:
+        if self.bathymetry_step is None:
             return np.array([0.0])
         else:
             return -(
-                self._gravitational_acceleration
+                self.gravitational_acceleration
                 * height_average
                 * self._height_positivity_fix
                 / self._wave_speed

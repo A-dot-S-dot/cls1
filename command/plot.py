@@ -5,7 +5,7 @@ import core
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
-from shallow_water.benchmark import ShallowWaterBenchmark
+import shallow_water as swe
 from tqdm.auto import tqdm
 
 from .calculate import Calculate
@@ -113,20 +113,25 @@ class ScalarPlotter(Plotter[float]):
 
 
 class ShallowWaterPlotter(Plotter[np.ndarray]):
-    _benchmark: ShallowWaterBenchmark
+    _benchmark: swe.ShallowWaterBenchmark
     _figure: plt.Figure
     _height_axes: plt.Axes
     _discharge_axes: plt.Axes
+    _velocity_axes: plt.Axes
 
-    def __init__(self, benchmark: ShallowWaterBenchmark, **kwargs):
+    def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
         Plotter.__init__(self, benchmark, **kwargs)
-        self._figure, (self._height_axes, self._discharge_axes) = plt.subplots(1, 2)
+        self._figure, (
+            self._height_axes,
+            self._discharge_axes,
+            self._velocity_axes,
+        ) = plt.subplots(1, 3)
 
     def set_suptitle(self, suptitle: str):
         self._figure.suptitle(suptitle, fontsize=14, fontweight="bold")
 
     def add_initial_data(self):
-        self.add_function(self._benchmark.initial_data, "$h_0$", "$q_0$")
+        self.add_function(self._benchmark.initial_data, "$h_0$", "$q_0$", "$u_0$")
 
     def add_exact_solution(self):
         end_time = self._benchmark.end_time
@@ -134,39 +139,44 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
             self._benchmark.exact_solution_at_end_time,
             f"$h+b(t={end_time:.1f})$",
             f"$q(t={end_time:.1f})$",
+            f"$u(t={end_time:.1f})$",
         )
 
     def add_function(self, function: Callable[[float], np.ndarray], *label: str):
         swe_values = np.array([function(x) for x in self._grid])
         self.add_function_values(self._grid, swe_values, *label)
 
-    def add_function_values(
-        self, grid: np.ndarray, swe_values: np.ndarray, *label: str
-    ):
-        height = swe_values.T[0]
-        discharge = swe_values.T[1]
-
+    def add_function_values(self, grid: np.ndarray, values: np.ndarray, *label: str):
         height_label = label[0]
 
         if len(label) == 1:
             discharge_label = label[0]
+            velocity_label = label[0]
         else:
             discharge_label = label[1]
+            velocity_label = label[2]
 
-        self.add_height(grid, height, height_label)
-        self.add_discharge(grid, discharge, discharge_label)
+        self.add_height(grid, values, height_label)
+        self.add_discharge(grid, values, discharge_label)
+        self.add_velocity(grid, values, velocity_label)
 
         self._plot_available = True
 
-    def add_height(self, grid: np.ndarray, height: np.ndarray, label: str):
+    def add_height(self, grid: np.ndarray, values: np.ndarray, label: str):
+        height = swe.get_height(values)
         total_height = height + [self._benchmark.bathymetry(x) for x in grid]
         self._height_axes.plot(grid, total_height, label=label)
 
-    def add_discharge(self, grid: np.ndarray, discharge: np.ndarray, label: str):
+    def add_discharge(self, grid: np.ndarray, values: np.ndarray, label: str):
+        discharge = swe.get_discharge(values)
         self._discharge_axes.plot(grid, discharge, label=label)
 
+    def add_velocity(self, grid: np.ndarray, values: np.ndarray, label: str):
+        velocity = swe.get_velocity(values)
+        self._velocity_axes.plot(grid, velocity, label=label)
+
     def _setup(self):
-        self._add_topography()
+        self._add_bathymetry()
 
         self._height_axes.set_xlabel("x")
         self._height_axes.set_ylabel("h+b")
@@ -176,11 +186,15 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
         self._discharge_axes.set_ylabel("discharge")
         self._discharge_axes.legend()
 
-    def _add_topography(self):
-        topography_values = np.array(
+        self._velocity_axes.set_xlabel("x")
+        self._velocity_axes.set_ylabel("velocity")
+        self._velocity_axes.legend()
+
+    def _add_bathymetry(self):
+        bathymetry_values = np.array(
             [self._benchmark.bathymetry(x) for x in self._grid]
         )
-        self._height_axes.plot(self._grid, topography_values, label="$b$")
+        self._height_axes.plot(self._grid, bathymetry_values, label="$b$")
 
 
 class Plot(Command):

@@ -18,9 +18,7 @@ class WaveSpeed:
     def __init__(self, gravitational_acceleration: float):
         self._gravitational_acceleration = gravitational_acceleration
 
-    def __call__(
-        self, value_left: np.ndarray, value_right: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def __call__(self, value_left, value_right) -> Tuple:
         height_left, height_right = get_heights(value_left, value_right)
         velocity_left, velocity_right = get_velocities(value_left, value_right)
 
@@ -31,12 +29,8 @@ class WaveSpeed:
         )
 
     def _build_wave_speed_left(
-        self,
-        height_left: np.ndarray,
-        height_right: np.ndarray,
-        velocity_left: np.ndarray,
-        velocity_right: np.ndarray,
-    ) -> np.ndarray:
+        self, height_left, height_right, velocity_left, velocity_right
+    ):
         return np.minimum(
             np.minimum(
                 velocity_left
@@ -48,12 +42,8 @@ class WaveSpeed:
         )
 
     def _build_wave_speed_right(
-        self,
-        height_left: np.ndarray,
-        height_right: np.ndarray,
-        velocity_left: np.ndarray,
-        velocity_right: np.ndarray,
-    ) -> np.ndarray:
+        self, height_left, height_right, velocity_left, velocity_right
+    ):
         return np.maximum(
             np.maximum(
                 velocity_left + np.sqrt(self._gravitational_acceleration * height_left),
@@ -76,9 +66,7 @@ class MaximumWaveSpeed:
     def __init__(self, gravitational_acceleration: float):
         self._gravitational_acceleration = gravitational_acceleration
 
-    def __call__(
-        self, value_left: np.ndarray, value_right: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def __call__(self, value_left, value_right) -> Tuple:
         height_left, height_right = get_heights(value_left, value_right)
         velocity_left, velocity_right = get_velocities(value_left, value_right)
 
@@ -89,12 +77,8 @@ class MaximumWaveSpeed:
         return -wave_speed, wave_speed
 
     def _build_wave_speed(
-        self,
-        height_left: np.ndarray,
-        height_right: np.ndarray,
-        velocity_left: np.ndarray,
-        velocity_right: np.ndarray,
-    ) -> np.ndarray:
+        self, height_left, height_right, velocity_left, velocity_right
+    ):
         return np.maximum(
             np.abs(velocity_left)
             + np.sqrt(self._gravitational_acceleration * height_left),

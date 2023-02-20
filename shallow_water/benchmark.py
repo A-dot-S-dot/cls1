@@ -5,7 +5,6 @@ import numpy as np
 from scipy.optimize import newton
 
 from core import Benchmark, Interval
-from .boundary import BOUNDARY_CONDITIONS
 
 # No topography benchmark
 LENGTH = 100.0
@@ -27,16 +26,14 @@ class ShallowWaterBenchmark(Benchmark[np.ndarray]):
 
     problem = "shallow_water"
     gravitational_acceleration = defaults.GRAVITATIONAL_ACCELERATION
-    boundary_conditions: BOUNDARY_CONDITIONS
 
     def bathymetry(self, x: float) -> float:
         raise NotImplementedError
 
 
 class LakeAtRestNoBathymetryBenchmark(ShallowWaterBenchmark):
-    gravitational_acceleration = 1.0
-    domain = Interval(0, 1)
-    boundary_conditions = "periodic"
+    domain = Interval(0, 20)
+    _boundary_conditions = ("outflow", "outflow")
 
     def __init__(self, end_time=None):
         self.end_time = end_time or 100
@@ -45,15 +42,49 @@ class LakeAtRestNoBathymetryBenchmark(ShallowWaterBenchmark):
         return 0
 
     def initial_data(self, x: float) -> np.ndarray:
-        return np.array([0.2, 0])
+        return np.array([1.0, 0])
 
     def exact_solution(self, x: float, t: float) -> np.ndarray:
         return self.initial_data(x)
 
 
-class MovingWaterNoBathymetryEquilibriumBenchmark(ShallowWaterBenchmark):
+class LakeAtRestBenchmark(ShallowWaterBenchmark):
+    domain = Interval(0, 20)
+    _boundary_conditions = ("wall", "wall")
+
+    def __init__(self, end_time=None):
+        self.end_time = end_time or 100
+
+    def bathymetry(self, x: float) -> float:
+        return (4 - (x - 10) ** 2) / 20 if x >= 8.0 and x < 12.0 else 0.0
+
+    def initial_data(self, x: float) -> np.ndarray:
+        return np.array([1.0 - self.bathymetry(x), 0])
+
+    def exact_solution(self, x: float, t: float) -> np.ndarray:
+        return self.initial_data(x)
+
+
+class PerturbatedLakeAtRestBenchmark(ShallowWaterBenchmark):
+    domain = Interval(0, 20)
+    _boundary_conditions = ("outflow", "outflow")
+
+    def __init__(self, end_time=None):
+        self.end_time = end_time or 2.0
+
+    def bathymetry(self, x: float) -> float:
+        return (4 - (x - 10) ** 2) / 20 if x >= 8.0 and x < 12.0 else 0.0
+
+    def initial_data(self, x: float) -> np.ndarray:
+        if x >= 5.75 and x < 6.25:
+            return np.array([1.01 - self.bathymetry(x), 0])
+        else:
+            return np.array([1.0 - self.bathymetry(x), 0])
+
+
+class MovingWaterNoBathymetryBenchmark(ShallowWaterBenchmark):
     domain = Interval(0, 100)
-    boundary_conditions = "periodic"
+    _boundary_conditions = "periodic"
 
     def __init__(self, end_time=None):
         self.end_time = end_time or 1
@@ -68,7 +99,7 @@ class MovingWaterNoBathymetryEquilibriumBenchmark(ShallowWaterBenchmark):
         return self.initial_data(x)
 
 
-class BumpSteadyStateBenchmark(ShallowWaterBenchmark):
+class MovingWaterBumpBathymetryBenchmark(ShallowWaterBenchmark):
     """A steady state must fullfill the following equations
 
         hu=K1,      u^2/2+g(h+b)=K2,
@@ -78,12 +109,12 @@ class BumpSteadyStateBenchmark(ShallowWaterBenchmark):
     """
 
     domain = Interval(-2, 2)
-    boundary_conditions = "periodic"
+    _boundary_conditions = "periodic"
     K1: float
     K2: float
 
     def __init__(self, end_time=None, K1=None, K2=None):
-        self.end_time = end_time or 0.1
+        self.end_time = end_time or 100
         self.K1 = K1 or 1.0
         self.K2 = K2 or 25.0
 
@@ -108,7 +139,7 @@ class BumpSteadyStateBenchmark(ShallowWaterBenchmark):
 
 class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
     domain = Interval(0, LENGTH)
-    boundary_conditions = "periodic"
+    _boundary_conditions = "periodic"
     height_average: float
     height_amplitude: float
     height_phase_shift: float
@@ -158,7 +189,7 @@ class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
 
 class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
     domain = Interval(0, LENGTH)
-    boundary_conditions = "periodic"
+    _boundary_conditions = "periodic"
 
     def __init__(
         self,
@@ -187,10 +218,27 @@ class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
         )
 
 
+class DammBreakBenchmark(ShallowWaterBenchmark):
+    domain = Interval(0, 1)
+    gravitational_acceleration = 1.0
+    _boundary_conditions = ("outflow", "outflow")
+
+    def __init__(self, end_time=None):
+        self.end_time = end_time or 0.3
+
+    def bathymetry(self, x: float) -> float:
+        return 0
+
+    def initial_data(self, x: float) -> np.ndarray:
+        height = 1.0 if x <= 0.5 else 0.1
+
+        return np.array([height, 0.0])
+
+
 class CylindricalDammBreakWithOutflowBenchmark(ShallowWaterBenchmark):
     domain = Interval(-1, 1)
     gravitational_acceleration = 1.0
-    boundary_conditions = ("outflow", "outflow")
+    _boundary_conditions = ("outflow", "outflow")
 
     def __init__(self, end_time=None):
         self.end_time = end_time or 0.2
@@ -207,12 +255,12 @@ class CylindricalDammBreakWithOutflowBenchmark(ShallowWaterBenchmark):
 class CylindricalDammBreakWithReflectingBoundaryBenchmark(
     CylindricalDammBreakWithOutflowBenchmark
 ):
-    boundary_conditions = ("wall", "wall")
+    _boundary_conditions = ("wall", "wall")
 
 
 class SinusInflowBenchmark(ShallowWaterBenchmark):
     domain = Interval(0, 100)
-    boundary_conditions = ("inflow", "wall")
+    _boundary_conditions = ("inflow", "wall")
 
     def __init__(self, end_time=None):
         self.end_time = end_time or 40
@@ -230,13 +278,16 @@ class SinusInflowBenchmark(ShallowWaterBenchmark):
 
 
 BENCHMARKS = {
-    "lake-at-rest": LakeAtRestNoBathymetryBenchmark,
-    "moving-water": MovingWaterNoBathymetryEquilibriumBenchmark,
-    "bump": BumpSteadyStateBenchmark,
+    "lake-at-rest-no-bathymetry": LakeAtRestNoBathymetryBenchmark,
+    "lake-at-rest": LakeAtRestBenchmark,
+    "lake-at-rest-perturbation": PerturbatedLakeAtRestBenchmark,
+    "moving-water-no-bathymetry": MovingWaterNoBathymetryBenchmark,
+    "moving-water-bump-bathymetry": MovingWaterBumpBathymetryBenchmark,
     "oscillation": OscillationNoTopographyBenchmark,
     "random": RandomOscillationNoTopographyBenchmark,
-    "damm-break": CylindricalDammBreakWithOutflowBenchmark,
-    "damm-break-with-wall": CylindricalDammBreakWithReflectingBoundaryBenchmark,
+    "damm-break": DammBreakBenchmark,
+    "cylindrical-damm-break": CylindricalDammBreakWithOutflowBenchmark,
+    "cylindrical-damm-break-with-wall": CylindricalDammBreakWithReflectingBoundaryBenchmark,
     "sinus-inflow": SinusInflowBenchmark,
 }
 BENCHMARK_DEFAULTS = {

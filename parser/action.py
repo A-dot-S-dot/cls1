@@ -8,7 +8,7 @@ from .solver_parser import SCALAR_SOLVER_PARSERS, SHALLOW_WATER_SOLVER_PARSERS
 class SolverAction(argparse.Action):
     """Create list of solver arguments"""
 
-    _solver_parsers: Dict
+    solver_parsers: Dict
 
     def __call__(
         self,
@@ -30,7 +30,7 @@ class SolverAction(argparse.Action):
         for i, value in enumerate(values):
             if (
                 i > 0
-                and value in self._solver_parsers.keys()
+                and value in self.solver_parsers.keys()
                 and values[i - 1] not in ["+f"]
             ):
                 slice_index = i
@@ -47,13 +47,13 @@ class SolverAction(argparse.Action):
         solver_key = raw_solver_arguments[0]
         namespace = argparse.Namespace()
         try:
-            self._solver_parsers[solver_key]().parse_arguments(
+            self.solver_parsers[solver_key]().parse_arguments(
                 raw_solver_arguments[1:], namespace
             )
         except KeyError:
             print(
                 "ERROR: Only the following solvers are available: "
-                + ", ".join(self._solver_parsers.keys())
+                + ", ".join(self.solver_parsers.keys())
             )
             quit()
 
@@ -61,8 +61,8 @@ class SolverAction(argparse.Action):
 
 
 class ScalarSolverAction(SolverAction):
-    _solver_parsers = SCALAR_SOLVER_PARSERS
+    solver_parsers = SCALAR_SOLVER_PARSERS
 
 
 class ShallowWaterSolverAction(SolverAction):
-    _solver_parsers = SHALLOW_WATER_SOLVER_PARSERS
+    solver_parsers = SHALLOW_WATER_SOLVER_PARSERS

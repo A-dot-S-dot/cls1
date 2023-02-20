@@ -20,6 +20,14 @@ class TestFlux(TestCase):
             Flux(1),
             np.array([[-1, 2], [2, 3]]),
         )
+        self.assertRaises(NegativeHeightError, Flux(1), np.array([-1, 2]))
+
+    def test_scalar_flux(self):
+        flux = Flux(1)
+        input = np.array([1.0, 1.0])
+        expected_flux = np.array([1.0, 1.5])
+
+        assert_equal(flux(input), expected_flux)
 
 
 class TestAverage(TestCase):
@@ -44,8 +52,8 @@ class TestAverage(TestCase):
 
 class TestNullify(TestCase):
     def test_nullify(self):
-        dof_vector = np.array([[0.5, 2], [0.5, 0.2], [2, 0.5], [2, 2]])
-        expected_output = np.array([[0, 0], [0, 0], [2, 0.5], [2, 2]])
+        dof_vector = np.array([[0.5, 2.0], [0.5, 2.0], [2.0, 0.5], [2.0, 2.0]])
+        expected_output = np.array([[0.0, 0.0], [0.0, 0.0], [2.0, 0.0], [2.0, 2.0]])
 
         assert_equal(nullify(dof_vector, eps=1.0), expected_output)
 

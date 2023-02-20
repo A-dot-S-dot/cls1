@@ -18,3 +18,14 @@ class TestWaveSpeed(TestCase):
 
         assert_almost_equal(wave_speed_left, expected_wave_speed_left)
         assert_almost_equal(wave_speed_right, expected_wave_speed_right)
+
+    def test_scalar_wave_speed(self):
+        value_left = np.array([2.0, 0.0])
+        value_right = np.array([1.0, 1.0])
+
+        wave_speed_left, wave_speed_right = self.wave_speed(value_left, value_right)
+        expected_wave_speed_left = -1.41421356
+        expected_wave_speed_right = 2.0
+
+        self.assertAlmostEqual(wave_speed_left, expected_wave_speed_left)
+        self.assertAlmostEqual(wave_speed_right, expected_wave_speed_right)

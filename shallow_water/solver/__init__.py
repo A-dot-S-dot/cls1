@@ -9,6 +9,7 @@ from .subgrid_network import *
 
 SHALLOW_WATER_FLUX_GETTER = {
     "central": get_central_flux,
+    "es": get_energy_stable_flux,
     "llf": get_lax_friedrichs_flux,
     "low-order": get_low_order_flux,
 }

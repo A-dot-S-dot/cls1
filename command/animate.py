@@ -7,8 +7,8 @@ import defaults
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
+import shallow_water as swe
 from matplotlib import animation
-from shallow_water.benchmark import ShallowWaterBenchmark
 from tqdm.auto import tqdm
 
 from .calculate import Calculate
@@ -31,7 +31,7 @@ class Animator(ABC, Generic[T]):
     _show: bool
 
     _animatables: List[core.DiscreteSolutionWithHistory | Callable]
-    _values: List[np.ndarray]
+    _values_per_solver: List[np.ndarray]
     _spatial_grids: List[np.ndarray]
     _temporal_grids: List[np.ndarray]
     _labels: List[Tuple[str, ...]]
@@ -131,12 +131,12 @@ class Animator(ABC, Generic[T]):
         self._build_animation()
 
     def _adjust_values(self):
-        self._values = []
+        self._values_per_solver = []
         interpolator = core.TemporalInterpolator()
 
         for animatable in self._animatables:
             if isinstance(animatable, core.DiscreteSolutionWithHistory):
-                self._values.append(
+                self._values_per_solver.append(
                     interpolator(
                         animatable.time_history,
                         animatable.value_history,
@@ -144,7 +144,7 @@ class Animator(ABC, Generic[T]):
                     )
                 )
             else:
-                self._values.append(
+                self._values_per_solver.append(
                     np.array(
                         [
                             [animatable(x, t) for x in self._spatial_grid]
@@ -183,7 +183,7 @@ class ScalarAnimator(Animator[float]):
 
     def __init__(self, benchmark: core.Benchmark, **kwargs):
         super().__init__(benchmark, **kwargs)
-        self._values, self._lines = [], []
+        self._values_per_solver, self._lines = [], []
         self._figure, self._axes = plt.subplots()
         self._time_info = self._axes.text(
             0.05,
@@ -206,7 +206,7 @@ class ScalarAnimator(Animator[float]):
         )
 
     def _animate(self, time_index: int):
-        for index, values in enumerate(self._values):
+        for index, values in enumerate(self._values_per_solver):
             self._lines[index].set_ydata(values[time_index])
 
         self._time_info.set_text(f"T={self._temporal_grid[time_index]:.2f}")
@@ -215,7 +215,7 @@ class ScalarAnimator(Animator[float]):
 
     def _adjust_axes(self):
         for spatial_grid, values, label in zip(
-            self._spatial_grids, self._values, self._labels
+            self._spatial_grids, self._values_per_solver, self._labels
         ):
             (line,) = self._axes.plot(spatial_grid, values[0], label=label[0])
             self._lines.append(line)
@@ -225,19 +225,24 @@ class ScalarAnimator(Animator[float]):
 
 
 class ShallowWaterAnimator(Animator[np.ndarray]):
-    _benchmark: ShallowWaterBenchmark
+    _benchmark: swe.ShallowWaterBenchmark
 
     _height_lines: List
     _discharge_lines: List
     _height_axes: ...
     _discharge_axes: ...
+    _velocity_axes: ...
     _time_info: ...
 
-    def __init__(self, benchmark: ShallowWaterBenchmark, **kwargs):
+    def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
         super().__init__(benchmark, **kwargs)
         self._benchmark = benchmark
-        self._height_lines, self._discharge_lines = ([], [])
-        self._figure, (self._height_axes, self._discharge_axes) = plt.subplots(1, 2)
+        self._height_lines, self._discharge_lines, self._velocity_lines = ([], [], [])
+        self._figure, (
+            self._height_axes,
+            self._discharge_axes,
+            self._velocity_axes,
+        ) = plt.subplots(1, 3)
         self._time_info = self._height_axes.text(
             0.05,
             0.95,
@@ -248,84 +253,118 @@ class ShallowWaterAnimator(Animator[np.ndarray]):
 
     def add_initial_data(self):
         self.add_animatable(
-            lambda x, t: self._benchmark.initial_data(x), "$h_0+b$", "$q_0$"
+            lambda x, t: self._benchmark.initial_data(x), "$h_0+b$", "$q_0$", "$u_0$"
         )
 
     def add_exact_solution(self):
-        self.add_animatable(self._benchmark.exact_solution, "$h+b$", "$q$")
+        self.add_animatable(self._benchmark.exact_solution, "$h+b$", "$q$", "$u$")
 
     def _animate(self, time_index: int):
-        for index, values in enumerate(self._values):
+        for index, values in enumerate(self._values_per_solver):
             height = self._get_total_height(
-                self._spatial_grids[index], values[time_index, :, 0]
+                self._spatial_grids[index], swe.get_height(values[time_index])
             )
 
             self._height_lines[index].set_ydata(height)
-            self._discharge_lines[index].set_ydata(values[time_index, :, 1])
+            self._discharge_lines[index].set_ydata(
+                swe.get_discharge(values[time_index])
+            )
+            self._velocity_lines[index].set_ydata(swe.get_velocity(values[time_index]))
 
         self._time_info.set_text(f"T={self._temporal_grid[time_index]:.2f}")
 
-        return [*self._height_lines, *self._discharge_lines, self._time_info]
+        return [
+            *self._height_lines,
+            *self._discharge_lines,
+            *self._velocity_lines,
+            self._time_info,
+        ]
 
-    def _get_total_height(self, grid: np.ndarray, heights: np.ndarray) -> np.ndarray:
-        return np.array(
-            [heights[i] + self._benchmark.bathymetry(x) for i, x in enumerate(grid)]
-        )
+    def _get_total_height(self, grid: np.ndarray, height: np.ndarray) -> np.ndarray:
+        return height + np.array([self._benchmark.bathymetry(x) for x in grid])
 
     def _adjust_axes(self):
         for spatial_grid, values, label in zip(
-            self._spatial_grids, self._values, self._labels
+            self._spatial_grids, self._values_per_solver, self._labels
         ):
 
             height_label = label[0]
 
             if len(label) == 1:
                 discharge_label = label[0]
+                velocity_label = label[0]
             else:
                 discharge_label = label[1]
+                velocity_label = label[2]
 
             (height_line,) = self._height_axes.plot(
-                spatial_grid, values[0].T[0], label=height_label
+                spatial_grid, swe.get_height(values[0]), label=height_label
             )
             (discharge_line,) = self._discharge_axes.plot(
-                spatial_grid, values[0].T[1], label=discharge_label
+                spatial_grid, swe.get_discharge(values[0]), label=discharge_label
+            )
+            (velocity_line,) = self._velocity_axes.plot(
+                spatial_grid, swe.get_velocity(values[0]), label=velocity_label
             )
             self._height_lines.append(height_line)
             self._discharge_lines.append(discharge_line)
+            self._velocity_lines.append(velocity_line)
 
-        self._add_topography()
+        self._add_bathymetry()
 
         additional_border_factor = 0.05
-        max_values, min_values = self._get_min_max_values()
+        values_min, values_max = self._get_min_max_values()
+        v_min, v_max = self._get_min_max_velocities()
 
         self._height_axes.set_xlabel("x")
         self._height_axes.set_ylabel("h+b")
         self._height_axes.set_ylim(
-            top=max_values[0] + additional_border_factor * max_values[0]
+            top=swe.get_height(values_max)
+            + additional_border_factor * swe.get_height(values_max)
         )
         self._height_axes.legend()
 
         self._discharge_axes.set_xlabel("x")
         self._discharge_axes.set_ylabel("discharge")
         self._discharge_axes.set_ylim(
-            bottom=min_values[1] - additional_border_factor * abs(min_values[1]),
-            top=max_values[1] + additional_border_factor * abs(max_values[1]),
+            bottom=swe.get_discharge(values_min)
+            - additional_border_factor * abs(swe.get_discharge(values_min)),
+            top=swe.get_discharge(values_max)
+            + additional_border_factor * abs(swe.get_discharge(values_max)),
         )
         self._discharge_axes.legend()
 
+        self._velocity_axes.set_xlabel("x")
+        self._velocity_axes.set_ylabel("velocity")
+        self._velocity_axes.set_ylim(
+            bottom=v_min - additional_border_factor * abs(v_min),
+            top=v_max + additional_border_factor * abs(v_max),
+        )
+        self._velocity_axes.legend()
+
     def _get_min_max_values(self) -> Tuple[np.ndarray, np.ndarray]:
-        max_values = np.array([np.max(value, axis=(0, 1)) for value in self._values])
-        max_values = np.max(max_values, axis=0)
-        min_values = np.array([np.min(value, axis=(0, 1)) for value in self._values])
-        min_values = np.min(min_values, axis=0)
+        values_max = np.array(
+            [np.max(value, axis=(0, 1)) for value in self._values_per_solver]
+        )
+        values_max = np.max(values_max, axis=0)
+        values_min = np.array(
+            [np.min(value, axis=(0, 1)) for value in self._values_per_solver]
+        )
+        values_min = np.min(values_min, axis=0)
 
-        return max_values, min_values
+        return values_min, values_max
 
-    def _add_topography(self):
-        topography_values = np.array(
+    def _get_min_max_velocities(self) -> Tuple[float, float]:
+        velocities_per_solver = [
+            swe.get_velocities(*value) for value in self._values_per_solver
+        ]
+        return np.min(velocities_per_solver), np.max(velocities_per_solver)
+
+    def _add_bathymetry(self):
+        bathymetry_values = np.array(
             [self._benchmark.bathymetry(x) for x in self._spatial_grid]
         )
-        self._height_axes.plot(self._spatial_grid, topography_values, label="$b$")
+        self._height_axes.plot(self._spatial_grid, bathymetry_values, label="$b$")
 
 
 class Animate(Command):

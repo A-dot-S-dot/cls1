@@ -1,13 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Generic, List, Literal, Tuple, TypeVar, overload
+from typing import Callable, Generic, List, Literal, Optional, Tuple, TypeVar
 
 import numpy as np
 
 SIDE = Literal["left", "right"]
-BOUNDARY_CONDITION = Literal["inflow", "outflow", "periodic"]
-BOUNDARY_CONDITIONS = (
-    Literal["periodic"] | Tuple[BOUNDARY_CONDITION, BOUNDARY_CONDITION]
-)
 T = TypeVar("T", np.ndarray, float)
 
 
@@ -16,15 +12,26 @@ class GhostCell(ABC, Generic[T]):
     def __call__(self, dof_vector: np.ndarray, time=None) -> T:
         ...
 
+    def __repr__(self) -> str:
+        return self.__class__.__name__
+
 
 class CopyCell(GhostCell, Generic[T]):
     _reference_index: int
+    _name: Optional[str]
 
-    def __init__(self, reference_index: int):
+    def __init__(self, reference_index: int, name=None):
+        self._name = name
         self._reference_index = reference_index
 
     def __call__(self, dof_vector: np.ndarray, time=None) -> T:
         return dof_vector[self._reference_index]
+
+    def __repr__(self) -> str:
+        if self._name:
+            return self._name
+        else:
+            return self.__class__.__name__
 
 
 class InflowCell(GhostCell, Generic[T]):
@@ -101,17 +108,23 @@ class BoundaryConditions:
             [*node_values_left, right_value]
         )
 
+    def __repr__(self) -> str:
+        return (
+            self.__class__.__name__
+            + f"(cells_left={self.cells_left}, cells_right={self.cells_right}, periodic={self.periodic})"
+        )
+
 
 class BoundaryConditionsBuilder:
     def __call__(
         self,
-        conditions: BOUNDARY_CONDITIONS,
+        *conditions: str,
         radius=1,
         inflow_left=None,
         inflow_right=None,
     ) -> BoundaryConditions:
-        condition_left = "periodic" if conditions == "periodic" else conditions[0]
-        condition_right = "periodic" if conditions == "periodic" else conditions[1]
+        condition_left = conditions[0]
+        condition_right = conditions[0] if len(conditions) == 1 else conditions[1]
         left_cells = [
             self._build_left_cell(condition_left, i, inflow_left=inflow_left)
             for i in range(radius - 1, -1, -1)
@@ -121,14 +134,16 @@ class BoundaryConditionsBuilder:
             for i in range(radius)
         ]
         return BoundaryConditions(
-            *left_cells, *right_cells, periodic=conditions == "periodic"
+            *left_cells, *right_cells, periodic=conditions == ("periodic",)
         )
 
     def _build_left_cell(
-        self, condition: BOUNDARY_CONDITION, index: int, inflow_left=None
+        self, condition: str, index: int, inflow_left=None
     ) -> GhostCell:
         if condition == "periodic":
-            return CopyCell(-index - 1)
+            return CopyCell(-index - 1, "PeriodicCell")
+        elif condition == "outflow":
+            return CopyCell(0, "OutflowCell")
         elif condition == "inflow":
             if inflow_left is None:
                 raise ValueError("Inflow data required.")
@@ -137,12 +152,12 @@ class BoundaryConditionsBuilder:
             raise ValueError(f"No boundary condition can be build for {condition}.")
 
     def _build_right_cell(
-        self, condition: BOUNDARY_CONDITION, index: int, inflow_right=None
+        self, condition: str, index: int, inflow_right=None
     ) -> GhostCell:
         if condition == "periodic":
-            return CopyCell(index)
+            return CopyCell(index, "PeriodicCell")
         elif condition == "outflow":
-            return CopyCell(0)
+            return CopyCell(-1, "OutflowCell")
         elif condition == "inflow":
             if inflow_right is None:
                 raise ValueError("Inflow data required.")
