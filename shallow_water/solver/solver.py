@@ -1,4 +1,5 @@
 from typing import Dict, Optional, Tuple
+from abc import ABC, abstractmethod
 
 import core
 import defaults
@@ -11,27 +12,38 @@ from core import finite_volume
 class ShallowWaterNumericalFlux(lib.NumericalFlux):
     bathymetry_step: np.ndarray
     gravitational_acceleration: float
+    _numerical_flux: lib.NumericalFlux
 
-    def __init__(self, gravitational_acceleration: float, bathymetry=None):
-        self.gravitational_acceleration = gravitational_acceleration
+    def __init__(
+        self,
+        numerical_flux: lib.NumericalFlux,
+        gravitational_acceleration=None,
+        bathymetry=None,
+    ):
+        self._numerical_flux = numerical_flux
+        self.input_dimension = numerical_flux.input_dimension
+        self.gravitational_acceleration = (
+            gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
+        )
 
         self._build_bathymetry_step(bathymetry)
 
-    def _build_bathymetry_step(self, bathymetry: Optional[np.ndarray]):
-        if bathymetry is None or swe.is_constant(bathymetry):
+    def _build_bathymetry_step(self, bathymetry: Optional[np.ndarray | float]):
+        if (
+            bathymetry is None
+            or isinstance(bathymetry, float)
+            or swe.is_constant(bathymetry)
+        ):
             self.bathymetry_step = np.array([0])
         else:
             bathymetry = np.array([bathymetry[0], *bathymetry, bathymetry[-1]])
             self.bathymetry_step = np.diff(bathymetry)
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        flux = self._get_flux(*values)
+        flux_left, flux_right = self._numerical_flux(*values)
         source = self._get_source_term(*values)
 
-        return -flux + -source, flux + -source
-
-    def _get_flux(self, *values: np.ndarray) -> np.ndarray:
-        raise NotImplementedError
+        return flux_left + -source, flux_right + -source
 
     def _get_source_term(self, *values: np.ndarray) -> np.ndarray:
         height_average = self._get_height_average(*values)
@@ -48,23 +60,27 @@ class ShallowWaterNumericalFlux(lib.NumericalFlux):
         return swe.get_average(*swe.get_heights(value_left, value_right))
 
 
-class ShallowWaterNumericalFluxDependentRightHandSide(
-    lib.NumericalFluxDependentRightHandSide
-):
-    _numerical_flux: ShallowWaterNumericalFlux
+class FluxGetter:
+    def __call__(
+        self, benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh, bathymetry=None
+    ) -> lib.NumericalFlux:
+        bathymetry = bathymetry or swe.build_bathymetry_discretization(
+            benchmark, len(mesh)
+        )
+        numerical_flux = self._get_flux(benchmark)
 
-    def _adjust_boundary_conditions(self):
-        super()._adjust_boundary_conditions()
+        return ShallowWaterNumericalFlux(
+            numerical_flux,
+            benchmark.gravitational_acceleration,
+            bathymetry=bathymetry,
+        )
 
-        if not self._boundary_conditions.periodic:
-            bathymetry_step = self._numerical_flux.bathymetry_step.copy()
-
-            if len(bathymetry_step) > 1:
-                self._numerical_flux.bathymetry_step = bathymetry_step[1:-1]
+    def _get_flux(self, benchmark: swe.ShallowWaterBenchmark) -> lib.NumericalFlux:
+        raise NotImplementedError
 
 
 class ShallowWaterSolver(core.Solver):
-    _get_flux: lib.FLUX_GETTER[swe.ShallowWaterBenchmark]
+    _get_flux: FluxGetter
 
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
         args = self._build_args(benchmark, **kwargs)
@@ -92,7 +108,7 @@ class ShallowWaterSolver(core.Solver):
             inflow_left=benchmark.inflow_left,
             inflow_right=benchmark.inflow_right,
         )
-        right_hand_side = ShallowWaterNumericalFluxDependentRightHandSide(
+        right_hand_side = lib.NumericalFluxDependentRightHandSide(
             numerical_flux,
             step_length,
             boundary_conditions,

@@ -94,8 +94,10 @@ class Flux:
     _gravitational_acceleration: float
     _eps: float
 
-    def __init__(self, gravitational_acceleration: float, eps=defaults.EPSILON):
-        self._gravitational_acceleration = gravitational_acceleration
+    def __init__(self, gravitational_acceleration=None, eps=defaults.EPSILON):
+        self._gravitational_acceleration = (
+            gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
+        )
         self._eps = eps
 
     def __call__(self, dof_vector: np.ndarray) -> np.ndarray:

@@ -4,7 +4,7 @@ import core
 import shallow_water as swe
 import defaults
 
-from .lax_friedrichs import get_lax_friedrichs_flux
+from .lax_friedrichs import LaxFriedrichsFluxGetter
 from .solver import ShallowWaterSolver
 
 
@@ -18,7 +18,7 @@ class CoarseSolver(ShallowWaterSolver):
         flux_getter=None,
         **kwargs
     ) -> Dict:
-        self._get_flux = flux_getter or get_lax_friedrichs_flux
+        self._get_flux = flux_getter or LaxFriedrichsFluxGetter()
         self._coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
 
         return super()._build_args(benchmark, **kwargs)

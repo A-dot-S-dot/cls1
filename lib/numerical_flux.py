@@ -26,9 +26,6 @@ class NumericalFlux(ABC):
         ...
 
 
-FLUX_GETTER = Callable[[BENCHMARK, core.Mesh], NumericalFlux]
-
-
 class NumericalFluxWithHistory(NumericalFlux):
     """Saves numerical flux calculated once in a history."""
 
@@ -76,6 +73,34 @@ class NumericalFluxWithArbitraryInput(NumericalFlux):
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         return self._numerical_flux(*get_required_values(self.input_dimension, *values))
+
+
+class LaxFriedrichsFlux(NumericalFlux):
+    input_dimension = 2
+    _riemann_solver: core.RiemannSolver
+
+    def __init__(self, riemann_solver: core.RiemannSolver):
+        self._riemann_solver = riemann_solver
+
+    def __call__(self, value_left, value_right) -> Tuple[np.ndarray, np.ndarray]:
+        flux, _ = self._riemann_solver.solve(value_left, value_right)
+
+        return -flux, flux
+
+
+class CentralFlux(NumericalFlux):
+    input_dimension = 2
+    _flux: Callable
+
+    def __init__(self, flux: Callable):
+        self._flux = flux
+
+    def __call__(
+        self, value_left: np.ndarray, value_right: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        flux = (self._flux(value_left) + self._flux(value_right)) / 2
+
+        return -flux, flux
 
 
 class CorrectedNumericalFlux(NumericalFlux):
@@ -170,23 +195,13 @@ class NumericalFluxDependentRightHandSide:
         self._boundary_conditions = boundary_conditions
         self._riemann_solver = riemann_solver
 
-        self._adjust_boundary_conditions()
-
-    def _adjust_boundary_conditions(self):
-        if not self._boundary_conditions.periodic:
-            self._cell_left = self._boundary_conditions.cells_left[-1]
-            self._cell_right = self._boundary_conditions.cells_right[0]
-
-            del self._boundary_conditions.cells_left[0]
-            del self._boundary_conditions.cells_right[-1]
-
     def __call__(self, time: float, dof_vector: np.ndarray) -> np.ndarray:
         left_flux, right_flux = self._transform_node_to_cell_fluxes(
-            time,
-            dof_vector,
             *self._numerical_flux(
                 *self._boundary_conditions.get_node_neighbours(
-                    dof_vector, radius=self._numerical_flux.input_dimension // 2
+                    dof_vector,
+                    radius=self._numerical_flux.input_dimension // 2,
+                    time=time,
                 )
             ),
         )
@@ -195,23 +210,7 @@ class NumericalFluxDependentRightHandSide:
 
     def _transform_node_to_cell_fluxes(
         self,
-        time: float,
-        dof_vector: np.ndarray,
         node_flux_left: np.ndarray,
         node_flux_right: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
-        if self._boundary_conditions.periodic:
-            return node_flux_right[:-1], node_flux_left[1:]
-        elif self._riemann_solver is None:
-            raise ValueError("Riemann Solver is needed to realize boundary conditions.")
-        else:
-            flux_left, _ = self._riemann_solver.solve(
-                self._cell_left(dof_vector, time), dof_vector[0]
-            )
-            flux_right, _ = self._riemann_solver.solve(
-                dof_vector[-1], self._cell_right(dof_vector, time)
-            )
-
-            return np.array([flux_left, *node_flux_right]), np.array(
-                [*node_flux_left, -flux_right]
-            )
+        return node_flux_right[:-1], node_flux_left[1:]

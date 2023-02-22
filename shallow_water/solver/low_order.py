@@ -1,11 +1,13 @@
 from typing import Tuple, TypeVar
 
 import core
+import defaults
+import lib
 import numpy as np
 import shallow_water as swe
 from shallow_water.core import get_height_positivity_fix
 
-from .solver import ShallowWaterNumericalFlux, ShallowWaterSolver
+from .solver import FluxGetter, ShallowWaterNumericalFlux, ShallowWaterSolver
 
 T = TypeVar("T", bound=core.DiscreteSolution)
 
@@ -42,8 +44,12 @@ class LowOrderFlux(ShallowWaterNumericalFlux):
     def _flux_right(self) -> np.ndarray:
         return self._riemann_solver.flux_right
 
-    def __init__(self, gravitational_acceleration: float, bathymetry=None):
-        super().__init__(gravitational_acceleration, bathymetry)
+    def __init__(self, gravitational_acceleration=None, bathymetry=None):
+        self.gravitational_acceleration = (
+            gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
+        )
+
+        self._build_bathymetry_step(bathymetry)
         self._riemann_solver = swe.RiemannSolver(
             gravitational_acceleration=gravitational_acceleration,
         )
@@ -79,7 +85,7 @@ class LowOrderFlux(ShallowWaterNumericalFlux):
         self._modified_height_right = self._height_HLL + -self._height_positivity_fix
 
     def _modify_discharge(self):
-        source_term = self.get_source_term(
+        source_term = self._get_source_term(
             swe.get_average(*swe.get_heights(self._value_left, self._value_right))
         )
         velocity_average = swe.get_average(
@@ -97,7 +103,7 @@ class LowOrderFlux(ShallowWaterNumericalFlux):
             + source_term
         )
 
-    def get_source_term(self, height_average: np.ndarray) -> np.ndarray:
+    def _get_source_term(self, height_average: np.ndarray) -> np.ndarray:
         if self.bathymetry_step is None:
             return np.array([0.0])
         else:
@@ -109,19 +115,21 @@ class LowOrderFlux(ShallowWaterNumericalFlux):
             )
 
 
-def get_low_order_flux(
-    benchmark: swe.ShallowWaterBenchmark,
-    mesh: core.Mesh,
-) -> LowOrderFlux:
-    bathymetry = swe.build_bathymetry_discretization(benchmark, len(mesh))
+class LowOrderFluxGetter(FluxGetter):
+    def __call__(
+        self, benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh, bathymetry=None
+    ) -> lib.NumericalFlux:
+        bathymetry = bathymetry or swe.build_bathymetry_discretization(
+            benchmark, len(mesh)
+        )
 
-    return LowOrderFlux(
-        benchmark.gravitational_acceleration,
-        bathymetry=bathymetry,
-    )
+        return LowOrderFlux(
+            benchmark.gravitational_acceleration,
+            bathymetry=bathymetry,
+        )
 
 
 class LowOrderSolver(ShallowWaterSolver):
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
-        self._get_flux = get_low_order_flux
+        self._get_flux = LowOrderFluxGetter()
         super().__init__(benchmark, **kwargs)

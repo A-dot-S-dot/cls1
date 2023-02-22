@@ -5,13 +5,13 @@ import defaults
 import lib
 import shallow_water as swe
 
-from .solver import ShallowWaterSolver
-from .lax_friedrichs import get_lax_friedrichs_flux
+from .lax_friedrichs import LaxFriedrichsFluxGetter
+from .solver import FluxGetter, ShallowWaterSolver
 
 
 class LinearAntidiffusiveSolver(ShallowWaterSolver):
     _gamma: float
-    _get_raw_flux: lib.FLUX_GETTER[swe.ShallowWaterBenchmark]
+    _get_raw_flux: FluxGetter
 
     def _build_args(
         self,
@@ -21,7 +21,7 @@ class LinearAntidiffusiveSolver(ShallowWaterSolver):
         **kwargs
     ) -> Dict:
         self._gamma = gamma or defaults.ANTIDIFFUSION_GAMMA
-        self._get_raw_flux = flux_getter or get_lax_friedrichs_flux
+        self._get_raw_flux = flux_getter or LaxFriedrichsFluxGetter()
 
         return super()._build_args(benchmark, **kwargs)
 

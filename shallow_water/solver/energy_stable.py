@@ -3,39 +3,34 @@ stable schemes for the shallow water equations with discontinuous topography' by
 U. S. Fjordholm et al."""
 from typing import Tuple
 
-import core
+import lib
 import numpy as np
 import shallow_water as swe
 
-from .solver import ShallowWaterNumericalFlux, ShallowWaterSolver
+from .solver import ShallowWaterSolver, FluxGetter
 
 
-class EnergyStableFlux(ShallowWaterNumericalFlux):
+class EnergyStableFlux(lib.NumericalFlux):
     input_dimension = 2
+    _flux: swe.Flux
 
-    def __init__(
-        self, gravitational_acceleration: float, step_length: float, bathymetry=None
-    ):
-        super().__init__(gravitational_acceleration, bathymetry)
-        self._step_length = step_length
+    def __init__(self, gravitational_acceleration=None):
         self._flux = swe.Flux(gravitational_acceleration)
 
-    def _get_flux(self, value_left: np.ndarray, value_right: np.ndarray) -> np.ndarray:
+    def __call__(
+        self, value_left: np.ndarray, value_right: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
         average = swe.get_average(value_left, value_right)
-        return self._flux(average)
+        flux = self._flux(average)
+        return -flux, flux
 
 
-def get_energy_stable_flux(
-    benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh
-) -> EnergyStableFlux:
-    bathymetry = swe.build_bathymetry_discretization(benchmark, len(mesh))
-
-    return EnergyStableFlux(
-        benchmark.gravitational_acceleration, mesh.step_length, bathymetry=bathymetry
-    )
+class EnergyStableFluxGetter(FluxGetter):
+    def _get_flux(self, benchmark: swe.ShallowWaterBenchmark) -> lib.NumericalFlux:
+        return EnergyStableFlux(benchmark.gravitational_acceleration)
 
 
 class EnergyStableSolver(ShallowWaterSolver):
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
-        self._get_flux = get_energy_stable_flux
+        self._get_flux = EnergyStableFluxGetter()
         super().__init__(benchmark, **kwargs)

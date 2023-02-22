@@ -138,25 +138,3 @@ class TestNumericalFluxDependentRightHandSide(TestCase):
         dof_vector = np.array([[1.0, 1.0], [0.0, 0.0], [1.0, -1], [2.0, 0.0]])
         assert_equal(r._cell_left(dof_vector), dof_vector[0])
         assert_equal(r._cell_right(dof_vector), dof_vector[-1])
-
-    def test_transform_node_to_cell_fluxes(self):
-        r = NumericalFluxDependentRightHandSide(
-            TestNumericalFlux(),
-            0.25,
-            core.get_boundary_conditions("outflow", "outflow"),
-            riemann_solver=shallow_water.RiemannSolver(1.0),
-        )
-        time = 0.0
-        dof_vector = np.array([[1.0, 1.0], [0.0, 0.0], [1.0, -1], [2.0, 0.0]])
-        node_flux = np.array([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
-        flux_left, flux_right = r._transform_node_to_cell_fluxes(
-            time, dof_vector, -node_flux, node_flux
-        )
-
-        expected_flux_left = np.array([[1.0, 1.5], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
-        expected_flux_right = np.array(
-            [[-1.0, -1.0], [-2.0, -2.0], [-3.0, -3.0], [0.0, -2.0]]
-        )
-
-        assert_equal(flux_left, expected_flux_left)
-        assert_equal(flux_right, expected_flux_right)

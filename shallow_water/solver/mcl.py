@@ -10,9 +10,9 @@ import lib
 import numpy as np
 import shallow_water as swe
 
-from .central import get_central_flux
+from .central import CentralFluxGetter
 from .low_order import LowOrderFlux
-from .solver import ShallowWaterSolver
+from .solver import ShallowWaterSolver, FluxGetter
 
 
 class MCLFlux(LowOrderFlux):
@@ -237,37 +237,34 @@ class EntropyStableMCLFlux(MCLFlux):
     ...
 
 
-def get_mcl_flux(
-    benchmark: swe.ShallowWaterBenchmark,
-    mesh: core.Mesh,
-    high_order_flux_getter: lib.FLUX_GETTER[swe.ShallowWaterBenchmark],
-) -> MCLFlux:
-    high_order_flux = high_order_flux_getter(benchmark, mesh)
-    boundary_conditions = swe.get_boundary_conditions(
-        *benchmark.boundary_conditions,
-        inflow_left=benchmark.inflow_left,
-        inflow_right=benchmark.inflow_right,
-    )
-    bathymetry = swe.build_bathymetry_discretization(benchmark, len(mesh))
+class MCLFluxGetter(FluxGetter):
+    _high_order_flux_getter: FluxGetter
 
-    return MCLFlux(
-        benchmark.gravitational_acceleration,
-        high_order_flux,
-        boundary_conditions,
-        bathymetry=bathymetry,
-    )
+    def __init__(self, high_order_flux_getter: FluxGetter):
+        self._high_order_flux_getter = high_order_flux_getter
+
+    def __call__(
+        self, benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh, bathymetry=None
+    ) -> lib.NumericalFlux:
+        high_order_flux = self._high_order_flux_getter(benchmark, mesh, bathymetry=0.0)
+        boundary_conditions = swe.get_boundary_conditions(
+            *benchmark.boundary_conditions,
+            inflow_left=benchmark.inflow_left,
+            inflow_right=benchmark.inflow_right,
+        )
+        bathymetry = swe.build_bathymetry_discretization(benchmark, len(mesh))
+
+        return MCLFlux(
+            benchmark.gravitational_acceleration,
+            high_order_flux,
+            boundary_conditions,
+            bathymetry=bathymetry,
+        )
 
 
 class MCLSolver(ShallowWaterSolver):
-    _high_order_flux_getter: lib.FLUX_GETTER[swe.ShallowWaterBenchmark]
-
     def _build_args(
         self, benchmark: swe.ShallowWaterBenchmark, flux_getter=None, **kwargs
     ) -> Dict:
-        self._high_order_flux_getter = flux_getter or get_central_flux
+        self._get_flux = MCLFluxGetter(flux_getter or CentralFluxGetter())
         return super()._build_args(benchmark, **kwargs)
-
-    def _get_flux(
-        self, benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh
-    ) -> lib.NumericalFlux:
-        return get_mcl_flux(benchmark, mesh, self._high_order_flux_getter)
