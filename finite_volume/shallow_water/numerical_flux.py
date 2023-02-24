@@ -5,8 +5,6 @@ import finite_volume
 import finite_volume.shallow_water as swe
 import numpy as np
 
-import core
-
 
 class NumericalFlux(finite_volume.NumericalFlux):
     bathymetry_step: np.ndarray
@@ -61,10 +59,13 @@ class NumericalFlux(finite_volume.NumericalFlux):
 
 class FluxGetter(finite_volume.FluxGetter):
     def __call__(
-        self, benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh, bathymetry=None
+        self,
+        benchmark: swe.ShallowWaterBenchmark,
+        space: finite_volume.FiniteVolumeSpace,
+        bathymetry=None,
     ) -> finite_volume.NumericalFlux:
         bathymetry = bathymetry or swe.build_bathymetry_discretization(
-            benchmark, len(mesh)
+            benchmark, len(space.mesh)
         )
         numerical_flux = self._get_flux(benchmark)
 

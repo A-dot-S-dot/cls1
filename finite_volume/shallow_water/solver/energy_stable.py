@@ -3,7 +3,6 @@ stable schemes for the shallow water equations with discontinuous topography' by
 U. S. Fjordholm et al."""
 from typing import Tuple
 
-import core
 import defaults
 import finite_volume
 import finite_volume.shallow_water as swe
@@ -119,10 +118,13 @@ class EnergyStableFluxGetter(swe.FluxGetter):
 
 class FirstOrderDiffusiveEnergyStableFluxGetter(swe.FluxGetter):
     def __call__(
-        self, benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh, bathymetry=None
+        self,
+        benchmark: swe.ShallowWaterBenchmark,
+        space: finite_volume.FiniteVolumeSpace,
+        bathymetry=None,
     ) -> finite_volume.NumericalFlux:
         bathymetry = bathymetry or swe.build_bathymetry_discretization(
-            benchmark, len(mesh)
+            benchmark, len(space.mesh)
         )
         return FirstOrderDiffusiveEnergyStableFlux(
             benchmark.gravitational_acceleration, bathymetry

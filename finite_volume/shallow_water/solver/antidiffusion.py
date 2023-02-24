@@ -1,6 +1,5 @@
 from typing import Dict
 
-import core
 import defaults
 import finite_volume
 import finite_volume.shallow_water as swe
@@ -25,11 +24,13 @@ class LinearAntidiffusiveSolver(swe.Solver):
         return super()._build_args(benchmark, **kwargs)
 
     def _get_flux(
-        self, benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh
+        self,
+        benchmark: swe.ShallowWaterBenchmark,
+        space: finite_volume.FiniteVolumeSpace,
     ) -> finite_volume.NumericalFlux:
-        numerical_flux = self._get_raw_flux(benchmark, mesh)
+        numerical_flux = self._get_raw_flux(benchmark, space)
         antidiffusive_flux = finite_volume.LinearAntidiffusiveFlux(
-            self._gamma, mesh.step_length
+            self._gamma, space.mesh.step_length
         )
 
         return finite_volume.CorrectedNumericalFlux(numerical_flux, antidiffusive_flux)

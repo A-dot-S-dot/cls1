@@ -5,7 +5,7 @@ from finite_volume import scalar
 
 class LaxFriedrichsFluxGetter(finite_volume.FluxGetter):
     def __call__(
-        self, benchmark: core.Benchmark, mesh: core.Mesh
+        self, benchmark: core.Benchmark, space: finite_volume.FiniteVolumeSpace
     ) -> finite_volume.NumericalFlux:
         riemann_solver = scalar.get_riemann_solver(benchmark.problem)
         return finite_volume.LaxFriedrichsFlux(riemann_solver)

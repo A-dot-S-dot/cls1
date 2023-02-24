@@ -291,15 +291,18 @@ class MCLFluxGetter(swe.FluxGetter):
         self._high_order_flux_getter = high_order_flux_getter
 
     def __call__(
-        self, benchmark: swe.ShallowWaterBenchmark, mesh: core.Mesh, bathymetry=None
+        self,
+        benchmark: swe.ShallowWaterBenchmark,
+        space: finite_volume.FiniteVolumeSpace,
+        bathymetry=None,
     ) -> finite_volume.NumericalFlux:
-        high_order_flux = self._high_order_flux_getter(benchmark, mesh, bathymetry=0.0)
+        high_order_flux = self._high_order_flux_getter(benchmark, space, bathymetry=0.0)
         boundary_conditions = swe.get_boundary_conditions(
             *benchmark.boundary_conditions,
             inflow_left=benchmark.inflow_left,
             inflow_right=benchmark.inflow_right,
         )
-        bathymetry = swe.build_bathymetry_discretization(benchmark, len(mesh))
+        bathymetry = swe.build_bathymetry_discretization(benchmark, len(space.mesh))
 
         return MCLFlux(
             benchmark.gravitational_acceleration,

@@ -1,17 +1,18 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Callable
+from typing import Dict
 
 import core
 import defaults
-import finite_volume
-from finite_volume import scalar
+
+from .space import FiniteVolumeSpace, get_finite_volume_solution
+from .numerical_flux import NumericalFlux, NumericalFluxDependentRightHandSide
 
 
 class FluxGetter(ABC):
     @abstractmethod
     def __call__(
-        self, benchmark: core.Benchmark, mesh: core.Mesh
-    ) -> finite_volume.NumericalFlux:
+        self, benchmark: core.Benchmark, space: FiniteVolumeSpace
+    ) -> NumericalFlux:
         ...
 
 
@@ -34,18 +35,18 @@ class Solver(core.Solver):
         ode_solver_type=None,
         save_history=False,
     ) -> Dict:
-        solution = finite_volume.get_finite_volume_solution(
+        solution = get_finite_volume_solution(
             benchmark, mesh_size or defaults.CALCULATE_MESH_SIZE, save_history
         )
         step_length = solution.space.mesh.step_length
 
-        numerical_flux = self._get_flux(benchmark, solution.space.mesh)
+        numerical_flux = self._get_flux(benchmark, solution.space)
         boundary_conditions = self._get_boundary_conditions(
             *benchmark.boundary_conditions,
             inflow_left=benchmark.inflow_left,
             inflow_right=benchmark.inflow_right,
         )
-        right_hand_side = finite_volume.NumericalFluxDependentRightHandSide(
+        right_hand_side = NumericalFluxDependentRightHandSide(
             numerical_flux, step_length, boundary_conditions
         )
 
