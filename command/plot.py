@@ -244,11 +244,9 @@ class Plot(Command):
         for solver in tqdm(self._solver, desc="Calculate", unit="solver", leave=False):
             try:
                 Calculate(solver).execute()
-            except core.CustomError as error:
+            except Exception as error:
                 if self._write_warnings:
-                    tqdm.write(
-                        f"WARNING: {str(error)} Solution could not be calculated."
-                    )
+                    tqdm.write(f"WARNING: {str(error)}")
 
     def _delete_not_solved_solutions(self):
         accepted_solver = []
