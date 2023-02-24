@@ -4,8 +4,8 @@ from typing import Type
 
 import defaults
 from core.solver import Solver
-from scalar import solver as scalar
-from shallow_water import solver as shallow_water
+from finite_element.scalar import solver as scalar
+from finite_volume.shallow_water import solver as shallow_water
 
 from . import argument
 
@@ -131,22 +131,35 @@ class EnergyStableParser(SolverParser):
         argument.add_ode_solver(self)
 
 
-class SubgridNetworkParser(SolverParser):
-    prog = "subgrid-network"
-    name = """Solver with NN corrected flux"""
-    solver = shallow_water.SubgridNetworkSolver
+class FirstOrderDiffusiveEnergyStableParser(SolverParser):
+    prog = "es1"
+    name = "Energy stable finite volume scheme with first order diffusion"
+    solver = shallow_water.FirstOrderDiffusiveEnergyStableSolver
 
     def _add_arguments(self):
         argument.add_name(self, self.name)
         argument.add_short(self, self.prog)
-        argument.add_mesh_size(
-            self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
-        )
-        argument.add_coarsening_degree(self)
-        argument.add_cfl_number(
-            self, defaults.FINITE_VOLUME_CFL_NUMBER / defaults.COARSENING_DEGREE
-        )
-        argument.add_network_load_path(self)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
+        argument.add_ode_solver(self)
+
+
+# class SubgridNetworkParser(SolverParser):
+#     prog = "subgrid-network"
+#     name = """Solver with NN corrected flux"""
+#     solver = shallow_water.SubgridNetworkSolver
+
+#     def _add_arguments(self):
+#         argument.add_name(self, self.name)
+#         argument.add_short(self, self.prog)
+#         argument.add_mesh_size(
+#             self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
+#         )
+#         argument.add_coarsening_degree(self)
+#         argument.add_cfl_number(
+#             self, defaults.FINITE_VOLUME_CFL_NUMBER / defaults.COARSENING_DEGREE
+#         )
+#         argument.add_network_load_path(self)
 
 
 class ShallowWaterMCLParser(SolverParser):
@@ -201,7 +214,8 @@ SHALLOW_WATER_SOLVER_PARSERS = {
     "low-order": LowOrderParser,
     "central": CentralFluxParser,
     "es": EnergyStableParser,
-    "subgrid-network": SubgridNetworkParser,
+    "es1": FirstOrderDiffusiveEnergyStableParser,
+    # "subgrid-network": SubgridNetworkParser,
     "antidiffusion": AntidiffusionParser,
     "coarse": CoarseParser,
     "mcl": ShallowWaterMCLParser,

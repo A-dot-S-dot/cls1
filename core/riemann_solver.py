@@ -10,6 +10,7 @@ class RiemannSolver:
 
     flux_left: ...
     flux_right: ...
+    intermediate_state: ...
     _wave_speed_left: ...
     _wave_speed_right: ...
 
@@ -28,15 +29,16 @@ class RiemannSolver:
         )
 
         factor = 1 / (self._wave_speed_right - self._wave_speed_left)
-        intermediate_state = factor * (
+        self.intermediate_state = factor * (
             self._wave_speed_right * value_right
             - self._wave_speed_left * value_left
             - (self.flux_right - self.flux_left)
         )
 
         return (
-            self.flux_left - self._wave_speed_left * (value_left - intermediate_state),
-            intermediate_state,
+            self.flux_left
+            - self._wave_speed_left * (value_left - self.intermediate_state),
+            self.intermediate_state,
         )
 
     @property

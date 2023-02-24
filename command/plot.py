@@ -5,7 +5,7 @@ import core
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
-import shallow_water as swe
+import finite_volume.shallow_water as swe
 from tqdm.auto import tqdm
 
 from .calculate import Calculate
@@ -14,7 +14,7 @@ from .command import Command
 T = TypeVar("T", float, np.ndarray)
 
 
-class NothingToPlotError(core.CustomError):
+class NothingToPlotError(Exception):
     ...
 
 
@@ -250,8 +250,6 @@ class Plot(Command):
                         f"WARNING: {str(error)} Solution could not be calculated."
                     )
 
-        self._delete_not_solved_solutions()
-
     def _delete_not_solved_solutions(self):
         accepted_solver = []
         for solver in self._solver:
@@ -270,13 +268,13 @@ class Plot(Command):
     def _add_exact_solution(self):
         try:
             self._plotter.add_exact_solution()
-        except core.NoExactSolutionError as error:
+        except Exception as error:
             if self._write_warnings:
                 tqdm.write("WARNING: " + str(error))
 
     def _add_discrete_solutions(self):
         for solver in self._solver:
-            solution = solver._solution
+            solution = solver.solution
             self._plotter.add_function_values(
                 solution.grid, solution.value, solver.short
             )

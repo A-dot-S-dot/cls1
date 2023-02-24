@@ -3,14 +3,9 @@ from typing import Generic, Tuple, TypeVar
 
 import numpy as np
 
-from .error import CustomError
 from .mesh import Interval
 
 T = TypeVar("T", float, np.ndarray)
-
-
-class NoExactSolutionError(CustomError):
-    ...
 
 
 class Benchmark(ABC, Generic[T]):
@@ -42,7 +37,7 @@ class Benchmark(ABC, Generic[T]):
         raise AttributeError("No right inflow speciefied.")
 
     def exact_solution(self, x: float, t: float) -> T:
-        raise NoExactSolutionError("No exact solution exists.")
+        raise AttributeError("No exact solution exists.")
 
     def exact_solution_at_end_time(self, x: float) -> T:
         return self.exact_solution(x, self.end_time)

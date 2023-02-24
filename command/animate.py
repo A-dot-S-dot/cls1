@@ -4,10 +4,10 @@ from typing import Callable, Generic, List, Optional, Sequence, Tuple, TypeVar
 
 import core
 import defaults
+import finite_volume.shallow_water as swe
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-import shallow_water as swe
 from matplotlib import animation
 from tqdm.auto import tqdm
 
@@ -430,7 +430,7 @@ class Animate(Command):
         try:
             self._benchmark.exact_solution(0, 0)
             self._animator.add_exact_solution()
-        except core.NoExactSolutionError as error:
+        except Exception as error:
             if self._write_warnings:
                 tqdm.write("WARNING: " + str(error))
 

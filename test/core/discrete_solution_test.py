@@ -77,7 +77,7 @@ class TestDiscreteSolution(TestCase):
     def test_not_finite_error(self):
         solution = self.create_solution()
         self.assertRaises(
-            NotFiniteError,
+            ValueError,
             solution.update,
             1.0,
             np.array([[0.0, 0.0], [0.0, 0.0], [0.0, np.nan]]),

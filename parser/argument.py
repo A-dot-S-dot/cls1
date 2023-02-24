@@ -1,7 +1,7 @@
 import defaults
 from core import ode_solver
-from shallow_water import RandomOscillationNoTopographyBenchmark
-from shallow_water.solver import SHALLOW_WATER_FLUX_GETTER
+from benchmark.shallow_water import RandomOscillationNoTopographyBenchmark
+from finite_volume.shallow_water.solver import SHALLOW_WATER_FLUX_GETTER
 
 from . import parser_type
 
@@ -261,10 +261,10 @@ def add_ode_solver(parser):
         "euler": ode_solver.ForwardEuler,
         "heun": ode_solver.Heun,
         "ssp3": ode_solver.StrongStabilityPreservingRungeKutta3,
-        # "ssp4": ode_solver.StrongStabilityPreservingRungeKutta4,
     }
 
     parser.add_argument(
+        "+o",
         "++ode-solver",
         help="Specify ode solver. Available solver are:"
         + ", ".join([*_ode_solver.keys()]),

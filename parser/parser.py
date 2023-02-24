@@ -3,8 +3,7 @@ import textwrap
 
 import command as cmd
 import defaults
-from scalar.benchmark import advection, burgers
-from shallow_water import benchmark as shallow_water
+from benchmark import advection, burgers, shallow_water
 
 from . import action, argument
 from . import postprocessing as ppr
@@ -38,19 +37,19 @@ class CustomArgumentParser:
             ppr.BuildCommand(cmd.Animate),
             ppr.DeleteArguments("problem"),
         ],
-        "eoc": [
-            ppr.adjust_end_time,
-            ppr.build_eoc_solutions,
-            ppr.BuildCommand(cmd.CalculateEOC),
-            ppr.DeleteArguments("problem"),
-        ],
-        "plot-error-evolution": [
-            ppr.adjust_end_time,
-            ppr.add_save_history_argument,
-            ppr.build_solver,
-            ppr.BuildCommand(cmd.PlotShallowWaterErrorEvolution),
-            ppr.DeleteArguments("problem", "benchmark"),
-        ],
+        # "eoc": [
+        #     ppr.adjust_end_time,
+        #     ppr.build_eoc_solutions,
+        #     ppr.BuildCommand(cmd.CalculateEOC),
+        #     ppr.DeleteArguments("problem"),
+        # ],
+        # "plot-error-evolution": [
+        #     ppr.adjust_end_time,
+        #     ppr.add_save_history_argument,
+        #     ppr.build_solver,
+        #     ppr.BuildCommand(cmd.PlotShallowWaterErrorEvolution),
+        #     ppr.DeleteArguments("problem", "benchmark"),
+        # ],
     }
 
     def __init__(self):
@@ -79,8 +78,8 @@ class CustomArgumentParser:
         self._add_calculation_parser(parsers)
         self._add_plot_parser(parsers)
         self._add_animate_parser(parsers)
-        self._add_eoc_parser(parsers)
-        self._add_plot_error_evolution_parser(parsers)
+        # self._add_eoc_parser(parsers)
+        # self._add_plot_error_evolution_parser(parsers)
 
     def _add_test_parser(self, parsers):
         test_parser = parsers.add_parser(

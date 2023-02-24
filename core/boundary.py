@@ -104,8 +104,8 @@ class BoundaryConditions:
         else:
             left_value, right_value = np.nan, np.nan
 
-        return np.array([left_value, *node_values_right]), np.array(
-            [*node_values_left, right_value]
+        return np.array([left_value, *node_values_right.copy()]), np.array(
+            [*node_values_left.copy(), right_value]
         )
 
     def __repr__(self) -> str:

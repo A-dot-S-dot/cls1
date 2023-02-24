@@ -6,8 +6,8 @@ import defaults
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import shallow_water
-from shallow_water import solver
+import finite_volume.shallow_water as swe
+from finite_volume.shallow_water import solver
 from tqdm.auto import tqdm, trange
 
 from .animate import Animate, ShallowWaterAnimator
@@ -432,7 +432,7 @@ class GenerateShallowWaterErrorEvolutionSeries(Command):
             unit="benchmark",
             leave=False,
         ):
-            benchmark = shallow_water.RandomOscillationNoTopographyBenchmark(
+            benchmark = swe.RandomOscillationNoTopographyBenchmark(
                 seed=self._seed + i, **self._benchmark_parameters
             )
             approximated_solver = solver.SubgridNetworkSolver(
@@ -456,7 +456,7 @@ class GenerateShallowWaterErrorEvolutionSeries(Command):
 
     def _save(
         self,
-        benchmark: shallow_water.ShallowWaterBenchmark,
+        benchmark: swe.ShallowWaterBenchmark,
         index: int,
         approximated_solver: core.Solver,
         exact_solver: core.Solver,
