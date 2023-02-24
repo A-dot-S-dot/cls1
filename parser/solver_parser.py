@@ -107,7 +107,19 @@ class ShallowWaterLaxFriedrichsParser(SolverParser):
         argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
 
 
-class CentralFluxParser(SolverParser):
+class ScalarCentralFluxParser(SolverParser):
+    prog = "central"
+    name = "Central scheme"
+    solver = fv_scalar.CentralFluxSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
+
+
+class ShallowWaterCentralFluxParser(SolverParser):
     prog = "central"
     name = "Central scheme"
     solver = fv_swe.CentralFluxSolver
@@ -219,6 +231,7 @@ class CoarseParser(SolverParser):
 
 SCALAR_SOLVER_PARSERS = {
     "llf": ScalarLaxFriedrichsParser,
+    "central": ScalarCentralFluxParser,
     "cg": CGParser,
     "cg_low": LowCGParser,
     "mcl": MCLParser,
@@ -226,7 +239,7 @@ SCALAR_SOLVER_PARSERS = {
 SHALLOW_WATER_SOLVER_PARSERS = {
     "llf": ShallowWaterLaxFriedrichsParser,
     "low-order": LowOrderParser,
-    "central": CentralFluxParser,
+    "central": ShallowWaterCentralFluxParser,
     "es": EnergyStableParser,
     "es1": FirstOrderDiffusiveEnergyStableParser,
     # "subgrid-network": SubgridNetworkParser,
