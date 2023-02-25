@@ -68,9 +68,9 @@ class LowCGParser(SolverParser):
         argument.add_ode_solver(self)
 
 
-class MCLParser(SolverParser):
-    prog = "mcl"
-    name = "MCL Solver"
+class ScalarFiniteElementMCLParser(SolverParser):
+    prog = "mcl-fem"
+    name = "Finite Element MCL Solver"
     solver = fem_scalar.MCLSolver
 
     def _add_arguments(self):
@@ -187,6 +187,19 @@ class FirstOrderDiffusiveEnergyStableParser(SolverParser):
 #         argument.add_network_load_path(self)
 
 
+class ScalarFiniteVolumeMCLParser(SolverParser):
+    prog = "mcl-fv"
+    name = "Finite Volume MCL Solver"
+    solver = fv_scalar.MCLSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(self)
+        argument.add_cfl_number(self, defaults.FINITE_VOLUME_CFL_NUMBER)
+        argument.add_ode_solver(self)
+
+
 class ShallowWaterMCLParser(SolverParser):
     prog = "mcl"
     name = "MCL Solver"
@@ -232,9 +245,10 @@ class CoarseParser(SolverParser):
 SCALAR_SOLVER_PARSERS = {
     "llf": ScalarLaxFriedrichsParser,
     "central": ScalarCentralFluxParser,
+    "mcl-fv": ScalarFiniteVolumeMCLParser,
     "cg": CGParser,
     "cg_low": LowCGParser,
-    "mcl": MCLParser,
+    "mcl-fem": ScalarFiniteElementMCLParser,
 }
 SHALLOW_WATER_SOLVER_PARSERS = {
     "llf": ShallowWaterLaxFriedrichsParser,

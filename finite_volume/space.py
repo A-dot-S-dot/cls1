@@ -2,7 +2,6 @@ from typing import Generic, TypeVar
 
 import numpy as np
 import core
-from .index_mapping import NeighbourIndicesMapping
 
 T = TypeVar("T", float, np.ndarray)
 
@@ -10,11 +9,9 @@ T = TypeVar("T", float, np.ndarray)
 class FiniteVolumeSpace(core.SolverSpace, Generic[T]):
     mesh: core.Mesh
     cell_centers: np.ndarray
-    dof_neighbours: core.NeighbourIndicesMapping
 
-    def __init__(self, mesh: core.Mesh, periodic=False):
+    def __init__(self, mesh: core.Mesh):
         self.mesh = mesh
-        self.dof_neighbours = NeighbourIndicesMapping(len(mesh), periodic)
 
         self._build_cell_centers()
 

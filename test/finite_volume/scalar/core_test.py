@@ -15,5 +15,7 @@ class TestWaveSpeed(TestCase):
 
         wl, wr = wave_speed(value_left, value_right)
 
+        assert_equal(wl.shape, (3,))
+        assert_equal(wr.shape, (3,))
         assert_equal(wl, -expected_wave_speed)
         assert_equal(wr, expected_wave_speed)

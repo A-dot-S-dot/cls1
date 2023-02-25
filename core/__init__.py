@@ -1,5 +1,6 @@
 from .boundary import *
 from .discrete_solution import *
+from .function import *
 from .index_mapping import *
 from .interpolate import *
 from .local_bounds import *

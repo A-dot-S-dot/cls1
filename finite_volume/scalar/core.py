@@ -21,7 +21,6 @@ class WaveSpeed:
         self._flux_prime = flux_prime
 
     def __call__(self, value_left, value_right) -> Tuple:
-
         wave_speed = np.maximum(
             self._flux_prime(value_left), self._flux_prime(value_right)
         )
@@ -31,7 +30,7 @@ class WaveSpeed:
 
 def get_wave_speed(problem: str) -> WaveSpeed:
     if problem == "advection":
-        flux_prime = lambda u: 1
+        flux_prime = lambda u: np.ones(u.shape)
     elif problem == "burgers":
         flux_prime = lambda u: u
     else:
