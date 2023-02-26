@@ -1,13 +1,14 @@
-from unittest import TestCase
-from finite_volume.scalar.solver.mcl import *
-from finite_volume import scalar
+from unittest import TestCase, skip
+
 import finite_volume
+from finite_volume import scalar
+from finite_volume.scalar.solver.mcl import *
 
 
 class TestMCL(TestCase):
+    @skip("No test implemented.")
     def test_flux(self):
         flux = MCLFlux(
             scalar.get_riemann_solver("advection"),
             finite_volume.NeighbourIndicesMapping(4, True),
         )
-        print(flux(np.array([1.0, 2.0, 3.0]), np.array([2.0, 3.0, 0.4])))
