@@ -358,7 +358,11 @@ class ShallowWaterAnimator(Animator[np.ndarray]):
         velocities_per_solver = [
             swe.get_velocities(*value) for value in self._values_per_solver
         ]
-        return np.min(velocities_per_solver), np.max(velocities_per_solver)
+
+        return (
+            np.min([np.min(v) for v in velocities_per_solver]),
+            np.max([np.max(v) for v in velocities_per_solver]),
+        )
 
     def _add_bathymetry(self):
         bathymetry_values = np.array(
@@ -413,7 +417,7 @@ class Animate(Command):
         for solver in tqdm(self._solver, desc="Calculate", unit="solver", leave=False):
             try:
                 Calculate(solver).execute()
-            except core.CustomError as error:
+            except Exception as error:
                 if self._write_warnings:
                     tqdm.write(
                         f"WARNING: {str(error)} Solution could not be calculated until T={self._benchmark.end_time}. Freeze solution after t={solver.solution.time:.3e}."
