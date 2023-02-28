@@ -48,7 +48,7 @@ class FirstOrderDiffusiveEnergyStableFlux(swe.NumericalFlux):
         self._build_diffusion_matrix()
         self._build_entropy_step(value_left, value_right)
 
-        diffusion = np.array([D.dot(V) for D, V in zip(self._D, self._entropy_step)])
+        diffusion = (self._D @ self._entropy_step)[..., 0]
 
         new_flux = flux + -diffusion
         source = self._get_source_term(value_left, value_right)
@@ -58,14 +58,9 @@ class FirstOrderDiffusiveEnergyStableFlux(swe.NumericalFlux):
     def _build_diffusion_matrix(self):
         self._build_R()
         self._build_Lambda()
+        R_transpose = np.moveaxis(self._R, -1, -2)
 
-        self._D = (
-            1
-            / 2
-            * np.array(
-                [np.dot(R, np.dot(L, R.T)) for R, L in zip(self._R, self._Lambda)]
-            )
-        )
+        self._D = 1 / 2 * self._R @ self._Lambda @ R_transpose
 
     def _build_wave_speeds(
         self, height_average: np.ndarray, velocity_average: np.ndarray
@@ -75,31 +70,36 @@ class FirstOrderDiffusiveEnergyStableFlux(swe.NumericalFlux):
         self._l_plus = velocity_average + x
 
     def _build_R(self):
-        self._R = (
-            1
-            / np.sqrt(2 * self.gravitational_acceleration)
-            * np.array(
-                [[[1.0, 1.0], [lm, lp]] for lm, lp in zip(self._l_minus, self._l_plus)]
-            )
-        )
-
-    def _build_Lambda(self):
-        self._Lambda = (
+        R = (
             1
             / np.sqrt(2 * self.gravitational_acceleration)
             * np.array(
                 [
-                    np.diag([np.abs(lm), np.abs(lp)])
-                    for lm, lp in zip(self._l_minus, self._l_plus)
+                    [np.ones(self._l_plus.shape), np.ones(self._l_plus.shape)],
+                    [self._l_minus, self._l_plus],
                 ]
             )
         )
+        self._R = np.moveaxis(R, -1, 0)
+
+    def _build_Lambda(self):
+        Lambda = (
+            1
+            / np.sqrt(2 * self.gravitational_acceleration)
+            * np.array(
+                [
+                    [np.abs(self._l_minus), np.zeros(self._l_plus.shape)],
+                    [np.zeros(self._l_plus.shape), np.abs(self._l_plus)],
+                ]
+            )
+        )
+        self._Lambda = np.moveaxis(Lambda, -1, 0)
 
     def _build_entropy_step(self, value_left, value_right):
         hl, hr = swe.get_heights(value_left, value_right)
         ul, ur = swe.get_velocities(value_left, value_right)
 
-        self._entropy_step = np.array(
+        entropy_step = np.array(
             [
                 self.gravitational_acceleration * (hr - hl + self.bathymetry_step)
                 - ur**2 / 2
@@ -107,6 +107,8 @@ class FirstOrderDiffusiveEnergyStableFlux(swe.NumericalFlux):
                 ur + -ul,
             ]
         ).T
+
+        self._entropy_step = np.moveaxis(entropy_step[:, None], -1, -2)
 
 
 class EnergyStableFluxGetter(swe.FluxGetter):
