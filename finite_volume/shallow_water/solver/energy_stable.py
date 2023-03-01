@@ -27,7 +27,7 @@ class EnergyStableFlux(finite_volume.NumericalFlux):
 
 class FirstOrderDiffusiveEnergyStableFlux(swe.NumericalFlux):
     input_dimension = 2
-    _es_flux: EnergyStableFlux
+    _energy_stable_flux: EnergyStableFlux
 
     def __init__(
         self,
@@ -38,77 +38,99 @@ class FirstOrderDiffusiveEnergyStableFlux(swe.NumericalFlux):
             gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
         )
 
-        self._build_bathymetry_step(bathymetry)
-        self._es_flux = EnergyStableFlux(gravitational_acceleration)
+        self._build_bathymetry(bathymetry)
+        self._energy_stable_flux = EnergyStableFlux(gravitational_acceleration)
 
     def __call__(self, value_left: np.ndarray, value_right: np.ndarray):
-        _, flux = self._es_flux(value_left, value_right)
-        average = swe.get_average(value_left, value_right)
-        self._build_wave_speeds(swe.get_height(average), swe.get_velocity(average))
-        self._build_diffusion_matrix()
-        self._build_entropy_step(value_left, value_right)
+        flux = self._get_raw_flux(value_left, value_right)
+        diffusion = self._get_diffusion(value_left, value_right)
 
-        diffusion = (self._D @ self._entropy_step)[..., 0]
-
-        new_flux = flux + -diffusion
+        new_flux = flux - diffusion
         source = self._get_source_term(value_left, value_right)
 
         return -new_flux - source, new_flux - source
 
-    def _build_diffusion_matrix(self):
-        self._build_R()
-        self._build_Lambda()
-        R_transpose = np.moveaxis(self._R, -1, -2)
+    def _get_raw_flux(self, value_left: np.ndarray, value_right: np.ndarray):
+        _, flux = self._energy_stable_flux(value_left, value_right)
 
-        self._D = 1 / 2 * self._R @ self._Lambda @ R_transpose
+        return flux
 
-    def _build_wave_speeds(
-        self, height_average: np.ndarray, velocity_average: np.ndarray
-    ):
-        x = np.sqrt(self.gravitational_acceleration * height_average)
-        self._l_minus = velocity_average + -x
-        self._l_plus = velocity_average + x
+    def _get_diffusion(
+        self, value_left: np.ndarray, value_right: np.ndarray
+    ) -> np.ndarray:
+        entropy = self._get_entropy(
+            finite_volume.get_dof_vector(value_left, value_right)
+        )
+        entropy_step = self._get_entropy_step(entropy)
 
-    def _build_R(self):
+        diffusion_matrix = self._get_diffusion_matrix(value_left, value_right)
+
+        return (diffusion_matrix @ entropy_step)[..., 0]
+
+    def _get_diffusion_matrix(
+        self, value_left: np.ndarray, value_right: np.ndarray
+    ) -> np.ndarray:
+        average = swe.get_average(value_left, value_right)
+        wave_speed_minus, wave_speed_plus = self._get_wave_speeds(
+            swe.get_height(average), swe.get_velocity(average)
+        )
+        R = self._get_R(wave_speed_minus, wave_speed_plus)
+        L = self._get_Lambda(wave_speed_minus, wave_speed_plus)
+        R_transpose = np.moveaxis(R, -1, -2)
+
+        return 1 / 2 * R @ L @ R_transpose
+
+    def _get_wave_speeds(
+        self, value_height: np.ndarray, value_velocity: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        sqrt_gh = np.sqrt(self.gravitational_acceleration * value_height)
+        return value_velocity - sqrt_gh, value_velocity + sqrt_gh
+
+    def _get_R(
+        self, wave_speed_minus: np.ndarray, wave_speed_plus: np.ndarray
+    ) -> np.ndarray:
         R = (
             1
             / np.sqrt(2 * self.gravitational_acceleration)
             * np.array(
                 [
-                    [np.ones(self._l_plus.shape), np.ones(self._l_plus.shape)],
-                    [self._l_minus, self._l_plus],
+                    [np.ones(wave_speed_plus.shape), np.ones(wave_speed_plus.shape)],
+                    [wave_speed_minus, wave_speed_plus],
                 ]
             )
         )
-        self._R = np.moveaxis(R, -1, 0)
+        return np.moveaxis(R, -1, 0)
 
-    def _build_Lambda(self):
+    def _get_Lambda(
+        self, wave_speed_minus: np.ndarray, wave_speed_plus: np.ndarray
+    ) -> np.ndarray:
         Lambda = (
             1
             / np.sqrt(2 * self.gravitational_acceleration)
             * np.array(
                 [
-                    [np.abs(self._l_minus), np.zeros(self._l_plus.shape)],
-                    [np.zeros(self._l_plus.shape), np.abs(self._l_plus)],
+                    [np.abs(wave_speed_minus), np.zeros(wave_speed_minus.shape)],
+                    [np.zeros(wave_speed_plus.shape), np.abs(wave_speed_plus)],
                 ]
             )
         )
-        self._Lambda = np.moveaxis(Lambda, -1, 0)
+        return np.moveaxis(Lambda, -1, 0)
 
-    def _build_entropy_step(self, value_left, value_right):
-        hl, hr = swe.get_heights(value_left, value_right)
-        ul, ur = swe.get_velocities(value_left, value_right)
+    def _get_entropy_step(self, entropy: np.ndarray) -> np.ndarray:
+        entropy_step = np.diff(entropy, axis=0)
+        return np.moveaxis(entropy_step[:, None], -1, -2)
 
-        entropy_step = np.array(
+    def _get_entropy(self, value: np.ndarray):
+        height = swe.get_height(value)
+        velocity = swe.get_velocity(value)
+
+        return np.array(
             [
-                self.gravitational_acceleration * (hr - hl + self.bathymetry_step)
-                - ur**2 / 2
-                + ul**2 / 2,
-                ur + -ul,
+                self.gravitational_acceleration * (height + self.bathymetry)
+                - velocity**2 / 2,
+                velocity,
             ]
         ).T
-
-        self._entropy_step = np.moveaxis(entropy_step[:, None], -1, -2)
 
 
 class EnergyStableFluxGetter(swe.FluxGetter):

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Tuple, TypeVar
+from typing import Callable, Tuple, TypeVar
 
 import core
 import numpy as np

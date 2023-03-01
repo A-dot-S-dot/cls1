@@ -46,7 +46,7 @@ class LowOrderFlux(swe.NumericalFlux):
             gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
         )
 
-        self._build_bathymetry_step(bathymetry)
+        self._build_bathymetry(bathymetry)
         self._riemann_solver = swe.RiemannSolver(
             gravitational_acceleration=gravitational_acceleration,
         )

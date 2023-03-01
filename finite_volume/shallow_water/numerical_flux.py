@@ -7,6 +7,7 @@ import numpy as np
 
 
 class NumericalFlux(finite_volume.NumericalFlux):
+    bathymetry: np.ndarray
     bathymetry_step: np.ndarray
     gravitational_acceleration: float
     _numerical_flux: finite_volume.NumericalFlux
@@ -23,18 +24,26 @@ class NumericalFlux(finite_volume.NumericalFlux):
             gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
         )
 
-        self._build_bathymetry_step(bathymetry)
+        self._build_bathymetry(bathymetry)
 
-    def _build_bathymetry_step(self, bathymetry: Optional[np.ndarray | float]):
+    def _build_bathymetry(self, bathymetry: Optional[np.ndarray | float]):
         if (
             bathymetry is None
             or isinstance(bathymetry, float)
             or swe.is_constant(bathymetry)
         ):
+            self.bathymetry = np.array([0])
             self.bathymetry_step = np.array([0])
         else:
-            bathymetry = np.array([bathymetry[0], *bathymetry, bathymetry[-1]])
-            self.bathymetry_step = np.diff(bathymetry)
+            input_radius = self.input_dimension // 2
+            self.bathymetry = np.array(
+                [
+                    *input_radius * [bathymetry[0]],
+                    *bathymetry,
+                    *input_radius * [bathymetry[-1]],
+                ]
+            )
+            self.bathymetry_step = np.diff(self.bathymetry)
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         flux_left, flux_right = self._numerical_flux(*values)
