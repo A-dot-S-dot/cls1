@@ -17,3 +17,13 @@ class TestMinimum(TestCase):
         expected_output = np.array([0.0, -1.0])
 
         assert_equal(min, expected_output)
+
+
+class TestMinmod(TestCase):
+    def test_func(self):
+        a = np.array([[-1.0, -1.0]])
+        b = np.array([[-2.0, 1.0]])
+
+        expected_output = np.array([[-1.0, 0.0]])
+
+        assert_equal(minmod(a, b), expected_output)
