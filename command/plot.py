@@ -246,7 +246,9 @@ class Plot(Command):
                 Calculate(solver).execute()
             except Exception as error:
                 if self._write_warnings:
-                    tqdm.write(f"WARNING: {str(error)}")
+                    tqdm.write(
+                        f"WARNING: {str(error)} Solution calculated until t={solver.solution.time:.3e}."
+                    )
 
     def _delete_not_solved_solutions(self):
         accepted_solver = []

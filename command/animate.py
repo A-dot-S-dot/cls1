@@ -420,7 +420,7 @@ class Animate(Command):
             except Exception as error:
                 if self._write_warnings:
                     tqdm.write(
-                        f"WARNING: {str(error)} Solution could not be calculated until T={self._benchmark.end_time}. Freeze solution after t={solver.solution.time:.3e}."
+                        f"WARNING: {str(error)} Solution calculated until t={solver.solution.time:.3e}."
                     )
 
     def _add_animations(self):
