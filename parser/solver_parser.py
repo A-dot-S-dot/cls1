@@ -40,7 +40,7 @@ class SolverParser(argparse.ArgumentParser, ABC):
 
 
 class CGParser(SolverParser):
-    prog = "cg"
+    prog = "CG"
     name = "Continuous Galerkin"
     solver = fem_scalar.ContinuousGalerkinSolver
 
@@ -54,7 +54,7 @@ class CGParser(SolverParser):
 
 
 class LowCGParser(SolverParser):
-    prog = "cg_low"
+    prog = "CG-Low"
     name = "Low order Continuous Galerkin"
     solver = fem_scalar.LowOrderContinuousGalerkinSolver
 
@@ -69,7 +69,7 @@ class LowCGParser(SolverParser):
 
 
 class ScalarFiniteElementMCLParser(SolverParser):
-    prog = "mcl-fem"
+    prog = "MCL-FEM"
     name = "Finite Element MCL Solver"
     solver = fem_scalar.MCLSolver
 
@@ -84,7 +84,7 @@ class ScalarFiniteElementMCLParser(SolverParser):
 
 
 class ScalarLaxFriedrichsParser(SolverParser):
-    prog = "llf"
+    prog = "LLF"
     name = "Lax-Friedrichs finite volume scheme"
     solver = fv_scalar.LaxFriedrichsSolver
 
@@ -96,7 +96,7 @@ class ScalarLaxFriedrichsParser(SolverParser):
 
 
 class ShallowWaterLaxFriedrichsParser(SolverParser):
-    prog = "llf"
+    prog = "LLF"
     name = "Lax-Friedrichs finite volume scheme"
     solver = fv_swe.LaxFriedrichsSolver
 
@@ -108,7 +108,7 @@ class ShallowWaterLaxFriedrichsParser(SolverParser):
 
 
 class ScalarCentralFluxParser(SolverParser):
-    prog = "central"
+    prog = "Central"
     name = "Central scheme"
     solver = fv_scalar.CentralFluxSolver
 
@@ -120,7 +120,7 @@ class ScalarCentralFluxParser(SolverParser):
 
 
 class ShallowWaterCentralFluxParser(SolverParser):
-    prog = "central"
+    prog = "Central"
     name = "Central scheme"
     solver = fv_swe.CentralFluxSolver
 
@@ -132,7 +132,7 @@ class ShallowWaterCentralFluxParser(SolverParser):
 
 
 class LowOrderParser(SolverParser):
-    prog = "low-order"
+    prog = "Low-Order"
     name = "Low order finite volume scheme"
     solver = fv_swe.LowOrderSolver
 
@@ -144,7 +144,7 @@ class LowOrderParser(SolverParser):
 
 
 class EnergyStableParser(SolverParser):
-    prog = "es"
+    prog = "ES"
     name = "Energy stable finite volume scheme"
     solver = fv_swe.EnergyStableSolver
 
@@ -157,7 +157,7 @@ class EnergyStableParser(SolverParser):
 
 
 class FirstOrderDiffusiveEnergyStableParser(SolverParser):
-    prog = "es1"
+    prog = "ES1"
     name = "Energy stable finite volume scheme with first order diffusion"
     solver = fv_swe.FirstOrderDiffusiveEnergyStableSolver
 
@@ -188,7 +188,7 @@ class FirstOrderDiffusiveEnergyStableParser(SolverParser):
 
 
 class ScalarFiniteVolumeMCLParser(SolverParser):
-    prog = "mcl-fv"
+    prog = "MCL-FV"
     name = "Finite Volume MCL Solver"
     solver = fv_scalar.MCLSolver
 
@@ -201,7 +201,7 @@ class ScalarFiniteVolumeMCLParser(SolverParser):
 
 
 class ShallowWaterMCLParser(SolverParser):
-    prog = "mcl"
+    prog = "MCL"
     name = "MCL Solver"
     solver = fv_swe.MCLSolver
 
@@ -215,7 +215,7 @@ class ShallowWaterMCLParser(SolverParser):
 
 
 class AntidiffusionParser(SolverParser):
-    prog = "antidiffusion"
+    prog = "Antidiffusion"
     name = "Solver with antidiffusion."
     solver = fv_swe.LinearAntidiffusiveSolver
 
@@ -229,7 +229,7 @@ class AntidiffusionParser(SolverParser):
 
 
 class CoarseParser(SolverParser):
-    prog = "coarse"
+    prog = "Coarse"
     name = "Coarsened Solver."
     solver = fv_swe.CoarseSolver
 
