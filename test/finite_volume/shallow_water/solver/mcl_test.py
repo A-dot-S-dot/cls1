@@ -10,7 +10,7 @@ class TestMcl(TestCase):
     def test_limiter(self):
         value_left = np.array([[2.0, 0.0], [2.0, 0.0], [1.0, 0.0]])
         value_right = np.array([[2.0, 0.0], [1.0, 0.0], [1.0, 0.0]])
-        limiter = MCLFlux(1.0, swe.get_boundary_conditions("outflow", "outflow"))
+        limiter = MCLFlux(gravitational_acceleration=1.0)
 
         flux_left, flux_right = limiter(value_left, value_right)
         expected_flux = np.array([[0.0, 2.0], [0.0, 1.0], [0.0, 0.5]])

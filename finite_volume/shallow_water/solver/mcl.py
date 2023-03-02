@@ -1,6 +1,6 @@
-"""A finite element version of the implemented solvers are discussed in
-'Bound-preserving and entropy-stable algebraic flux correction schemes for the
-shallow water equations with topography' by H. Hajduk and D. Kuzmin.
+"""A finite volume version of the MCL solver is discussed in 'Bound-preserving
+and entropy-stable algebraic flux correction schemes for the shallow water
+equations with topography' by H. Hajduk and D. Kuzmin.
 
 """
 from typing import Dict, Tuple
@@ -29,14 +29,16 @@ class MCLFlux(LowOrderFlux):
 
     def __init__(
         self,
-        gravitational_acceleration: float,
-        boundary_conditions: core.BoundaryConditions,
+        gravitational_acceleration=None,
+        boundary_conditions=None,
         high_order_flux=None,
         bathymetry=None,
     ):
         LowOrderFlux.__init__(self, gravitational_acceleration, bathymetry)
 
-        self._boundary_conditions = boundary_conditions
+        self._boundary_conditions = boundary_conditions or swe.get_boundary_conditions(
+            "outflow", "outflow"
+        )
 
         self._high_order_flux = high_order_flux or finite_volume.CentralFlux(
             swe.Flux(gravitational_acceleration)
