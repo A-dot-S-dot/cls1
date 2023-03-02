@@ -42,10 +42,6 @@ class Solver(Generic[T]):
             initial_time=self._solution.time,
         )
 
-    def reinitialize(self, initial_value: np.ndarray, initial_time=0.0):
-        self._solution.set_value(initial_value, initial_time)
-        self._ode_solver.reinitialize(initial_value, initial_time)
-
     @property
     def solution(self) -> T:
         return self._solution

@@ -64,3 +64,10 @@ class Solver(core.Solver):
             "name": name,
             "short": short,
         }
+
+    def reinitialize(self, benchmark: core.Benchmark):
+        initial_data = get_finite_volume_solution(
+            benchmark, len(self.solution.space.mesh)
+        )
+        self._solution.set_value(initial_data.value, initial_data.time)
+        self._ode_solver.reinitialize(initial_data.value, initial_data.time)
