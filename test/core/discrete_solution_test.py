@@ -2,6 +2,7 @@ from test.test_helper import VOLUME_SPACE
 from unittest import TestCase
 
 import numpy as np
+from numpy.testing import assert_equal
 
 from core.discrete_solution import *
 
@@ -31,27 +32,27 @@ class TestDiscreteSolution(TestCase):
         self.update(solution)
         self.assertTupleEqual(solution.dimension, (3, 2))
 
-    def test_time_with_default_start_time_before_update(self):
+    def test_time_with_default_initial_time_before_update(self):
         solution = self.create_solution()
         self.assertEqual(solution.time, 0.0)
 
-    def test_time_with_default_start_time_after_update(self):
+    def test_time_with_default_initial_time_after_update(self):
         solution = self.create_solution()
         self.update(solution)
         self.assertEqual(solution.time, 1.0)
 
-    def test_time_with_custom_start_time_before_update(self):
-        solution = self.create_solution(start_time=1.0)
+    def test_time_with_custom_initial_time_before_update(self):
+        solution = self.create_solution(initial_time=1.0)
         self.assertEqual(solution.time, 1.0)
 
-    def test_end_time_with_custom_start_time_after_update(self):
-        solution = self.create_solution(start_time=1.0)
+    def test_end_time_with_custom_initial_time_after_update(self):
+        solution = self.create_solution(initial_time=1.0)
         self.update(solution)
         self.assertEqual(solution.time, 2.0)
 
     def test_grid(self):
         solution = self.create_solution(space=VOLUME_SPACE)
-        self.assertListEqual(list(solution.grid), list(VOLUME_SPACE.grid))
+        assert_equal(solution.grid, VOLUME_SPACE.grid)
 
     def test_no_grid_error(self):
         solution = self.create_solution(space=None)
@@ -63,16 +64,12 @@ class TestDiscreteSolution(TestCase):
 
     def test_value_before_update(self):
         solution = self.create_solution()
-        for i in range(3):
-            for j in range(2):
-                self.assertEqual(solution.value[i, j], 0.0)
+        assert_equal(solution.value, 0.0)
 
     def test_value_after_update(self):
         solution = self.create_solution()
         self.update(solution)
-        for i in range(3):
-            for j in range(2):
-                self.assertEqual(solution.value[i, j], 1.0)
+        assert_equal(solution.value, 1.0)
 
     def test_not_finite_error(self):
         solution = self.create_solution()
@@ -95,47 +92,54 @@ class TestDiscreteSolutionWithHistory(TestCase):
             np.array([[1.0, 1.0], [1.0, 1.0], [1.0, 1.0]]),
         )
 
-    def test_time_history_with_default_start_time_before_update(self):
+    def test_time_history_with_default_initial_time_before_update(self):
         solution = self.create_solution()
-        self.assertListEqual(list(solution.time_history), [0.0])
+        assert_equal(solution.time_history, 0.0)
 
-    def test_time_history_with_custom_start_time_before_update(self):
-        solution = self.create_solution(start_time=1.0)
-        self.assertListEqual(list(solution.time_history), [1.0])
+    def test_time_history_with_custom_initial_time_before_update(self):
+        solution = self.create_solution(initial_time=1.0)
+        assert_equal(solution.time_history, 1.0)
 
-    def test_time_history_with_default_start_time_after_update(self):
+    def test_time_history_with_default_initial_time_after_update(self):
         solution = self.create_solution()
         self.update(solution)
-        self.assertListEqual(list(solution.time_history), [0.0, 1.0])
+        assert_equal(solution.time_history, [0.0, 1.0])
 
-    def test_time_history_with_custom_start_time_after_update(self):
-        solution = self.create_solution(start_time=1.0)
+    def test_time_history_with_custom_initial_time_after_update(self):
+        solution = self.create_solution(initial_time=1.0)
         self.update(solution)
-        self.assertListEqual(list(solution.time_history), [1.0, 2.0])
+        assert_equal(solution.time_history, [1.0, 2.0])
 
     def test_time_step_history_befote_update(self):
         solution = self.create_solution()
-        self.assertListEqual(list(solution.time_step_history), [])
+        assert_equal(solution.time_step_history, [])
 
     def test_time_step_history_after_update(self):
         solution = self.create_solution()
         self.update(solution)
-        self.assertListEqual(list(solution.time_step_history), [1.0])
+        assert_equal(solution.time_step_history, 1.0)
 
     def test_value_history_before_update(self):
         solution = self.create_solution()
         for i in range(1):
-            for j in range(3):
-                for k in range(2):
-                    self.assertEqual(solution.value_history[i, j, k], i)
+            assert_equal(solution.value_history[i], i)
 
     def test_value_history_after_update(self):
         solution = self.create_solution()
         self.update(solution)
         for i in range(2):
-            for j in range(3):
-                for k in range(2):
-                    self.assertEqual(solution.value_history[i, j, k], i)
+            assert_equal(solution.value_history[i], i)
+
+    def test_set_value(self):
+        solution = self.create_solution()
+        self.update(solution)
+        self.update(solution)
+        value = np.array([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
+
+        solution.set_value(value)
+
+        assert_equal(solution.value_history, value[None, :])
+        assert_equal(solution.time_history, 0.0)
 
 
 class TestCoarseSolution(TestCase):
@@ -147,7 +151,7 @@ class TestCoarseSolution(TestCase):
         expected_value = np.array([[2.0, 3.0], [6.0, 7.0]])
 
         self.assertEqual(coarse_solution.time, solution.time)
-        self.assertTrue(np.array_equal(coarse_solution.value, expected_value))
+        assert_equal(coarse_solution.value, expected_value)
 
 
 class TestCoarseSolutionWithHistory(TestCase):
@@ -161,9 +165,5 @@ class TestCoarseSolutionWithHistory(TestCase):
             [[[2.0, 3.0], [6.0, 7.0]], [[2.0, 3.0], [6.0, 7.0]]]
         )
 
-        self.assertTrue(
-            np.array_equal(solution.time_history, coarse_solution.time_history)
-        )
-        self.assertTrue(
-            np.array_equal(coarse_solution.value_history, expected_value_history)
-        )
+        assert_equal(solution.time_history, coarse_solution.time_history)
+        assert_equal(coarse_solution.value_history, expected_value_history)
