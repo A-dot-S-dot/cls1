@@ -214,6 +214,43 @@ class MaximumWaveSpeed:
         )
 
 
+class Entropy:
+    _gravitational_acceleration: float
+
+    def __init__(self, gravitational_acceleration=None):
+        self._gravitational_acceleration = (
+            gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
+        )
+
+    def __call__(self, value: np.ndarray, bathymetry=None) -> np.ndarray:
+        height = get_height(value)
+        velocity = get_velocity(value)
+        bathymetry = bathymetry if bathymetry is not None else 0.0
+
+        return np.array(
+            [
+                self._gravitational_acceleration * (height + bathymetry)
+                - velocity**2 / 2,
+                velocity,
+            ]
+        ).T
+
+
+class Potential:
+    _gravitational_acceleration: float
+
+    def __init__(self, gravitational_acceleration=None):
+        self._gravitational_acceleration = (
+            gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
+        )
+
+    def __call__(self, value: np.ndarray) -> np.ndarray:
+        height = get_height(value)
+        velocity = get_velocity(value)
+
+        return self._gravitational_acceleration / 2 * height**2 * velocity
+
+
 class RiemannSolver(core.RiemannSolver):
     flux: core.FLUX
     gravitational_acceleration: float
