@@ -58,6 +58,6 @@ def get_finite_volume_solution(
 
     return solution_type(
         interpolator.interpolate(benchmark.initial_data),
-        start_time=benchmark.start_time,
+        initial_time=benchmark.start_time,
         space=space,
     )
