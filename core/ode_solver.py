@@ -23,14 +23,19 @@ class ExplicitRungeKuttaMethod(Generic[T]):
     _time_nodes: List[float]
 
     def __init__(
-        self, right_hand_side: Callable[[float, T], T], initial_value: T, start_time=0.0
+        self,
+        right_hand_side: Callable[[float, T], T],
+        initial_value: T,
+        initial_time=0.0,
     ):
-        self._time = start_time
         self._right_hand_side = right_hand_side
-        self._solution = self._build_initial_value(initial_value)
-        self._stage_values = []
+        self._initialize(initial_value, initial_time)
 
-    def _build_initial_value(self, initial_value: T) -> T:
+    def _initialize(self, initial_value: T, initial_time: float):
+        self._time = initial_time
+        self._solution = self._get_initial_value(initial_value)
+
+    def _get_initial_value(self, initial_value: T) -> T:
         if isinstance(initial_value, np.ndarray):
             return initial_value.copy()
         else:
@@ -51,6 +56,9 @@ class ExplicitRungeKuttaMethod(Generic[T]):
     @property
     def time_nodes(self) -> List[float]:
         return self._time_nodes
+
+    def reinitialize(self, initial_value: T, initial_time=0.0):
+        self._initialize(initial_value, initial_time)
 
     def execute(self, time_step: float):
         """A Runge Kutta step starting at actual point `xn` at actual time `tn` with the

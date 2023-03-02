@@ -19,10 +19,10 @@ class DiscreteSolution(Generic[T]):
     def __init__(
         self,
         initial_value: np.ndarray,
-        start_time=0.0,
+        initial_time=0.0,
         space=None,
     ):
-        self._time = start_time
+        self._time = initial_time
         self._value = initial_value
         self._space = space
 
@@ -56,12 +56,15 @@ class DiscreteSolution(Generic[T]):
     def value(self) -> np.ndarray:
         return self._value.copy()
 
-    def update(self, time_step: float, solution: np.ndarray):
-        if not np.isfinite(solution).all():
+    def update(self, time_step: float, value: np.ndarray):
+        if not np.isfinite(value).all():
             raise ValueError("Solution is not finite.")
 
         self._time += time_step
-        self._value = solution
+        self._value = value
+
+    def set_value(self, value: np.ndarray, time=0.0):
+        self.update(time - self._time, value)
 
     def __repr__(self) -> str:
         return (
@@ -78,13 +81,13 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
     def __init__(
         self,
         initial_value: np.ndarray,
-        start_time=0.0,
+        initial_time=0.0,
         space=None,
     ):
         DiscreteSolution.__init__(
             self,
             initial_value,
-            start_time=start_time,
+            initial_time=initial_time,
             space=space,
         )
 
@@ -109,6 +112,13 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
         self._value_history = np.append(
             self.value_history, np.array([solution.copy()]), axis=0
         )
+
+    def set_value(self, value: np.ndarray, time=0.0):
+        values_past = self._time_history < time
+        self._time_history = self._time_history[values_past]
+        self._value_history = self._value_history[values_past]
+
+        self.update(time - self._time, value)
 
 
 class CoarseSolution(DiscreteSolution):
