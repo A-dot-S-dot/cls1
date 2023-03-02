@@ -42,7 +42,7 @@ class LowOrderFlux(swe.NumericalFlux):
         return self._riemann_solver.flux_right
 
     def __init__(self, gravitational_acceleration=None, bathymetry=None):
-        self.gravitational_acceleration = (
+        self._gravitational_acceleration = (
             gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
         )
 
@@ -76,7 +76,7 @@ class LowOrderFlux(swe.NumericalFlux):
 
     def _build_modified_heights(self):
         self._height_positivity_fix = swe.get_height_positivity_fix(
-            self._height_HLL, self.bathymetry_step
+            self._height_HLL, self._bathymetry_step
         )
         self._modified_height_left = self._height_HLL + self._height_positivity_fix
         self._modified_height_right = self._height_HLL + -self._height_positivity_fix
@@ -101,11 +101,11 @@ class LowOrderFlux(swe.NumericalFlux):
         )
 
     def _build_source_term(self, height_average: np.ndarray):
-        if self.bathymetry_step is None:
+        if self._bathymetry_step is None:
             self._source_term = np.array([0.0])
         else:
             self._source_term = -(
-                self.gravitational_acceleration
+                self._gravitational_acceleration
                 * height_average
                 * self._height_positivity_fix
                 / self._wave_speed

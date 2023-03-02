@@ -7,9 +7,9 @@ import numpy as np
 
 
 class NumericalFlux(finite_volume.NumericalFlux):
-    bathymetry: np.ndarray
-    bathymetry_step: np.ndarray
-    gravitational_acceleration: float
+    _bathymetry: np.ndarray
+    _bathymetry_step: np.ndarray
+    _gravitational_acceleration: float
     _numerical_flux: finite_volume.NumericalFlux
 
     def __init__(
@@ -20,7 +20,7 @@ class NumericalFlux(finite_volume.NumericalFlux):
     ):
         self._numerical_flux = numerical_flux
         self.input_dimension = numerical_flux.input_dimension
-        self.gravitational_acceleration = (
+        self._gravitational_acceleration = (
             gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
         )
 
@@ -32,18 +32,18 @@ class NumericalFlux(finite_volume.NumericalFlux):
             or isinstance(bathymetry, float)
             or swe.is_constant(bathymetry)
         ):
-            self.bathymetry = np.array([0])
-            self.bathymetry_step = np.array([0])
+            self._bathymetry = np.array([0])
+            self._bathymetry_step = np.array([0])
         else:
             input_radius = self.input_dimension // 2
-            self.bathymetry = np.array(
+            self._bathymetry = np.array(
                 [
                     *input_radius * [bathymetry[0]],
                     *bathymetry,
                     *input_radius * [bathymetry[-1]],
                 ]
             )
-            self.bathymetry_step = np.diff(self.bathymetry)
+            self._bathymetry_step = np.diff(self._bathymetry)
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         flux_left, flux_right = self._numerical_flux(*values)
@@ -55,7 +55,10 @@ class NumericalFlux(finite_volume.NumericalFlux):
         height_average = self._get_height_average(*values)
         height_source = np.zeros(len(height_average))
         discharge_source = (
-            self.gravitational_acceleration / 2 * height_average * self.bathymetry_step
+            self._gravitational_acceleration
+            / 2
+            * height_average
+            * self._bathymetry_step
         )
 
         return np.array([height_source, discharge_source]).T
