@@ -10,8 +10,8 @@ BENCHMARK = TypeVar("BENCHMARK", bound=core.Benchmark)
 def get_required_values(
     input_dimension: int, *values: np.ndarray
 ) -> Tuple[np.ndarray, ...]:
-    assert len(values) >= input_dimension, f"{input_dimension} inputs are needed."
-    assert len(values) % 2 == 0, "Even number of inputs needed."
+    assert len(values) >= input_dimension, f"{input_dimension} inputs is required."
+    assert len(values) % 2 == 0, "Even number of inputs is required."
 
     delta = (len(values) - input_dimension) // 2
 
@@ -128,40 +128,6 @@ class CorrectedNumericalFlux(NumericalFlux):
         flux_left, flux_right = self._numerical_flux(*values)
         flux_correction_left, flux_correction_right = self._flux_correction(*values)
         return flux_left + flux_correction_left, flux_right + flux_correction_right
-
-
-# class SubgridFlux(NumericalFlux):
-#     _fine_flux: NumericalFlux
-#     _coarse_flux: NumericalFlux
-#     _coarsener: core.VectorCoarsener
-
-#     def __init__(
-#         self,
-#         fine_flux: NumericalFlux,
-#         coarse_flux: NumericalFlux,
-#         coarsening_degree: int,
-#     ):
-#         assert (
-#             fine_flux.input_dimension == coarse_flux.input_dimension
-#         ), "Input dimension of FINE_FLUX and COARSE_FLUX must be identical."
-
-#         self.input_dimension = fine_flux.input_dimension
-#         self._fine_flux = fine_flux
-#         self._coarse_flux = coarse_flux
-#         self._coarsener = core.VectorCoarsener(coarsening_degree)
-
-#     def __call__(
-#         self, fine_values: Tuple[np.ndarray, ...], coarse_values: Tuple[np.ndarray, ...]
-#     ) -> Tuple[np.ndarray, np.ndarray]:
-#         N = self._coarsener.coarsening_degree
-
-#         fine_flux_left, fine_flux_right = self._fine_flux(*fine_values)
-#         coarse_flux_left, coarse_flux_right = self._coarse_flux(*coarse_values)
-
-#         subgrid_flux_left = fine_flux_left[::N] + -coarse_flux_left
-#         subgrid_flux_right = fine_flux_right[N - 1 :: N] + -coarse_flux_right
-
-#         return subgrid_flux_left, subgrid_flux_right
 
 
 class LinearAntidiffusiveFlux(NumericalFlux):
