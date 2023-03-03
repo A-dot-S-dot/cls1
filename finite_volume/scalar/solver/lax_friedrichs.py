@@ -13,5 +13,5 @@ class LaxFriedrichsFluxGetter(finite_volume.FluxGetter):
 
 class LaxFriedrichsSolver(finite_volume.Solver):
     def __init__(self, benchmark: core.Benchmark, **kwargs):
-        self._get_flux = LaxFriedrichsFluxGetter()
+        self.flux_getter = LaxFriedrichsFluxGetter()
         super().__init__(benchmark, **kwargs)

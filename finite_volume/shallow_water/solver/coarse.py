@@ -17,7 +17,7 @@ class CoarseSolver(swe.Solver):
         flux_getter=None,
         **kwargs
     ) -> Dict:
-        self._get_flux = flux_getter or LaxFriedrichsFluxGetter()
+        self.flux_getter = flux_getter or LaxFriedrichsFluxGetter()
         self._coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
 
         return super()._build_args(benchmark, **kwargs)

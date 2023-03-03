@@ -96,5 +96,5 @@ class MCLFluxGetter(finite_volume.FluxGetter):
 
 class MCLSolver(finite_volume.Solver):
     def __init__(self, benchmark: core.Benchmark, **kwargs):
-        self._get_flux = MCLFluxGetter()
+        self.flux_getter = MCLFluxGetter()
         super().__init__(benchmark, **kwargs)

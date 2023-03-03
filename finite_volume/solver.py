@@ -17,8 +17,8 @@ class FluxGetter(ABC):
 
 
 class Solver(core.Solver):
+    flux_getter: FluxGetter
     _get_boundary_conditions = core.get_boundary_conditions
-    _get_flux: FluxGetter
 
     def __init__(self, benchmark: core.Benchmark, **kwargs):
         args = self._build_args(benchmark, **kwargs)
@@ -40,7 +40,7 @@ class Solver(core.Solver):
         )
         step_length = solution.space.mesh.step_length
 
-        numerical_flux = self._get_flux(benchmark, solution.space)
+        numerical_flux = self.flux_getter(benchmark, solution.space)
         boundary_conditions = self._get_boundary_conditions(
             *benchmark.boundary_conditions,
             inflow_left=benchmark.inflow_left,

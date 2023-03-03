@@ -131,5 +131,5 @@ class LowOrderFluxGetter(swe.FluxGetter):
 
 class LowOrderSolver(swe.Solver):
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
-        self._get_flux = LowOrderFluxGetter()
+        self.flux_getter = LowOrderFluxGetter()
         super().__init__(benchmark, **kwargs)

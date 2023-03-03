@@ -12,5 +12,5 @@ class LaxFriedrichsFluxGetter(swe.FluxGetter):
 
 class LaxFriedrichsSolver(swe.Solver):
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
-        self._get_flux = LaxFriedrichsFluxGetter()
+        self.flux_getter = LaxFriedrichsFluxGetter()
         super().__init__(benchmark, **kwargs)

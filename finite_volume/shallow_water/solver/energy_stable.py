@@ -148,11 +148,11 @@ class FirstOrderDiffusiveEnergyStableFluxGetter(swe.FluxGetter):
 
 class EnergyStableSolver(swe.Solver):
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
-        self._get_flux = EnergyStableFluxGetter()
+        self.flux_getter = EnergyStableFluxGetter()
         super().__init__(benchmark, **kwargs)
 
 
 class FirstOrderDiffusiveEnergyStableSolver(swe.Solver):
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
-        self._get_flux = FirstOrderDiffusiveEnergyStableFluxGetter()
+        self.flux_getter = FirstOrderDiffusiveEnergyStableFluxGetter()
         super().__init__(benchmark, **kwargs)

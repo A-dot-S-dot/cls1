@@ -204,5 +204,5 @@ class MCLSolver(swe.Solver):
     def _build_args(
         self, benchmark: swe.ShallowWaterBenchmark, flux_getter=None, **kwargs
     ) -> Dict:
-        self._get_flux = MCLFluxGetter(flux_getter or CentralFluxGetter())
+        self.flux_getter = MCLFluxGetter(flux_getter or CentralFluxGetter())
         return super()._build_args(benchmark, **kwargs)

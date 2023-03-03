@@ -12,5 +12,5 @@ class CentralFluxGetter(finite_volume.FluxGetter):
 
 class CentralFluxSolver(finite_volume.Solver):
     def __init__(self, benchmark: core.Benchmark, **kwargs):
-        self._get_flux = CentralFluxGetter()
+        self.flux_getter = CentralFluxGetter()
         super().__init__(benchmark, **kwargs)
