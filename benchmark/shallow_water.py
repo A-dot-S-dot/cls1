@@ -35,7 +35,7 @@ class LakeAtRestNoBathymetryBenchmark(ShallowWaterBenchmark):
     domain = Interval(0, 20)
     _boundary_conditions = ("outflow", "outflow")
 
-    def __init__(self, end_time=100):
+    def __init__(self, end_time=100.0):
         self.end_time = end_time
 
     def bathymetry(self, x: float) -> float:
@@ -52,7 +52,7 @@ class LakeAtRestBenchmark(ShallowWaterBenchmark):
     domain = Interval(0, 20)
     _boundary_conditions = ("wall", "wall")
 
-    def __init__(self, end_time=100):
+    def __init__(self, end_time=100.0):
         self.end_time = end_time
 
     def bathymetry(self, x: float) -> float:
@@ -113,7 +113,7 @@ class MovingWaterBumpBathymetryBenchmark(ShallowWaterBenchmark):
     K1: float
     K2: float
 
-    def __init__(self, end_time=100, K1=1.0, K2=25.0):
+    def __init__(self, end_time=100.0, K1=1.0, K2=25.0):
         self.end_time = end_time
         self.K1 = K1
         self.K2 = K2
@@ -151,7 +151,7 @@ class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
 
     def __init__(
         self,
-        end_time=40,
+        end_time=40.0,
         height_average=None,
         height_amplitude=None,
         height_phase_shift=None,
@@ -193,7 +193,7 @@ class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
 
     def __init__(
         self,
-        end_time=40,
+        end_time=40.0,
         seed=None,
         height_average=None,
         height_amplitude=None,
