@@ -33,6 +33,12 @@ class FiniteVolumeSpace(core.SolverSpace, Generic[T]):
     def element(self, dof_vector: np.ndarray) -> core.CellDependentFunction[T]:
         return FiniteVolumeElement(self, dof_vector)
 
+    def refine(self, refine_degree: int) -> "FiniteVolumeSpace":
+        return FiniteVolumeSpace(self.mesh.refine(refine_degree))
+
+    def coarsen(self, coarsening_degree: int) -> "FiniteVolumeSpace":
+        return FiniteVolumeSpace(self.mesh.coarsen(coarsening_degree))
+
     def __repr__(self) -> str:
         return self.__class__.__name__ + f"(mesh={self.mesh})"
 

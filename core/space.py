@@ -50,6 +50,14 @@ class SolverSpace(ABC, Generic[T]):
     def element(self, dof_vector: np.ndarray) -> CellDependentFunction[T]:
         ...
 
+    @abstractmethod
+    def refine(self, refine_degree: int) -> "SolverSpace":
+        ...
+
+    @abstractmethod
+    def coarsen(self, coarsening_degree: int) -> "SolverSpace":
+        ...
+
 
 class EmptySpace(SolverSpace):
     @property

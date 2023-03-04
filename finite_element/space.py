@@ -126,6 +126,14 @@ class LagrangeSpace(core.SolverSpace[float]):
     def element(self, dof_vector: np.ndarray) -> core.CellDependentFunction[float]:
         return LagrangeFiniteElement(self, dof_vector)
 
+    def refine(self, refine_degree: int) -> "LagrangeSpace":
+        return LagrangeSpace(self.mesh.refine(refine_degree), self.polynomial_degree)
+
+    def coarsen(self, coarsening_degree: int) -> "LagrangeSpace":
+        return LagrangeSpace(
+            self.mesh.coarsen(coarsening_degree), self.polynomial_degree
+        )
+
     def __repr__(self) -> str:
         return (
             self.__class__.__name__ + f"(mesh={self.mesh}, p={self.polynomial_degree})"
