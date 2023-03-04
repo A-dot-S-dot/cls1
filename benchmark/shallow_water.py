@@ -204,7 +204,9 @@ class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
         velocity_phase_shift=None,
         velocity_wave_number=None,
     ):
-        random.seed(seed)
+        if seed is not None:
+            random.seed(seed)
+
         super().__init__(
             end_time=end_time,
             height_average=height_average or random.uniform(1.6, 2.4),
