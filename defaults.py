@@ -49,11 +49,13 @@ ANTIDIFFUSION_GAMMA = 0.1
 ################################################################################
 # GENERATE-DATA
 ################################################################################
-INPUT_DIMENSION = 2
+SOLUTION_NUMBER = 100
+SEED = 1
+INPUT_RADIUS = 2
 SKIP = 40  # Determines how many subgrid fluxes should be skipped
+
 SUBGRID_FLUX_DATA_PATH = "data/data.csv"
 BENCHMARK_DATA_PATH = "data/benchmark_data.csv"
-OVERWRITE = True
 
 ################################################################################
 # TRAIN-NETWORK
