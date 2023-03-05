@@ -1,6 +1,7 @@
 from typing import Type
 
 import command as cmd
+from benchmark.shallow_water import OscillationNoTopographyBenchmark
 from tqdm.auto import tqdm, trange
 
 
@@ -56,9 +57,9 @@ def build_solver(arguments):
 ################################################################################
 def build_plotter(arguments):
     plotter = {
-        "advection": cmd.ScalarPlotter,
-        "burgers": cmd.ScalarPlotter,
-        "swe": cmd.ShallowWaterPlotter,
+        "advection": command.ScalarPlotter,
+        "burgers": command.ScalarPlotter,
+        "swe": command.ShallowWaterPlotter,
     }
 
     arguments.plotter = plotter[arguments.problem](
@@ -78,9 +79,9 @@ def build_plotter(arguments):
 ################################################################################
 def build_animator(arguments):
     animator = {
-        "advection": cmd.ScalarAnimator,
-        "burgers": cmd.ScalarAnimator,
-        "swe": cmd.ShallowWaterAnimator,
+        "advection": command.ScalarAnimator,
+        "burgers": command.ScalarAnimator,
+        "swe": command.ShallowWaterAnimator,
     }
 
     arguments.animator = animator[arguments.problem](
@@ -131,7 +132,7 @@ def build_eoc_solutions(arguments):
         ):
             solver_arguments.mesh_size = 2**i * arguments.mesh_size
             solver = solver_type(arguments.benchmark, **vars(solver_arguments))
-            cmd.Calculate(solver, leave=False).execute()
+            command.Calculate(solver, leave=False).execute()
             solvers.append(solver)
             solver_spaces.append(solver.solution.space)
 
@@ -141,3 +142,22 @@ def build_eoc_solutions(arguments):
     del arguments.refine
     del arguments.mesh_size
     del arguments.solver
+
+
+################################################################################
+# GENERATE DATA
+################################################################################
+def extract_solver(arguments):
+    solver_num = 0 if arguments.solver is None else len(arguments.solver)
+    assert solver_num == 1, f"Exactly one solver must be given. There are {solver_num}."
+
+    arguments.solver = arguments.solver[0]
+
+
+def build_benchmark(arguments):
+    arguments.benchmark = OscillationNoTopographyBenchmark()
+
+
+def build_overwrite_argument(arguments):
+    arguments.overwrite = not arguments.append
+    del arguments.append

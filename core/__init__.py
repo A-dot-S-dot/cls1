@@ -1,4 +1,5 @@
 from .boundary import *
+from .data import *
 from .discrete_solution import *
 from .function import *
 from .index_mapping import *

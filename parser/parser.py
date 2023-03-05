@@ -1,9 +1,10 @@
 import argparse
 import textwrap
 
-import command as cmd
+import command
 import defaults
 from benchmark import advection, burgers, shallow_water
+from finite_volume.shallow_water import command as shallow_water_command
 
 from . import action, argument
 from . import postprocessing as ppr
@@ -14,19 +15,19 @@ class CustomArgumentParser:
     """Parser for command line arguments."""
 
     _arguments_postprocessing = {
-        "test": [ppr.BuildCommand(cmd.Test)],
-        "help": [ppr.BuildCommand(cmd.Help)],
+        "test": [ppr.BuildCommand(command.Test)],
+        "help": [ppr.BuildCommand(command.Help)],
         "calculate": [
             ppr.adjust_end_time,
             ppr.build_solver,
-            ppr.BuildCommand(cmd.Calculate),
+            ppr.BuildCommand(command.Calculate),
             ppr.DeleteArguments("problem", "benchmark"),
         ],
         "plot": [
             ppr.adjust_end_time,
             ppr.build_solver,
             ppr.build_plotter,
-            ppr.BuildCommand(cmd.Plot),
+            ppr.BuildCommand(command.Plot),
             ppr.DeleteArguments("problem"),
         ],
         "animate": [
@@ -34,9 +35,18 @@ class CustomArgumentParser:
             ppr.add_save_history_argument,
             ppr.build_solver,
             ppr.build_animator,
-            ppr.BuildCommand(cmd.Animate),
+            ppr.BuildCommand(command.Animate),
             ppr.DeleteArguments("problem"),
         ],
+        "generate-data": [
+            ppr.build_overwrite_argument,
+            ppr.build_benchmark,
+            ppr.add_save_history_argument,
+            ppr.build_solver,
+            ppr.extract_solver,
+            ppr.BuildCommand(shallow_water_command.GenerateData),
+            ppr.DeleteArguments("benchmark"),
+        ]
         # "eoc": [
         #     ppr.adjust_end_time,
         #     ppr.build_eoc_solutions,
@@ -78,6 +88,7 @@ class CustomArgumentParser:
         self._add_calculation_parser(parsers)
         self._add_plot_parser(parsers)
         self._add_animate_parser(parsers)
+        self._add_generate_data_parser(parsers)
         # self._add_eoc_parser(parsers)
         # self._add_plot_error_evolution_parser(parsers)
 
@@ -231,6 +242,27 @@ class CustomArgumentParser:
             argument.add_hide(problem_parser)
             argument.add_profile(problem_parser)
             argument.add_print_args(problem_parser)
+
+    def _add_generate_data_parser(self, parsers):
+        parser = parsers.add_parser(
+            "generate-data",
+            help="Generate data for reduced shallow water models.",
+            description="""Generates data for shallow water models which uses
+            neural networks subgrid fluxes.""",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+        argument.add_end_time(parser)
+        argument.add_solver(parser, action.ShallowWaterSolverAction)
+        argument.add_solution_number(parser)
+        argument.add_seed(parser)
+        argument.add_input_radius(parser)
+        argument.add_node_index(parser)
+        argument.add_subgrid_flux_data_path(parser)
+        argument.add_benchmark_data_path(parser)
+        argument.add_append(parser)
+        argument.add_profile(parser)
+        argument.add_print_args(parser)
 
     def _add_eoc_parser(self, parsers):
         parser = parsers.add_parser(

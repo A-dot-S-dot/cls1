@@ -16,7 +16,6 @@ class SubgridFluxDataBuilder:
     coarsening_degree: int
     input_radius: int
     node_index: int
-    skip: int
     print_output: bool
 
     _fine_flux: finite_volume.NumericalFlux
@@ -30,7 +29,6 @@ class SubgridFluxDataBuilder:
         coarsening_degree=None,
         input_radius=None,
         node_index=None,
-        skip=None,
         print_output=True,
     ):
         self._fine_flux = finite_volume.NumericalFluxWithArbitraryInput(fine_flux)
@@ -39,7 +37,6 @@ class SubgridFluxDataBuilder:
         self._coarsener = core.VectorCoarsener(self.coarsening_degree)
         self.input_radius = input_radius or defaults.INPUT_RADIUS
         self.node_index = node_index or self.input_radius
-        self.skip = skip or defaults.SKIP
         self.print_output = print_output
 
         assert self.node_index >= self.input_radius
@@ -59,12 +56,12 @@ class SubgridFluxDataBuilder:
         self, solution: core.DiscreteSolutionWithHistory
     ) -> Tuple[Tuple[np.ndarray, ...], Tuple[np.ndarray, ...]]:
         anchor_cell_index = self.node_index * self.coarsening_degree
-        input_radius = self.coarsening_degree * self._coarse_flux.input_dimension // 2
+        input_radius = self.coarsening_degree * self.input_radius
         left_cell_index = anchor_cell_index - input_radius
         right_cell_index = anchor_cell_index + input_radius
 
         fine_values = np.moveaxis(
-            solution.value_history[:: self.skip, left_cell_index:right_cell_index],
+            solution.value_history[:, left_cell_index:right_cell_index],
             1,
             0,
         )
@@ -86,7 +83,7 @@ class SubgridFluxDataFrameBuilder:
         solution: core.DiscreteSolutionWithHistory,
         data=None,
     ) -> pd.DataFrame:
-        time = solution.time_history[:: self._data_builder.skip]
+        time = solution.time_history
         coarse_values, subgrid_flux = self._data_builder(solution)
 
         new_data = pd.DataFrame(
@@ -155,12 +152,16 @@ class BenchparkParameterDataFrameBuilder:
 
 
 class RandomBenchmarkGenerator:
-    def __init__(self, seed=None):
+    _end_time: float
+
+    def __init__(self, seed=None, end_time=None):
         random.seed(seed)
+        self._end_time = end_time or 40.0
 
     def __call__(self) -> swe.OscillationNoTopographyBenchmark:
         return swe.RandomOscillationNoTopographyBenchmark(
-            height_average=swe.HEIGHT_AVERAGE
+            end_time=self._end_time,
+            height_average=swe.HEIGHT_AVERAGE,
         )
 
     def __repr__(self) -> str:
@@ -172,8 +173,8 @@ class GenerateData(command.Command):
     _get_benchmark: RandomBenchmarkGenerator
     _subgrid_flux_df_builder: SubgridFluxDataFrameBuilder
     _benchmark_df_builder: BenchparkParameterDataFrameBuilder
-    _subgrid_flux_data_path: str
-    _benchmark_data_path: str
+    _subgrid_flux_path: str
+    _benchmark_path: str
     _overwrite: bool
     _print_output: bool
 
@@ -181,31 +182,28 @@ class GenerateData(command.Command):
         self,
         solver: finite_volume.Solver,
         solution_number=None,
+        end_time=None,
         seed=None,
         coarsening_degree=None,
-        skip=None,
         input_radius=None,
         node_index=None,
-        subgrid_flux_data_path=None,
-        benchmark_data_path=None,
+        subgrid_flux_path=None,
+        benchmark_path=None,
         overwrite=True,
         print_output=True,
     ):
         self._solver = solver
         self._solution_number = solution_number or defaults.SOLUTION_NUMBER
-        self._get_benchmark = RandomBenchmarkGenerator(seed or defaults.SEED)
+        self._get_benchmark = RandomBenchmarkGenerator(seed or defaults.SEED, end_time)
         self._benchmark_df_builder = BenchparkParameterDataFrameBuilder()
         self._subgrid_flux_df_builder = self._get_subgrid_flux_data_frame_builder(
             coarsening_degree or defaults.COARSENING_DEGREE,
-            skip=skip,
             input_radius=input_radius,
             node_index=node_index,
             print_output=print_output,
         )
-        self._subgrid_flux_data_path = (
-            subgrid_flux_data_path or defaults.SUBGRID_FLUX_DATA_PATH
-        )
-        self._benchmark_data_path = benchmark_data_path or defaults.BENCHMARK_DATA_PATH
+        self._subgrid_flux_path = subgrid_flux_path or defaults.SUBGRID_FLUX_PATH
+        self._benchmark_path = benchmark_path or defaults.BENCHMARK_PATH
         self._overwrite = overwrite
         self._print_output = print_output
 
@@ -247,8 +245,8 @@ class GenerateData(command.Command):
                 )
 
         if self._print_output:
-            tqdm.write(f"Subgrid Flux Data is saved in {self._subgrid_flux_data_path}.")
-            tqdm.write(f"Becnhmark Data is saved in {self._benchmark_data_path}.")
+            tqdm.write(f"Subgrid Flux Data is saved in {self._subgrid_flux_path}.")
+            tqdm.write(f"Becnhmark Data is saved in {self._benchmark_path}.")
 
     def _build_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         benchmark = self._get_benchmark()
@@ -271,16 +269,5 @@ class GenerateData(command.Command):
         benchmark_data: pd.DataFrame,
         overwrite: bool,
     ):
-        self._save(subgrid_flux_data, self._subgrid_flux_data_path, overwrite)
-        self._save(benchmark_data, self._benchmark_data_path, overwrite)
-
-    def _save(self, data: pd.DataFrame, path: str, overwrite: bool):
-        data.to_csv(
-            path,
-            mode="w" if overwrite else "a",
-            header=overwrite,
-        )
-
-
-def load_data(data_path: str) -> pd.DataFrame:
-    return pd.read_csv(data_path, header=[0, 1], skipinitialspace=True, index_col=0)
+        core.save_data(subgrid_flux_data, self._subgrid_flux_path, overwrite)
+        core.save_data(benchmark_data, self._benchmark_path, overwrite)

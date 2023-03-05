@@ -1,5 +1,5 @@
+import core
 import defaults
-from core import ode_solver
 from benchmark.shallow_water import RandomOscillationNoTopographyBenchmark
 from finite_volume.shallow_water.solver import SHALLOW_WATER_FLUX_GETTER
 
@@ -183,8 +183,76 @@ def add_refine(parser):
     )
 
 
+def add_solution_number(parser):
+    parser.add_argument(
+        "-n",
+        "--solution-number",
+        help="Number of generated solutions.",
+        type=parser_type.positive_int,
+        default=defaults.SOLUTION_NUMBER,
+        metavar="<number>",
+    )
+
+
+def add_seed(parser):
+    parser.add_argument(
+        "--seed",
+        help="Seed for generating random benchmarks",
+        type=parser_type.positive_int,
+        default=defaults.SEED,
+        metavar="<seed>",
+    )
+
+
+def add_input_radius(parser):
+    parser.add_argument(
+        "-i",
+        "--input-radius",
+        help="Number of considered cells on each node side.",
+        type=parser_type.positive_int,
+        default=defaults.INPUT_RADIUS,
+        metavar="<radius>",
+    )
+
+
+def add_node_index(parser):
+    parser.add_argument(
+        "--node-index",
+        help="Determines for which node the subgrid fluxes are calculated. The most left node has the index 0.",
+        type=parser_type.positive_int,
+        default=defaults.INPUT_RADIUS,
+        metavar="<index>",
+    )
+
+
+def add_subgrid_flux_data_path(parser):
+    parser.add_argument(
+        "--subgrid-flux-path",
+        help="Specify the path for subgrid fluxes.",
+        metavar="<file>",
+        default=defaults.SUBGRID_FLUX_PATH,
+    )
+
+
+def add_benchmark_data_path(parser):
+    parser.add_argument(
+        "--benchmark-path",
+        help="Specify the path for generated benchmark parameters.",
+        metavar="<file>",
+        default=defaults.BENCHMARK_PATH,
+    )
+
+
+def add_append(parser):
+    parser.add_argument(
+        "--append",
+        help="Appends generated data to the specified paths",
+        action="store_true",
+    )
+
+
 ################################################################################
-# SOLVER
+# solver
 ################################################################################
 def add_name(parser, default):
     parser.add_argument(
@@ -258,9 +326,9 @@ def add_exact_flux(parser):
 
 def add_ode_solver(parser):
     _ode_solver = {
-        "euler": ode_solver.ForwardEuler,
-        "heun": ode_solver.Heun,
-        "ssp3": ode_solver.StrongStabilityPreservingRungeKutta3,
+        "euler": core.ForwardEuler,
+        "heun": core.Heun,
+        "ssp3": core.StrongStabilityPreservingRungeKutta3,
     }
 
     parser.add_argument(
