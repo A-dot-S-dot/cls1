@@ -57,9 +57,9 @@ def build_solver(arguments):
 ################################################################################
 def build_plotter(arguments):
     plotter = {
-        "advection": command.ScalarPlotter,
-        "burgers": command.ScalarPlotter,
-        "swe": command.ShallowWaterPlotter,
+        "advection": cmd.ScalarPlotter,
+        "burgers": cmd.ScalarPlotter,
+        "swe": cmd.ShallowWaterPlotter,
     }
 
     arguments.plotter = plotter[arguments.problem](
@@ -79,9 +79,9 @@ def build_plotter(arguments):
 ################################################################################
 def build_animator(arguments):
     animator = {
-        "advection": command.ScalarAnimator,
-        "burgers": command.ScalarAnimator,
-        "swe": command.ShallowWaterAnimator,
+        "advection": cmd.ScalarAnimator,
+        "burgers": cmd.ScalarAnimator,
+        "swe": cmd.ShallowWaterAnimator,
     }
 
     arguments.animator = animator[arguments.problem](
@@ -132,7 +132,7 @@ def build_eoc_solutions(arguments):
         ):
             solver_arguments.mesh_size = 2**i * arguments.mesh_size
             solver = solver_type(arguments.benchmark, **vars(solver_arguments))
-            command.Calculate(solver, leave=False).execute()
+            cmd.Calculate(solver, leave=False).execute()
             solvers.append(solver)
             solver_spaces.append(solver.solution.space)
 
