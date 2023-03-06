@@ -38,6 +38,12 @@ class CustomArgumentParser:
             ppr.BuildCommand(command.Animate),
             ppr.DeleteArguments("problem"),
         ],
+        "eoc": [
+            ppr.adjust_end_time,
+            ppr.build_eoc_solutions,
+            ppr.BuildCommand(command.CalculateEOC),
+            ppr.DeleteArguments("problem"),
+        ],
         "generate-data": [
             ppr.build_overwrite_argument,
             ppr.build_benchmark,
@@ -89,7 +95,7 @@ class CustomArgumentParser:
         self._add_plot_parser(parsers)
         self._add_animate_parser(parsers)
         self._add_generate_data_parser(parsers)
-        # self._add_eoc_parser(parsers)
+        self._add_eoc_parser(parsers)
         # self._add_plot_error_evolution_parser(parsers)
 
     def _add_test_parser(self, parsers):
