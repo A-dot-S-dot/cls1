@@ -25,7 +25,7 @@ EOC_MESH_SIZE = 8
 ################################################################################
 # CALCULATE
 ################################################################################
-CALCULATE_MESH_SIZE = 128
+CALCULATE_MESH_SIZE = 400
 
 ################################################################################
 # SOLVER
@@ -41,7 +41,6 @@ FLUX_APPROXIMATION = True
 FINITE_VOLUME_CFL_NUMBER = 0.1
 COARSENING_DEGREE = 8
 
-NETWORK_PATH = "data/subgrid-network.pth"
 LOSS_GRAPH_PATH = "data/loss.png"
 LIMITING_GAMMA = 1.0
 ANTIDIFFUSION_GAMMA = 0.1
@@ -52,20 +51,14 @@ ANTIDIFFUSION_GAMMA = 0.1
 SOLUTION_NUMBER = 100
 SEED = 1
 INPUT_RADIUS = 2
-SKIP = 40  # Determines how many subgrid fluxes should be skipped
-
-SUBGRID_FLUX_PATH = "data/data.csv"
-BENCHMARK_PATH = "data/benchmark_data.csv"
 
 ################################################################################
 # TRAIN-NETWORK
 ################################################################################
-BATCH_SIZE = 128
-LEARNING_RATE = 0.1
-
-TRAINING_DATA_PATH = "data/train.csv"
-VALIDATION_DATA_PATH = "data/validate.csv"
-NETWORK_PATH = "data/subgrid-network.pth"
+EPOCHS = 100
+SKIP = 40  # Determines how many subgrid fluxes should be skipped
+LLF_NETWORK_PATH = "data/reduced-llf/model.pkl"
+MCL_NETWORK_PATH = "data/reduced-mcl/model.pkl"
 
 ################################################################################
 # PLOW ERROR EVOLUTION

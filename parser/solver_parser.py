@@ -169,22 +169,38 @@ class FirstOrderDiffusiveEnergyStableParser(SolverParser):
         argument.add_ode_solver(self)
 
 
-# class SubgridNetworkParser(SolverParser):
-#     prog = "subgrid-network"
-#     name = """Solver with NN corrected flux"""
-#     solver = shallow_water.SubgridNetworkSolver
+class ReducedLaxFriedrichsSolverParser(SolverParser):
+    prog = "reduced-llf"
+    name = "Reduced Lax Friedrichs Solver"
+    solver = fv_swe.ReducedLaxFriedrichsSolver
 
-#     def _add_arguments(self):
-#         argument.add_name(self, self.name)
-#         argument.add_short(self, self.prog)
-#         argument.add_mesh_size(
-#             self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
-#         )
-#         argument.add_coarsening_degree(self)
-#         argument.add_cfl_number(
-#             self, defaults.FINITE_VOLUME_CFL_NUMBER / defaults.COARSENING_DEGREE
-#         )
-#         argument.add_network_load_path(self)
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(
+            self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
+        )
+        argument.add_cfl_number(
+            self, defaults.FINITE_VOLUME_CFL_NUMBER / defaults.COARSENING_DEGREE
+        )
+        argument.add_load_network_path(self, defaults.LLF_NETWORK_PATH)
+
+
+class ReducedMCLSolverParser(SolverParser):
+    prog = "reduced-mcl"
+    name = "Reduced MCL Solver"
+    solver = fv_swe.ReducedMCLSolver
+
+    def _add_arguments(self):
+        argument.add_name(self, self.name)
+        argument.add_short(self, self.prog)
+        argument.add_mesh_size(
+            self, defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
+        )
+        argument.add_cfl_number(
+            self, defaults.FINITE_VOLUME_CFL_NUMBER / defaults.COARSENING_DEGREE
+        )
+        argument.add_load_network_path(self, defaults.MCL_NETWORK_PATH)
 
 
 class ScalarFiniteVolumeMCLParser(SolverParser):
@@ -256,7 +272,8 @@ SHALLOW_WATER_SOLVER_PARSERS = {
     "central": ShallowWaterCentralFluxParser,
     "es": EnergyStableParser,
     "es1": FirstOrderDiffusiveEnergyStableParser,
-    # "subgrid-network": SubgridNetworkParser,
+    "reduced-llf": ReducedLaxFriedrichsSolverParser,
+    "reduced-mcl": ReducedMCLSolverParser,
     "antidiffusion": AntidiffusionParser,
     "coarse": CoarseParser,
     "mcl": ShallowWaterMCLParser,

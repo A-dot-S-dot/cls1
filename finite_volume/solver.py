@@ -43,6 +43,7 @@ class Solver(core.Solver):
         numerical_flux = self.flux_getter(benchmark, solution.space)
         boundary_conditions = self._get_boundary_conditions(
             *benchmark.boundary_conditions,
+            radius=numerical_flux.input_dimension // 2,
             inflow_left=benchmark.inflow_left,
             inflow_right=benchmark.inflow_right,
         )

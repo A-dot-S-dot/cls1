@@ -1,5 +1,6 @@
+import os
 import random
-from typing import Callable, Tuple
+from typing import Tuple
 
 import benchmark.shallow_water as swe
 import core
@@ -181,14 +182,13 @@ class GenerateData(command.Command):
     def __init__(
         self,
         solver: finite_volume.Solver,
+        directory: str,
         solution_number=None,
         end_time=None,
         seed=None,
         coarsening_degree=None,
         input_radius=None,
         node_index=None,
-        subgrid_flux_path=None,
-        benchmark_path=None,
         overwrite=True,
         print_output=True,
     ):
@@ -202,8 +202,8 @@ class GenerateData(command.Command):
             node_index=node_index,
             print_output=print_output,
         )
-        self._subgrid_flux_path = subgrid_flux_path or defaults.SUBGRID_FLUX_PATH
-        self._benchmark_path = benchmark_path or defaults.BENCHMARK_PATH
+        self._subgrid_flux_path = os.path.join(directory, "data.csv")
+        self._benchmark_path = os.path.join(directory, "benchmark.csv")
         self._overwrite = overwrite
         self._print_output = print_output
 

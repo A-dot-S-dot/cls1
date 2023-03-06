@@ -225,21 +225,10 @@ def add_node_index(parser):
     )
 
 
-def add_subgrid_flux_data_path(parser):
+def add_directory(parser):
     parser.add_argument(
-        "--subgrid-flux-path",
-        help="Specify the path for subgrid fluxes.",
-        metavar="<file>",
-        default=defaults.SUBGRID_FLUX_PATH,
-    )
-
-
-def add_benchmark_data_path(parser):
-    parser.add_argument(
-        "--benchmark-path",
-        help="Specify the path for generated benchmark parameters.",
-        metavar="<file>",
-        default=defaults.BENCHMARK_PATH,
+        "directory",
+        help="Specify directory for storing data.",
     )
 
 
@@ -251,6 +240,41 @@ def add_append(parser):
     )
 
 
+def add_data_path(parser):
+    parser.add_argument("data_path", help="Specify data location.")
+
+
+def add_histogram(parser):
+    parser.add_argument("--histogram", action="store_true", help="Plot historgram.")
+
+
+def add_save_network_path(parser):
+    parser.add_argument(
+        "network_path", help="Specify where the network should be stored."
+    )
+
+
+def add_epochs(parser):
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        help="Determines the maximum number of epochs.",
+        type=parser_type.positive_int,
+        metavar="<number>",
+        default=defaults.EPOCHS,
+    )
+
+
+def add_skip(parser):
+    parser.add_argument(
+        "--skip",
+        help="Use every SKIP-th data point for training.",
+        type=parser_type.positive_int,
+        metavar="<skip>",
+        default=defaults.SKIP,
+    )
+
+
 ################################################################################
 # solver
 ################################################################################
@@ -258,7 +282,6 @@ def add_name(parser, default):
     parser.add_argument(
         "+n",
         "++name",
-        type=str,
         help="Specify short name",
         metavar="<name>",
         default=default,
@@ -269,7 +292,6 @@ def add_short(parser, default):
     parser.add_argument(
         "+s",
         "++short",
-        type=str,
         help="Specify short name",
         metavar="<short>",
         default=default,
@@ -355,12 +377,13 @@ def add_coarsening_degree(parser):
     )
 
 
-def add_network_load_path(parser):
+# REDUCED SOLVER
+def add_load_network_path(parser, default_path):
     parser.add_argument(
         "++network-path",
         help="Specify from where to load trained network.",
         metavar="<file>",
-        default=defaults.NETWORK_PATH,
+        default=default_path,
     )
 
 

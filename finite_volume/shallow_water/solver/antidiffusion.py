@@ -23,12 +23,13 @@ class LinearAntidiffusiveSolver(swe.Solver):
 
         return super()._build_args(benchmark, **kwargs)
 
-    def _get_flux(
+    def flux_getter(
         self,
         benchmark: swe.ShallowWaterBenchmark,
         space: finite_volume.FiniteVolumeSpace,
+        bathymetry=None,
     ) -> finite_volume.NumericalFlux:
-        numerical_flux = self._get_raw_flux(benchmark, space)
+        numerical_flux = self._get_raw_flux(benchmark, space, bathymetry)
         antidiffusive_flux = finite_volume.LinearAntidiffusiveFlux(
             self._gamma, space.mesh.step_length
         )

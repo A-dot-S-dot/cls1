@@ -54,6 +54,7 @@ class CustomArgumentParser:
             ppr.DeleteArguments("benchmark"),
         ],
         "analyze-data": [ppr.BuildCommand(command.AnalyzeData)],
+        "train-network": [ppr.BuildCommand(shallow_water_command.TrainNetwork)],
         # "plot-error-evolution": [
         #     ppr.adjust_end_time,
         #     ppr.add_save_history_argument,
@@ -91,6 +92,7 @@ class CustomArgumentParser:
         self._add_animate_parser(parsers)
         self._add_generate_data_parser(parsers)
         self._add_analyze_data_parser(parsers)
+        self._add_train_network_parser(parsers)
         self._add_eoc_parser(parsers)
         # self._add_plot_error_evolution_parser(parsers)
 
@@ -254,14 +256,13 @@ class CustomArgumentParser:
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
 
+        argument.add_directory(parser)
         argument.add_end_time(parser)
         argument.add_solver(parser, action.ShallowWaterSolverAction)
         argument.add_solution_number(parser)
         argument.add_seed(parser)
         argument.add_input_radius(parser)
         argument.add_node_index(parser)
-        argument.add_subgrid_flux_data_path(parser)
-        argument.add_benchmark_data_path(parser)
         argument.add_append(parser)
         argument.add_profile(parser)
         argument.add_print_args(parser)
@@ -278,6 +279,22 @@ class CustomArgumentParser:
         argument.add_histogram(parser)
         argument.add_profile(parser)
         argument.add_print_args(parser)
+
+    def _add_train_network_parser(self, parsers):
+        parser = parsers.add_parser(
+            "train-network",
+            help="Trains networks for reduced models.",
+            description="""Train networks for reduced shallow water models.""",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+        argument.add_data_path(parser)
+        argument.add_save_network_path(parser)
+        argument.add_epochs(parser)
+        argument.add_skip(parser)
+        argument.add_profile(parser)
+        argument.add_print_args(parser)
+
     def _add_eoc_parser(self, parsers):
         parser = parsers.add_parser(
             "eoc",

@@ -175,8 +175,8 @@ class MCLFlux(LowOrderFlux):
 class MCLFluxGetter(swe.FluxGetter):
     _high_order_flux_getter: swe.FluxGetter
 
-    def __init__(self, high_order_flux_getter: swe.FluxGetter):
-        self._high_order_flux_getter = high_order_flux_getter
+    def __init__(self, high_order_flux_getter=None):
+        self._high_order_flux_getter = high_order_flux_getter or CentralFluxGetter()
 
     def __call__(
         self,
@@ -204,5 +204,5 @@ class MCLSolver(swe.Solver):
     def _build_args(
         self, benchmark: swe.ShallowWaterBenchmark, flux_getter=None, **kwargs
     ) -> Dict:
-        self.flux_getter = MCLFluxGetter(flux_getter or CentralFluxGetter())
+        self.flux_getter = MCLFluxGetter(flux_getter)
         return super()._build_args(benchmark, **kwargs)
