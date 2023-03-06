@@ -1,10 +1,9 @@
-"""This module takes arguments from argparse and processes them."""
 from .animate import Animate, ScalarAnimator, ShallowWaterAnimator
 from .calculate import Calculate
 from .command import Command
 
-# from .error import *
 # from .generate_data import GenerateData
+from .error import *
 from .help import Help
 from .plot import Plot, ScalarPlotter, ShallowWaterPlotter
 from .test import Test
