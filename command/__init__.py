@@ -1,3 +1,4 @@
+from .analyze_data import AnalyzeData
 from .animate import Animate, ScalarAnimator, ShallowWaterAnimator
 from .calculate import Calculate
 from .command import Command

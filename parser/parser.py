@@ -52,13 +52,8 @@ class CustomArgumentParser:
             ppr.extract_solver,
             ppr.BuildCommand(shallow_water_command.GenerateData),
             ppr.DeleteArguments("benchmark"),
-        ]
-        # "eoc": [
-        #     ppr.adjust_end_time,
-        #     ppr.build_eoc_solutions,
-        #     ppr.BuildCommand(cmd.CalculateEOC),
-        #     ppr.DeleteArguments("problem"),
-        # ],
+        ],
+        "analyze-data": [ppr.BuildCommand(command.AnalyzeData)],
         # "plot-error-evolution": [
         #     ppr.adjust_end_time,
         #     ppr.add_save_history_argument,
@@ -95,6 +90,7 @@ class CustomArgumentParser:
         self._add_plot_parser(parsers)
         self._add_animate_parser(parsers)
         self._add_generate_data_parser(parsers)
+        self._add_analyze_data_parser(parsers)
         self._add_eoc_parser(parsers)
         # self._add_plot_error_evolution_parser(parsers)
 
@@ -270,6 +266,18 @@ class CustomArgumentParser:
         argument.add_profile(parser)
         argument.add_print_args(parser)
 
+    def _add_analyze_data_parser(self, parsers):
+        parser = parsers.add_parser(
+            "analyze-data",
+            help="Analyze data.",
+            description="""Analye data by printing summary statistics and historgrams.""",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+        argument.add_data_path(parser)
+        argument.add_histogram(parser)
+        argument.add_profile(parser)
+        argument.add_print_args(parser)
     def _add_eoc_parser(self, parsers):
         parser = parsers.add_parser(
             "eoc",
