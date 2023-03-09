@@ -55,8 +55,8 @@ INPUT_RADIUS = 2
 ################################################################################
 # TRAIN-NETWORK
 ################################################################################
-EPOCHS = 100
-SKIP = 40  # Determines how many subgrid fluxes should be skipped
+EPOCHS = 500
+SKIP = 1  # Determines how many subgrid fluxes should be skipped
 LLF_NETWORK_PATH = "data/reduced-llf/model.pkl"
 MCL_NETWORK_PATH = "data/reduced-mcl/model.pkl"
 
