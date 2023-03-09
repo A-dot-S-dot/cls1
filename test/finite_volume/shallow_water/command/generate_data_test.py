@@ -1,6 +1,7 @@
 from typing import Tuple
 from unittest import TestCase
 
+import core
 import finite_volume
 import numpy as np
 import pandas as pd
@@ -31,16 +32,13 @@ class TestSubgridFluxDataBuilder(TestCase):
         value = np.array([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0], [4.0, 4.0]])
 
         solution = core.DiscreteSolutionWithHistory(value)
-        solution.update(1.0, 2 * value)
-        solution.update(1.0, 3 * value)
-        solution.update(1.0, 4 * value)
+        solution.update(2.0, 3 * value)
         builder = SubgridFluxDataBuilder(
             TestNumericalFlux(),
             TestNumericalFlux(),
             coarsening_degree=2,
             input_radius=1,
             node_index=1,
-            skip=2,
             print_output=False,
         )
         coarse_values, subgrid_flux = builder(solution)
@@ -57,16 +55,13 @@ class TestSubgridFluxDataFrameBuilder(TestCase):
         value = np.array([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0], [4.0, 4.0]])
 
         solution = core.DiscreteSolutionWithHistory(value)
-        solution.update(1.0, 2 * value)
-        solution.update(1.0, 3 * value)
-        solution.update(1.0, 4 * value)
+        solution.update(2.0, 3 * value)
         data_builder = SubgridFluxDataBuilder(
             TestNumericalFlux(),
             TestNumericalFlux(),
             coarsening_degree=2,
             input_radius=1,
             node_index=1,
-            skip=2,
             print_output=False,
         )
         df_builder = SubgridFluxDataFrameBuilder(data_builder)
@@ -91,30 +86,23 @@ class TestSubgridFluxDataFrameBuilder(TestCase):
 
 class TestGenerateData(TestCase):
     def test_data_shape(self):
-        subgrid_flux_data_path = (
-            "test/finite_volume/shallow_water/command/subgrid_flux_data.csv"
-        )
-        benchmark_data_path = (
-            "test/finite_volume/shallow_water/command/benchmark_data.csv"
-        )
+        directory = "test/finite_volume/shallow_water/command/"
         command = GenerateData(
             LaxFriedrichsSolver(
                 OscillationNoTopographyBenchmark(end_time=2.0),
                 mesh_size=8,
                 save_history=True,
             ),
+            directory=directory,
             solution_number=2,
-            subgrid_flux_path=subgrid_flux_data_path,
-            benchmark_path=benchmark_data_path,
-            skip=2,
             coarsening_degree=2,
             input_radius=1,
             print_output=False,
         )
         command.execute()
 
-        subgrid_flux_data = load_data(subgrid_flux_data_path)
-        benchmark_data = load_data(benchmark_data_path)
+        subgrid_flux_data = core.load_data(directory + "data.csv")
+        benchmark_data = core.load_data(directory + "benchmark.csv")
 
-        assert_equal(subgrid_flux_data.shape, (4, 6))
+        assert_equal(subgrid_flux_data.shape, (6, 6))
         assert_equal(benchmark_data.shape, (2, 8))

@@ -51,6 +51,9 @@ class FiniteVolumeElement(core.CellDependentFunction, Generic[T]):
     def __call__(self, cell_index: int, x: float) -> T:
         return self._dof_vector[cell_index]
 
+    def __repr__(self) -> str:
+        return self.__class__.__name__ + f"(dof={self._dof_vector})"
+
 
 def get_finite_volume_solution(
     benchmark: core.Benchmark, mesh_size: int, save_history=False

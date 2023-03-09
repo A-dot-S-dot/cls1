@@ -45,6 +45,7 @@ class CustomArgumentParser:
             ppr.DeleteArguments("problem"),
         ],
         "generate-data": [
+            ppr.build_directory,
             ppr.build_overwrite_argument,
             ppr.build_benchmark,
             ppr.add_save_history_argument,
@@ -54,14 +55,20 @@ class CustomArgumentParser:
             ppr.DeleteArguments("benchmark"),
         ],
         "analyze-data": [ppr.BuildCommand(command.AnalyzeData)],
-        "train-network": [ppr.BuildCommand(shallow_water_command.TrainNetwork)],
-        # "plot-error-evolution": [
-        #     ppr.adjust_end_time,
-        #     ppr.add_save_history_argument,
-        #     ppr.build_solver,
-        #     ppr.BuildCommand(cmd.PlotShallowWaterErrorEvolution),
-        #     ppr.DeleteArguments("problem", "benchmark"),
-        # ],
+        "analyze-curvature": [
+            ppr.BuildCommand(shallow_water_command.PlotCurvatureAgainstSubgridFlux)
+        ],
+        "train-network": [
+            ppr.build_train_network_arguments,
+            ppr.BuildCommand(shallow_water_command.TrainNetwork),
+        ],
+        "plot-error-evolution": [
+            ppr.adjust_end_time,
+            ppr.add_save_history_argument,
+            ppr.build_solver,
+            ppr.BuildCommand(shallow_water_command.PlotShallowWaterErrorEvolution),
+            ppr.DeleteArguments("benchmark"),
+        ],
     }
 
     def __init__(self):
@@ -92,9 +99,10 @@ class CustomArgumentParser:
         self._add_animate_parser(parsers)
         self._add_generate_data_parser(parsers)
         self._add_analyze_data_parser(parsers)
+        self._add_analyze_curvature_parser(parsers)
         self._add_train_network_parser(parsers)
         self._add_eoc_parser(parsers)
-        # self._add_plot_error_evolution_parser(parsers)
+        self._add_plot_error_evolution_parser(parsers)
 
     def _add_test_parser(self, parsers):
         test_parser = parsers.add_parser(
@@ -280,6 +288,18 @@ class CustomArgumentParser:
         argument.add_profile(parser)
         argument.add_print_args(parser)
 
+    def _add_analyze_curvature_parser(self, parsers):
+        parser = parsers.add_parser(
+            "analyze-curvature",
+            help="Analyze curvature.",
+            description="""Analye curvature by plotting it against subgrid flux.""",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+        argument.add_hide(parser)
+        argument.add_profile(parser)
+        argument.add_print_args(parser)
+
     def _add_train_network_parser(self, parsers):
         parser = parsers.add_parser(
             "train-network",
@@ -288,10 +308,11 @@ class CustomArgumentParser:
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
 
-        argument.add_data_path(parser)
-        argument.add_save_network_path(parser)
+        argument.add_network(parser)
+        argument.add_network_file_name(parser)
         argument.add_epochs(parser)
         argument.add_skip(parser)
+        argument.add_plot_loss(parser)
         argument.add_profile(parser)
         argument.add_print_args(parser)
 
@@ -319,13 +340,13 @@ class CustomArgumentParser:
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
 
-        problem_parsers = self._add_problem_parsers(parser)
-        for parser_func in [self._add_shallow_water_parser]:
-            problem_parser = parser_func(problem_parsers, "plot-error-evolution")
-            argument.add_save(problem_parser, defaults.ERROR_EVOLUTION_PATH)
-            argument.add_hide(problem_parser)
-            argument.add_profile(problem_parser)
-            argument.add_print_args(problem_parser)
+        argument.add_end_time(parser)
+        self._add_shallow_water_benchmark_group(parser, "calculate")
+        argument.add_solver(parser, action.ShallowWaterSolverAction)
+        argument.add_save(parser, defaults.ERROR_EVOLUTION_PATH)
+        argument.add_hide(parser)
+        argument.add_profile(parser)
+        argument.add_print_args(parser)
 
     def parse_arguments(self, *arguments) -> argparse.Namespace:
         arguments = self._parser.parse_args(*arguments)

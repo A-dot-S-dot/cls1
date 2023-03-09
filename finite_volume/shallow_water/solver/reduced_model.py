@@ -1,16 +1,16 @@
 import pickle
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Type
 
 import defaults
 import finite_volume
 import finite_volume.shallow_water as swe
 import numpy as np
+from torch import nn
 
 from .lax_friedrichs import LaxFriedrichsFluxGetter
-from .mcl import MCLFluxGetter
 
 
-class NetworkSubgridFlux(finite_volume.NumericalFlux):
+class ApproximatedSubgridFlux(finite_volume.NumericalFlux):
     input_dimension = 4
     _network: ...
 
@@ -46,7 +46,7 @@ class ReducedFluxGetter(swe.FluxGetter):
             benchmark, len(space.mesh)
         )
         numerical_flux = self._flux_getter(benchmark, space)
-        subgrid_flux = NetworkSubgridFlux(self._network_path)
+        subgrid_flux = ApproximatedSubgridFlux(self._network_path)
         numerical_flux = finite_volume.CorrectedNumericalFlux(
             numerical_flux, subgrid_flux
         )
@@ -86,27 +86,4 @@ class ReducedSolver(swe.Solver):
         )
         return super()._build_args(
             benchmark, mesh_size=mesh_size, cfl_number=cfl_number, **kwargs
-        )
-
-
-class ReducedLaxFriedrichsSolver(ReducedSolver):
-    def __init__(
-        self, benchmark: swe.ShallowWaterBenchmark, network_path=None, **kwargs
-    ):
-        network_path = network_path or defaults.LLF_NETWORK_PATH
-        super().__init__(
-            benchmark,
-            flux_getter=LaxFriedrichsFluxGetter(),
-            network_path=network_path,
-            **kwargs,
-        )
-
-
-class ReducedMCLSolver(ReducedSolver):
-    def __init__(
-        self, benchmark: swe.ShallowWaterBenchmark, network_path=None, **kwargs
-    ):
-        network_path = network_path or defaults.MCL_NETWORK_PATH
-        super().__init__(
-            benchmark, flux_getter=MCLFluxGetter(), network_path=network_path, **kwargs
         )

@@ -183,7 +183,7 @@ class ReducedLaxFriedrichsSolverParser(SolverParser):
         argument.add_cfl_number(
             self, defaults.FINITE_VOLUME_CFL_NUMBER / defaults.COARSENING_DEGREE
         )
-        argument.add_load_network_path(self, defaults.LLF_NETWORK_PATH)
+        argument.add_network_name(self)
 
 
 class ReducedMCLSolverParser(SolverParser):
@@ -200,7 +200,7 @@ class ReducedMCLSolverParser(SolverParser):
         argument.add_cfl_number(
             self, defaults.FINITE_VOLUME_CFL_NUMBER / defaults.COARSENING_DEGREE
         )
-        argument.add_load_network_path(self, defaults.MCL_NETWORK_PATH)
+        argument.add_network_name(self)
 
 
 class ScalarFiniteVolumeMCLParser(SolverParser):

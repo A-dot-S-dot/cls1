@@ -1,7 +1,10 @@
 import core
 import defaults
 from benchmark.shallow_water import RandomOscillationNoTopographyBenchmark
-from finite_volume.shallow_water.solver import SHALLOW_WATER_FLUX_GETTER
+from finite_volume.shallow_water.solver import (
+    ESTIMATOR_TYPES,
+    SHALLOW_WATER_FLUX_GETTER,
+)
 
 from . import parser_type
 
@@ -227,7 +230,8 @@ def add_node_index(parser):
 
 def add_directory(parser):
     parser.add_argument(
-        "directory",
+        "-d",
+        "--directory",
         help="Specify directory for storing data.",
     )
 
@@ -248,9 +252,21 @@ def add_histogram(parser):
     parser.add_argument("--histogram", action="store_true", help="Plot historgram.")
 
 
-def add_save_network_path(parser):
+def add_network(parser):
     parser.add_argument(
-        "network_path", help="Specify where the network should be stored."
+        "network",
+        help="Specify which network should be trained.",
+        choices=ESTIMATOR_TYPES.keys(),
+    )
+
+
+def add_network_file_name(parser):
+    parser.add_argument(
+        "-f",
+        "--file",
+        help="Specify network file name (file-ending is generated automatically).",
+        metavar="<name>",
+        default="model",
     )
 
 
@@ -267,11 +283,18 @@ def add_epochs(parser):
 
 def add_skip(parser):
     parser.add_argument(
+        "-s",
         "--skip",
         help="Use every SKIP-th data point for training.",
         type=parser_type.positive_int,
         metavar="<skip>",
         default=defaults.SKIP,
+    )
+
+
+def add_plot_loss(parser):
+    parser.add_argument(
+        "--plot-loss", help="Plot training and validation loss.", action="store_true"
     )
 
 
@@ -378,12 +401,13 @@ def add_coarsening_degree(parser):
 
 
 # REDUCED SOLVER
-def add_load_network_path(parser, default_path):
+def add_network_name(parser):
     parser.add_argument(
-        "++network-path",
-        help="Specify from where to load trained network.",
-        metavar="<file>",
-        default=default_path,
+        "++network-file",
+        help="Specify file name of the network (file ending is added automatically).",
+        metavar="<name>",
+        dest="network_file_name",
+        default="model",
     )
 
 

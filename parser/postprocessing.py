@@ -3,6 +3,7 @@ from typing import Type
 import command as cmd
 from benchmark.shallow_water import OscillationNoTopographyBenchmark
 from tqdm.auto import tqdm, trange
+from finite_volume.shallow_water.solver import ESTIMATOR_TYPES
 
 
 ################################################################################
@@ -147,6 +148,12 @@ def build_eoc_solutions(arguments):
 ################################################################################
 # GENERATE DATA
 ################################################################################
+def build_directory(arguments):
+    directories = {"MCL": "data/reduced-mcl/", "LLF": "data/reduced-llf"}
+    if arguments.directory is None:
+        arguments.directory = directories[arguments.solver[0].short]
+
+
 def extract_solver(arguments):
     solver_num = 0 if arguments.solver is None else len(arguments.solver)
     assert solver_num == 1, f"Exactly one solver must be given. There are {solver_num}."
@@ -161,3 +168,17 @@ def build_benchmark(arguments):
 def build_overwrite_argument(arguments):
     arguments.overwrite = not arguments.append
     del arguments.append
+
+
+################################################################################
+# TRAIN NETWORK
+################################################################################
+def build_train_network_arguments(arguments):
+    arguments.estimator_type = ESTIMATOR_TYPES[arguments.network]
+
+    directories = {"llf": "data/reduced-llf/", "mcl": "data/reduced-mcl/"}
+    arguments.data_path = directories[arguments.network] + "data.csv"
+    arguments.network_path = directories[arguments.network] + arguments.file + ".pkl"
+
+    del arguments.network
+    del arguments.file

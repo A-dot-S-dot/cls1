@@ -5,6 +5,8 @@ from .energy_stable import *
 from .lax_friedrichs import *
 from .low_order import *
 from .mcl import *
+from .reduced_llf import *
+from .reduced_mcl import *
 from .reduced_model import *
 
 SHALLOW_WATER_FLUX_GETTER = {
@@ -18,3 +20,5 @@ SHALLOW_WATER_FLUX_GETTER = {
     ),
     "reduced-mcl": ReducedFluxGetter(MCLFluxGetter(), "data/reduced-mcl/model.pkl"),
 }
+
+ESTIMATOR_TYPES = {"llf": LaxFriedrichsEstimator, "mcl": MCLEstimator}
