@@ -98,3 +98,9 @@ class MCLSolver(finite_volume.Solver):
     def __init__(self, benchmark: core.Benchmark, **kwargs):
         self.flux_getter = MCLFluxGetter()
         super().__init__(benchmark, **kwargs)
+
+
+class MCLParser(finite_volume.SolverParser):
+    prog = "mcl-fv"
+    name = "Finite Volume MCL Solver"
+    solver = MCLSolver

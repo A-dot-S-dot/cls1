@@ -1,10 +1,13 @@
-from command import Command
+import argparse
+from typing import Any
+
+import core
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-import core
 from finite_volume.shallow_water.solver.reduced_mcl import Curvature
+
+from .command import Command, CommandParser
 
 
 def compare_2d_scatter_plots(
@@ -185,3 +188,24 @@ class PlotCurvatureAgainstSubgridFlux(Command):
             plt.show()
         else:
             plt.close()
+
+
+class AnalyzeCurvatureParser(CommandParser):
+    def _get_parser(self, parsers) -> Any:
+        return parsers.add_parser(
+            "analyze-curvature",
+            help="Analyze curvature.",
+            description="""Analye curvature by plotting it against subgrid flux.""",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+    def _add_arguments(self, parser):
+        parser.add_argument(
+            "--hide",
+            help=f"Do not show any figures.",
+            action="store_false",
+            dest="show",
+        )
+
+    def postprocess(self, arguments):
+        arguments.command = PlotCurvatureAgainstSubgridFlux

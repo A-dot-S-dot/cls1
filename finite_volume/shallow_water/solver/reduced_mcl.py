@@ -8,7 +8,7 @@ from torch import nn
 from torch.optim.lr_scheduler import StepLR
 
 from .mcl import MCLFluxGetter
-from .reduced_model import ReducedSolver
+from .reduced_model import ReducedSolver, ReducedSolverParser
 
 
 class Curvature:
@@ -43,17 +43,17 @@ class MCLModule(nn.Module):
         nn.Module.__init__(self)
 
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(8, 64),
+            nn.Linear(8, 128),
             nn.LeakyReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.LeakyReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.LeakyReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.LeakyReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.LeakyReLU(),
-            nn.Linear(64, 2),
+            nn.Linear(128, 2),
         )
 
     def forward(self, x):
@@ -64,7 +64,7 @@ class MCLEstimator(Pipeline):
     def __init__(self, **kwargs):
         callbacks = [
             ("early_stopping", EarlyStopping(threshold=1e-8, patience=10)),
-            ("lr_scheduler", LRScheduler(policy=StepLR, step_size=50)),
+            # ("lr_scheduler", LRScheduler(policy=StepLR, step_size=50)),
         ]
         self._network = NeuralNetRegressor(
             MCLModule,
@@ -91,3 +91,9 @@ class ReducedMCLSolver(ReducedSolver):
             network_path="data/reduced-mcl/" + network_file_name + ".pkl",
             **kwargs
         )
+
+
+class ReducedMCLSolverParser(ReducedSolverParser):
+    prog = "reduced-mcl"
+    name = "Reduced MCL Solver"
+    solver = ReducedMCLSolver

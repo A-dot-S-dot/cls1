@@ -1,11 +1,14 @@
-from typing import Callable, Sequence, Tuple, Type, TypeVar
+import argparse
+from typing import Any, Callable, List, Sequence, Tuple, Type, TypeVar
 
 import core
+import defaults
 import finite_element
 import numpy as np
 import pandas as pd
-from tqdm.auto import tqdm
+from tqdm.auto import tqdm, trange
 
+from .calculate import Calculate, CalculateParser
 from .command import Command
 
 T = TypeVar("T", float, np.ndarray)
@@ -220,3 +223,87 @@ class CalculateEOC(Command):
             print(title)
             print(len(title) * "-")
             print(eoc)
+
+
+class CalculateEOCParser(CalculateParser):
+    _benchmark_default = "eoc"
+
+    @property
+    def _problem_parser_adder(self) -> List[Callable]:
+        return [
+            self._add_advection_parser,
+            self._add_burgers_parser,
+        ]
+
+    def _get_parser(self, parsers) -> Any:
+        return parsers.add_parser(
+            "eoc",
+            help="Compute Experimental convergence order (EOC).",
+            description="Compute experimental order of convergence (EOC).",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+    def _add_command_arguments(self, parser):
+        self._add_eoc_mesh_size(parser)
+        self._add_refine(parser)
+
+    def _add_eoc_mesh_size(self, parser):
+        parser.add_argument(
+            "-m",
+            "--mesh-size",
+            help="""Initial mesh size for eoc calculation. Note, that mesh size
+            arguments for solvers are not considered.""",
+            type=core.positive_int,
+            metavar="<size>",
+            default=defaults.EOC_MESH_SIZE,
+        )
+
+    def _add_refine(self, parser):
+        parser.add_argument(
+            "-r",
+            "--refine",
+            help="Specify number of refinements.",
+            type=core.positive_int,
+            default=defaults.REFINE_NUMBER,
+            metavar="<number>",
+        )
+
+    def postprocess(self, arguments):
+        self._adjust_end_time(arguments)
+        self._build_eoc_solutions(arguments)
+        arguments.command = CalculateEOC
+
+        del arguments.problem
+
+    def _build_eoc_solutions(self, arguments):
+        arguments.solvers = []
+        arguments.solver_spaces = []
+
+        tqdm.write("Calculate Solutions")
+        tqdm.write("-------------------")
+        tqdm.write(
+            f"Initial Mesh Size={arguments.mesh_size}, Refinements={arguments.refine} "
+        )
+        for solver_arguments in tqdm(
+            arguments.solver, desc="Calculate Solutions", unit="solver", leave=False
+        ):
+            solver_type = solver_arguments.solver
+            del solver_arguments.solver
+            solvers = []
+            solver_spaces = []
+
+            for i in trange(
+                arguments.refine, desc=solver_arguments.name, unit="refinement"
+            ):
+                solver_arguments.mesh_size = 2**i * arguments.mesh_size
+                solver = solver_type(arguments.benchmark, **vars(solver_arguments))
+                Calculate(solver, leave=False).execute()
+                solvers.append(solver)
+                solver_spaces.append(solver.solution.space)
+
+            arguments.solvers.append(solvers)
+            arguments.solver_spaces.append(solver_spaces)
+
+        del arguments.refine
+        del arguments.mesh_size
+        del arguments.solver

@@ -14,4 +14,5 @@ from .solver import *
 from .space import *
 from .system import *
 from .time_stepping import *
+from .type import *
 from .vector_coarsener import *

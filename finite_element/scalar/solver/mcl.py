@@ -154,3 +154,14 @@ class MCLSolver(core.Solver):
             short=short,
             cfl_checker=cfl_checker,
         )
+
+
+class MCLParser(finite_element.SolverParser):
+    prog = "mcl-fem"
+    name = "Finite Element MCL Solver"
+    solver = MCLSolver
+
+    def _add_arguments(self):
+        super()._add_arguments(cfl_default=1.0)
+        self._add_adaptive_time_stepping()
+        self._add_ode_solver()

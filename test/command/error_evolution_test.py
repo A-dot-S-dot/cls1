@@ -4,8 +4,9 @@ from unittest import TestCase
 import core
 import numpy as np
 from finite_volume import FiniteVolumeSpace
-from finite_volume.shallow_water.command.error_evolution import *
 from numpy.testing import assert_almost_equal, assert_equal
+
+from command.error_evolution import *
 
 
 class TestErrorEvolutionCalculator(TestCase):

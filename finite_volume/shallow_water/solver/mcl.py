@@ -206,3 +206,13 @@ class MCLSolver(swe.Solver):
     ) -> Dict:
         self.flux_getter = MCLFluxGetter(flux_getter)
         return super()._build_args(benchmark, **kwargs)
+
+
+class MCLParser(finite_volume.SolverParser):
+    prog = "mcl"
+    name = "MCL Solver"
+    solver = MCLSolver
+
+    def _add_arguments(self):
+        super()._add_arguments()
+        self._add_flux()

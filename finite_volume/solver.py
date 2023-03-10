@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, Optional
 
 import core
 import defaults
@@ -72,3 +72,29 @@ class Solver(core.Solver):
         )
         self._solution.set_value(initial_data.value, initial_data.time)
         self._ode_solver.reinitialize(initial_data.value, initial_data.time)
+
+
+class SolverParser(core.SolverParser):
+    _flux_getter: Optional[Dict]
+
+    def __init__(self, flux_getter=None):
+        self._flux_getter = flux_getter
+        super().__init__()
+
+    def _add_arguments(self, mesh_size_default=None, cfl_default=None):
+        super()._add_arguments(
+            mesh_size_default, cfl_default or defaults.FINITE_VOLUME_CFL_NUMBER
+        )
+
+    def _add_flux(self):
+        assert self._flux_getter is not None
+
+        self.add_argument(
+            "+f",
+            "++flux",
+            help="""Choose flux by key. Available fluxes are: """
+            + ", ".join([*self._flux_getter.keys()]),
+            type=lambda input: self._flux_getter[input],
+            metavar="<flux>",
+            dest="flux_getter",
+        )

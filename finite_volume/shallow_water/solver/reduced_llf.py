@@ -6,7 +6,7 @@ from skorch.callbacks import EarlyStopping
 from torch import nn
 
 from .lax_friedrichs import LaxFriedrichsFluxGetter
-from .reduced_model import ReducedSolver
+from .reduced_model import ReducedSolver, ReducedSolverParser
 
 
 class LaxFriedrichsModule(nn.Module):
@@ -57,3 +57,9 @@ class ReducedLaxFriedrichsSolver(ReducedSolver):
             network_path="data/reduced-llf/" + network_file_name + ".pkl",
             **kwargs,
         )
+
+
+class ReducedLaxFriedrichsSolverParser(ReducedSolverParser):
+    prog = "reduced-llf"
+    name = "Reduced Lax Friedrichs Solver"
+    solver = ReducedLaxFriedrichsSolver

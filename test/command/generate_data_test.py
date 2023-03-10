@@ -6,9 +6,10 @@ import finite_volume
 import numpy as np
 import pandas as pd
 from benchmark.shallow_water import OscillationNoTopographyBenchmark
-from finite_volume.shallow_water.command.generate_data import *
 from finite_volume.shallow_water.solver import LaxFriedrichsSolver
 from numpy.testing import assert_equal
+
+from command.generate_data import *
 
 
 class TestNumericalFlux(finite_volume.NumericalFlux):
@@ -86,7 +87,7 @@ class TestSubgridFluxDataFrameBuilder(TestCase):
 
 class TestGenerateData(TestCase):
     def test_data_shape(self):
-        directory = "test/finite_volume/shallow_water/command/"
+        directory = "test/command/"
         command = GenerateData(
             LaxFriedrichsSolver(
                 OscillationNoTopographyBenchmark(end_time=2.0),

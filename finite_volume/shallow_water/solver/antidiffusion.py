@@ -35,3 +35,24 @@ class LinearAntidiffusiveSolver(swe.Solver):
         )
 
         return finite_volume.CorrectedNumericalFlux(numerical_flux, antidiffusive_flux)
+
+
+class AntidiffusionParser(finite_volume.SolverParser):
+    prog = "Antidiffusion"
+    name = "Solver with antidiffusion."
+    solver = LinearAntidiffusiveSolver
+
+    def _add_arguments(self):
+        super()._add_arguments()
+        self._add_flux()
+        self._add_gamma
+
+    def _add_gamma(self):
+        self.add_argument(
+            "+g",
+            "++gamma",
+            help="Specify antidiffusion parameter",
+            type=float,
+            metavar="<gamma>",
+            default=defaults.ANTIDIFFUSION_GAMMA,
+        )

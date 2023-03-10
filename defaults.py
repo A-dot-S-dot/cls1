@@ -12,7 +12,7 @@ PLOT_MESH_SIZE = 200
 ################################################################################
 # ANIMATION
 ################################################################################
-ANIMATION_TARGET = "data/animation.mp4"
+ANIMATE_TARGET = "data/animation.mp4"
 DURATION = 20  # how many seconds one clip should last
 TIME_STEPS = 100
 
@@ -33,9 +33,8 @@ CALCULATE_MESH_SIZE = 400
 # finite element based solver
 POLYNOMIAL_DEGREE = 1
 ODE_SOLVER = "heun"
-FINITE_ELEMENT_CFL_NUMBER = 0.1
-MCL_CFL_NUMBER = 1
 FLUX_APPROXIMATION = True
+FINITE_ELEMENT_CFL_NUMBER = 0.1
 
 # finite volume based solver
 FINITE_VOLUME_CFL_NUMBER = 0.1
@@ -63,7 +62,7 @@ MCL_NETWORK_PATH = "data/reduced-mcl/model.pkl"
 ################################################################################
 # PLOW ERROR EVOLUTION
 ################################################################################
-ERROR_EVOLUTION_PATH = "data/error.png"
+ERROR_EVOLUTION_TARGET = "data/error.png"
 
 ################################################################################
 # OTHER

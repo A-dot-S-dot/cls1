@@ -1,13 +1,17 @@
+import argparse
 import os
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import core
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
+from benchmark import shallow_water
 from tqdm.auto import tqdm, trange
 
-import command as cmd
+from .calculate import Calculate
+from .command import Command
+from .plot import PlotParser
 
 
 class ErrorEvolutionCalculator:
@@ -104,7 +108,7 @@ class ErrorEvolutionCalculator:
         return time, solution_values, solution_exact_values
 
 
-class PlotShallowWaterErrorEvolution(cmd.Command):
+class PlotShallowWaterErrorEvolution(Command):
     _solver: List[core.Solver]
     _suptitle: str
     _show: bool
@@ -144,7 +148,7 @@ class PlotShallowWaterErrorEvolution(cmd.Command):
     def _calculate_solutions(self):
         tqdm.write("\nCalculate solutions")
         tqdm.write("-------------------")
-        cmd.Calculate(self._solver).execute()
+        Calculate(self._solver).execute()
 
     def _plot(self, time: np.ndarray, error: np.ndarray):
         plt.plot(time, error[:, 0], label="height error")
@@ -336,3 +340,39 @@ class PlotShallowWaterErrorEvolution(cmd.Command):
 #     def _get_minimum_time(self) -> np.ndarray:
 #         time_lengths = [len(time) for time in self._times]
 #         return self._times[np.argmin(time_lengths)]
+
+
+class PlotErrorEvolutionParser(PlotParser):
+    _benchmark_default = "calculate"
+    _save_default = defaults.ERROR_EVOLUTION_TARGET
+
+    def _get_parser(self, parsers) -> Any:
+        return parsers.add_parser(
+            "plot-error-evolution",
+            help="Plot error between two solutions.",
+            description="Plot error between two solutions. Note, two solutions are required. The second one should be the reference solution.",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+    def _add_arguments(self, parser):
+        benchmark_group = parser.add_mutually_exclusive_group()
+        self._add_benchmark(
+            benchmark_group, shallow_water.BENCHMARK_DEFAULTS, shallow_water.BENCHMARKS
+        )
+        self._add_random_benchmark(benchmark_group)
+        self._add_end_time(parser)
+        self._add_shallow_water_solver(parser)
+        self._add_save(parser)
+        self._add_hide(parser)
+
+    def postprocess(self, arguments):
+        self._adjust_end_time(arguments)
+        self._add_save_history_argument(arguments)
+        self._build_solver(arguments)
+        arguments.command = PlotShallowWaterErrorEvolution
+
+        del arguments.benchmark
+
+    def _add_save_history_argument(self, arguments):
+        for solver_arguments in arguments.solver:
+            solver_arguments.save_history = True

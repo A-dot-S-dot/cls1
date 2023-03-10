@@ -7,9 +7,10 @@ More information are available with "cls1 --help".
 
 """
 
-from parser import CustomArgumentParser
-
 import profiler
+from command import PARSER_COMMANDS
+
+from parser import CustomArgumentParser
 
 
 def print_arguments(arguments):
@@ -34,7 +35,7 @@ def execute_command(arguments):
 
 @profiler.profile
 def main():
-    parser = CustomArgumentParser()
+    parser = CustomArgumentParser(PARSER_COMMANDS)
     arguments = parser.parse_arguments()
 
     print_arguments(arguments)

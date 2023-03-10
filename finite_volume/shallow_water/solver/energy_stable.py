@@ -156,3 +156,15 @@ class FirstOrderDiffusiveEnergyStableSolver(swe.Solver):
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
         self.flux_getter = FirstOrderDiffusiveEnergyStableFluxGetter()
         super().__init__(benchmark, **kwargs)
+
+
+class EnergyStableParser(finite_volume.SolverParser):
+    prog = "es"
+    name = "Energy stable finite volume scheme"
+    solver = EnergyStableSolver
+
+
+class FirstOrderDiffusiveEnergyStableParser(finite_volume.SolverParser):
+    prog = "es1"
+    name = "Energy stable finite volume scheme with first order diffusion"
+    solver = FirstOrderDiffusiveEnergyStableSolver

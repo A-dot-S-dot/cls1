@@ -1,12 +1,9 @@
 from typing import Callable
 
+import core
 import defaults
 import finite_element
 import numpy as np
-from core.benchmark import Benchmark
-from core.solver import Solver
-from core.system import SystemMatrix
-from core.time_stepping import get_mesh_dependent_time_stepping
 
 
 class CGRightHandSide:
@@ -19,11 +16,11 @@ class CGRightHandSide:
 
     """
 
-    mass: SystemMatrix
+    mass: core.SystemMatrix
     flux_gradient: Callable[[np.ndarray], np.ndarray]
 
     def __init__(
-        self, mass: SystemMatrix, flux_gradient: Callable[[np.ndarray], np.ndarray]
+        self, mass: core.SystemMatrix, flux_gradient: Callable[[np.ndarray], np.ndarray]
     ):
         self.mass = mass
         self.flux_gradient = flux_gradient
@@ -45,10 +42,10 @@ def get_cg_right_hand_side(
     return CGRightHandSide(mass, flux_gradient)
 
 
-class ContinuousGalerkinSolver(Solver):
+class ContinuousGalerkinSolver(core.Solver):
     def __init__(
         self,
-        benchmark: Benchmark,
+        benchmark: core.Benchmark,
         name=None,
         short=None,
         mesh_size=None,
@@ -72,11 +69,11 @@ class ContinuousGalerkinSolver(Solver):
             benchmark.problem, solution.space, exact_flux=exact_flux
         )
         ode_solver = finite_element.build_optimal_ode_solver(solution.space)
-        time_stepping = get_mesh_dependent_time_stepping(
+        time_stepping = core.get_mesh_dependent_time_stepping(
             benchmark, solution.space.mesh, cfl_number
         )
 
-        Solver.__init__(
+        core.Solver.__init__(
             self,
             solution,
             right_hand_side,
@@ -84,4 +81,16 @@ class ContinuousGalerkinSolver(Solver):
             time_stepping,
             name=name,
             short=short,
+        )
+
+
+class CGParser(finite_element.SolverParser):
+    prog = "cg"
+    name = "Continuous Galerkin"
+    solver = ContinuousGalerkinSolver
+
+    def _add_arguments(self):
+        super()._add_arguments()
+        self.add_argument(
+            "++exact-flux", action="store_true", help="Calculate flux matrices exactly."
         )

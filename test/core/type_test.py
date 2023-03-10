@@ -1,4 +1,4 @@
-from parser.parser_type import percent_number, positive_float, positive_int
+from core.type import *
 from unittest import TestCase
 
 

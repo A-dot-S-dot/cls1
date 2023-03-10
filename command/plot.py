@@ -1,14 +1,15 @@
+import argparse
 from abc import ABC, abstractmethod
-from typing import Callable, Generic, List, Optional, TypeVar
+from typing import Any, Callable, Generic, List, Optional, TypeVar
 
 import core
 import defaults
+import finite_volume.shallow_water as swe
 import matplotlib.pyplot as plt
 import numpy as np
-import finite_volume.shallow_water as swe
 from tqdm.auto import tqdm
 
-from .calculate import Calculate
+from .calculate import Calculate, CalculateParser
 from .command import Command
 
 T = TypeVar("T", float, np.ndarray)
@@ -278,3 +279,78 @@ class Plot(Command):
             self._plotter.add_function_values(
                 solution.grid, solution.value, solver.short
             )
+
+
+class PlotParser(CalculateParser):
+    _benchmark_default = "plot"
+    _save_default = defaults.PLOT_TARGET
+
+    def _get_parser(self, parsers) -> Any:
+        return parsers.add_parser(
+            "plot",
+            help="Calculate and plot solutions.",
+            description="Plot benchmarks and computed solutions.",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+    def _add_command_arguments(self, parser):
+        self._add_plot_mesh_size(parser)
+        self._add_initial_data(parser)
+        self._add_save(parser)
+        self._add_hide(parser)
+
+    def _add_plot_mesh_size(self, parser):
+        parser.add_argument(
+            "-m",
+            "--mesh-size",
+            help="Number of points used for plotting.",
+            type=core.positive_int,
+            metavar="<size>",
+            default=defaults.PLOT_MESH_SIZE,
+        )
+
+    def _add_initial_data(self, parser):
+        parser.add_argument("--initial", help="Show initial data.", action="store_true")
+
+    def _add_save(self, parser):
+        parser.add_argument(
+            "--save",
+            help=f"Save file in specified direction. (const: {self._save_default})",
+            nargs="?",
+            const=self._save_default,
+            metavar="<file>",
+        )
+
+    def _add_hide(self, parser):
+        parser.add_argument(
+            "--hide",
+            help=f"Do not show any figures.",
+            action="store_false",
+            dest="show",
+        )
+
+    def postprocess(self, arguments):
+        self._adjust_end_time(arguments)
+        self._build_solver(arguments)
+        self._build_plotter(arguments)
+        arguments.command = Plot
+
+        del arguments.problem
+
+    def _build_plotter(self, arguments):
+        plotter = {
+            "advection": ScalarPlotter,
+            "burgers": ScalarPlotter,
+            "swe": ShallowWaterPlotter,
+        }
+
+        arguments.plotter = plotter[arguments.problem](
+            arguments.benchmark,
+            mesh_size=arguments.mesh_size,
+            save=arguments.save,
+            show=arguments.show,
+        )
+
+        del arguments.mesh_size
+        del arguments.save
+        del arguments.show

@@ -14,3 +14,9 @@ class CentralFluxSolver(swe.Solver):
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
         self.flux_getter = CentralFluxGetter()
         super().__init__(benchmark, **kwargs)
+
+
+class CentralFluxParser(finite_volume.SolverParser):
+    prog = "central"
+    name = "Central scheme"
+    solver = CentralFluxSolver

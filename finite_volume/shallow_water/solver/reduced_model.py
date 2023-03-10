@@ -87,3 +87,22 @@ class ReducedSolver(swe.Solver):
         return super()._build_args(
             benchmark, mesh_size=mesh_size, cfl_number=cfl_number, **kwargs
         )
+
+
+class ReducedSolverParser(finite_volume.SolverParser):
+    def _add_arguments(self):
+        super()._add_arguments(
+            mesh_size_default=defaults.CALCULATE_MESH_SIZE
+            // defaults.COARSENING_DEGREE,
+            cfl_default=0.1 / defaults.COARSENING_DEGREE,
+        )
+        self._add_network()
+
+    def _add_network(self):
+        self.add_argument(
+            "++network-file",
+            help="Specify file name of the network (file ending is added automatically).",
+            metavar="<name>",
+            dest="network_file_name",
+            default="model",
+        )

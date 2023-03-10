@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Callable, Generic, List, Optional, Sequence, Tuple, TypeVar
+from typing import Callable, Generic, List, Optional, Sequence, Tuple, TypeVar, Any
 
+import argparse
 import core
 import defaults
 import finite_volume.shallow_water as swe
@@ -13,6 +14,7 @@ from tqdm.auto import tqdm
 
 from .calculate import Calculate
 from .command import Command
+from .plot import PlotParser
 
 T = TypeVar("T", float, np.ndarray)
 
@@ -441,3 +443,89 @@ class Animate(Command):
     def _add_discrete_solutions(self):
         for solver in self._solver:
             self._animator.add_animatable(solver._solution, solver.short)
+
+
+class AnimateParser(PlotParser):
+    _benchmark_parser = "animate"
+    _save_default = defaults.ANIMATE_TARGET
+
+    def _get_parser(self, parsers) -> Any:
+        return parsers.add_parser(
+            "animate",
+            help="Calculate and animate solutions.",
+            description="Animate benchmarks and computed solutions.",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+    def _add_command_arguments(self, parser):
+        self._add_plot_mesh_size(parser)
+        self._add_initial_data(parser)
+        self._add_save(parser)
+        self._add_hide(parser)
+        self._add_time_steps(parser)
+        self._add_start_time(parser)
+        self._add_duration(parser)
+
+    def _add_time_steps(self, parser):
+        parser.add_argument(
+            "--time_steps",
+            help="Specify how many time steps should be at least simulated.",
+            type=core.positive_int,
+            metavar="<number>",
+            default=defaults.TIME_STEPS,
+        )
+
+    def _add_start_time(self, parser):
+        parser.add_argument(
+            "-t",
+            "--start-time",
+            help="Set start time for animation.",
+            type=core.positive_float,
+            metavar="<time>",
+        )
+
+    def _add_duration(self, parser):
+        parser.add_argument(
+            "--duration",
+            help="""Specifies how many second an animation should last.""",
+            type=core.positive_float,
+            default=defaults.DURATION,
+            metavar="<factor>",
+        )
+
+    def postprocess(self, arguments):
+        self._adjust_end_time(arguments)
+        self._add_save_history_argument(arguments)
+        self._build_solver(arguments)
+        self._build_animator(arguments)
+        arguments.command = Animate
+
+        del arguments.problem
+
+    def _build_animator(self, arguments):
+        animator = {
+            "advection": ScalarAnimator,
+            "burgers": ScalarAnimator,
+            "swe": ShallowWaterAnimator,
+        }
+
+        arguments.animator = animator[arguments.problem](
+            arguments.benchmark,
+            mesh_size=arguments.mesh_size,
+            time_steps=arguments.time_steps,
+            save=arguments.save,
+            start_time=arguments.start_time,
+            duration=arguments.duration,
+            show=arguments.show,
+        )
+
+        del arguments.mesh_size
+        del arguments.time_steps
+        del arguments.save
+        del arguments.start_time
+        del arguments.duration
+        del arguments.show
+
+    def _add_save_history_argument(self, arguments):
+        for solver_arguments in arguments.solver:
+            solver_arguments.save_history = True

@@ -7,5 +7,6 @@ from .index_mapping import *
 from .lumped_mass import *
 from .mass import *
 from .ode_solver import *
+from .solver import *
 from .space import *
 from .system import *

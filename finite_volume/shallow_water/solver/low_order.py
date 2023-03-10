@@ -133,3 +133,9 @@ class LowOrderSolver(swe.Solver):
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
         self.flux_getter = LowOrderFluxGetter()
         super().__init__(benchmark, **kwargs)
+
+
+class LowOrderParser(finite_volume.SolverParser):
+    prog = "low-order"
+    name = "Low order finite volume scheme"
+    solver = LowOrderSolver

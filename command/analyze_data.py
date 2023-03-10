@@ -1,7 +1,11 @@
-from .command import Command
+import argparse
+from typing import Any
+
 import core
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
+
+from .command import Command, CommandParser
 
 
 class AnalyzeData(Command):
@@ -17,3 +21,20 @@ class AnalyzeData(Command):
         if self._histogram:
             self._data.hist()
             plt.show()
+
+
+class AnalazyDataParser(CommandParser):
+    def _get_parser(self, parsers) -> Any:
+        return parsers.add_parser(
+            "analyze-data",
+            help="Analyze data.",
+            description="""Analyze data by printing summary statistics and historgrams.""",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+
+    def _add_arguments(self, parser):
+        parser.add_argument("data_path", help="Specify data location.")
+        parser.add_argument("--histogram", action="store_true", help="Plot historgram.")
+
+    def postprocess(self, arguments):
+        arguments.command = AnalyzeData

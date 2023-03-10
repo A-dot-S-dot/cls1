@@ -14,3 +14,9 @@ class CentralFluxSolver(finite_volume.Solver):
     def __init__(self, benchmark: core.Benchmark, **kwargs):
         self.flux_getter = CentralFluxGetter()
         super().__init__(benchmark, **kwargs)
+
+
+class CentralParser(finite_volume.SolverParser):
+    prog = "central"
+    name = "Central scheme"
+    solver = CentralFluxSolver

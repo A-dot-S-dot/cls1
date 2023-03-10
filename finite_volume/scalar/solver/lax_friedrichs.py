@@ -15,3 +15,9 @@ class LaxFriedrichsSolver(finite_volume.Solver):
     def __init__(self, benchmark: core.Benchmark, **kwargs):
         self.flux_getter = LaxFriedrichsFluxGetter()
         super().__init__(benchmark, **kwargs)
+
+
+class LaxFriedrichsParser(finite_volume.SolverParser):
+    prog = "llf"
+    name = "Lax-Friedrichs finite volume scheme"
+    solver = LaxFriedrichsSolver
