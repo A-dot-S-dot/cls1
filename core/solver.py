@@ -6,7 +6,8 @@ import defaults
 import numpy as np
 from tqdm.auto import tqdm
 
-from . import time_stepping, ode_solver
+from . import ode_solver, time_stepping
+from .benchmark import Benchmark
 from .discrete_solution import DiscreteSolution
 from .system import RightHandSide
 from .type import *
@@ -14,7 +15,7 @@ from .type import *
 T = TypeVar("T", bound=DiscreteSolution)
 
 
-class Solver(Generic[T]):
+class Solver(Generic[T], ABC):
     name: str
     short: str
     _solution: T
@@ -80,6 +81,10 @@ class Solver(Generic[T]):
                     f"WARNING: CFL condition is violated at time {self._time_stepping.time:.4f}"
                 )
 
+    @abstractmethod
+    def reinitialize(self, benchmark: Benchmark):
+        ...
+
     def __repr__(self) -> str:
         return (
             self.__class__.__name__
@@ -87,7 +92,7 @@ class Solver(Generic[T]):
         )
 
 
-class SolverParser(argparse.ArgumentParser, ABC):
+class SolverParser(argparse.ArgumentParser):
     prog: str
     name: str
     solver: Type[Solver]

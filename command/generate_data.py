@@ -156,26 +156,9 @@ class BenchparkParameterDataFrameBuilder:
         ]
 
 
-class RandomBenchmarkGenerator:
-    _end_time: float
-
-    def __init__(self, seed=None, end_time=None):
-        random.seed(seed)
-        self._end_time = end_time or 40.0
-
-    def __call__(self) -> shallow_water.OscillationNoTopographyBenchmark:
-        return shallow_water.RandomOscillationNoTopographyBenchmark(
-            end_time=self._end_time,
-            height_average=shallow_water.HEIGHT_AVERAGE,
-        )
-
-    def __repr__(self) -> str:
-        return self.__class__.__name__
-
-
 class GenerateData(Command):
     _solution_number: int
-    _get_benchmark: RandomBenchmarkGenerator
+    _get_benchmark: shallow_water.RandomBenchmarkGenerator
     _subgrid_flux_df_builder: SubgridFluxDataFrameBuilder
     _benchmark_df_builder: BenchparkParameterDataFrameBuilder
     _subgrid_flux_path: str
@@ -198,7 +181,9 @@ class GenerateData(Command):
     ):
         self._solver = solver
         self._solution_number = solution_number or defaults.SOLUTION_NUMBER
-        self._get_benchmark = RandomBenchmarkGenerator(seed or defaults.SEED, end_time)
+        self._get_benchmark = shallow_water.RandomBenchmarkGenerator(
+            seed or defaults.SEED, end_time
+        )
         self._benchmark_df_builder = BenchparkParameterDataFrameBuilder()
         self._subgrid_flux_df_builder = self._get_subgrid_flux_data_frame_builder(
             coarsening_degree or defaults.COARSENING_DEGREE,

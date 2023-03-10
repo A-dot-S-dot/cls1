@@ -1,4 +1,5 @@
 import random
+from typing import Dict
 
 import defaults
 import numpy as np
@@ -325,6 +326,25 @@ class SinusInflowBenchmark(ShallowWaterBenchmark):
         height = 2.0
 
         return np.array([height, 0.0])
+
+
+class RandomBenchmarkGenerator:
+    _benchmark_kwargs: Dict
+
+    def __init__(
+        self, seed=None, end_time=None, height_average=HEIGHT_AVERAGE, **kwargs
+    ):
+        random.seed(seed)
+        self._benchmark_kwargs = {
+            "end_time": end_time or 40.0,
+            "height_average": height_average,
+        } | kwargs
+
+    def __call__(self) -> OscillationNoTopographyBenchmark:
+        return RandomOscillationNoTopographyBenchmark(**self._benchmark_kwargs)
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__
 
 
 BENCHMARKS = {
