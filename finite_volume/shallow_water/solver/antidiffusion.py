@@ -43,7 +43,6 @@ class AntidiffusionParser(finite_volume.SolverParser):
     solver = LinearAntidiffusiveSolver
 
     def _add_arguments(self):
-        super()._add_arguments()
         self._add_flux()
         self._add_gamma
 

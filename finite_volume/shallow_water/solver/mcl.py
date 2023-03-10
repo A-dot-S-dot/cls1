@@ -214,5 +214,4 @@ class MCLParser(finite_volume.SolverParser):
     solver = MCLSolver
 
     def _add_arguments(self):
-        super()._add_arguments()
         self._add_flux()

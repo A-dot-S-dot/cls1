@@ -23,14 +23,14 @@ SHALLOW_WATER_FLUX_GETTER = {
 
 ESTIMATOR_TYPES = {"llf": LaxFriedrichsEstimator, "mcl": MCLEstimator}
 SOLVER_PARSER = {
-    "llf": LaxFriedrichsParser,
-    "low-order": LowOrderParser,
-    "central": CentralFluxParser,
-    "es": EnergyStableParser,
-    "es1": FirstOrderDiffusiveEnergyStableParser,
-    "mcl": MCLParser,
-    "reduced-llf": ReducedLaxFriedrichsSolverParser,
-    "reduced-mcl": ReducedMCLSolverParser,
-    "antidiffusion": AntidiffusionParser,
-    "coarse": CoarseParser,
+    "llf": LaxFriedrichsParser(),
+    "low-order": LowOrderParser(),
+    "central": CentralFluxParser(),
+    "es": EnergyStableParser(),
+    "es1": FirstOrderDiffusiveEnergyStableParser(),
+    "mcl": MCLParser(flux_getter=SHALLOW_WATER_FLUX_GETTER),
+    "reduced-llf": ReducedLaxFriedrichsSolverParser(),
+    "reduced-mcl": ReducedMCLSolverParser(),
+    "antidiffusion": AntidiffusionParser(flux_getter=SHALLOW_WATER_FLUX_GETTER),
+    "coarse": CoarseParser(flux_getter=SHALLOW_WATER_FLUX_GETTER),
 }

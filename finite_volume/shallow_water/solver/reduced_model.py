@@ -90,12 +90,11 @@ class ReducedSolver(swe.Solver):
 
 
 class ReducedSolverParser(finite_volume.SolverParser):
+    _mesh_size_default = defaults.CALCULATE_MESH_SIZE // defaults.COARSENING_DEGREE
+    _cfl_default = defaults.FINITE_VOLUME_CFL_NUMBER / defaults.COARSENING_DEGREE
+
     def _add_arguments(self):
-        super()._add_arguments(
-            mesh_size_default=defaults.CALCULATE_MESH_SIZE
-            // defaults.COARSENING_DEGREE,
-            cfl_default=0.1 / defaults.COARSENING_DEGREE,
-        )
+        self._add_ode_solver()
         self._add_network()
 
     def _add_network(self):

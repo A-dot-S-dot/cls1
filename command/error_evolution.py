@@ -364,6 +364,7 @@ class PlotErrorEvolutionParser(PlotParser):
         self._add_shallow_water_solver(parser)
         self._add_save(parser)
         self._add_hide(parser)
+        self._add_general_arguments(parser)
 
     def postprocess(self, arguments):
         self._adjust_end_time(arguments)

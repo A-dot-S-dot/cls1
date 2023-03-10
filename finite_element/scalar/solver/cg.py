@@ -90,7 +90,6 @@ class CGParser(finite_element.SolverParser):
     solver = ContinuousGalerkinSolver
 
     def _add_arguments(self):
-        super()._add_arguments()
         self.add_argument(
             "++exact-flux", action="store_true", help="Calculate flux matrices exactly."
         )

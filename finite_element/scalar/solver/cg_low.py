@@ -125,8 +125,8 @@ class CGLowParser(finite_element.SolverParser):
     prog = "cg-low"
     name = "Low order Continuous Galerkin"
     solver = LowOrderContinuousGalerkinSolver
+    _cfl_default = 1.0
 
     def _add_arguments(self):
-        super()._add_arguments(cfl_default=1.0)
         self._add_adaptive_time_stepping()
         self._add_ode_solver()

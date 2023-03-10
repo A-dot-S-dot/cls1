@@ -76,15 +76,11 @@ class Solver(core.Solver):
 
 class SolverParser(core.SolverParser):
     _flux_getter: Optional[Dict]
+    _cfl_default = defaults.FINITE_VOLUME_CFL_NUMBER
 
     def __init__(self, flux_getter=None):
         self._flux_getter = flux_getter
         super().__init__()
-
-    def _add_arguments(self, mesh_size_default=None, cfl_default=None):
-        super()._add_arguments(
-            mesh_size_default, cfl_default or defaults.FINITE_VOLUME_CFL_NUMBER
-        )
 
     def _add_flux(self):
         assert self._flux_getter is not None

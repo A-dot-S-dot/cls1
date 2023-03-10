@@ -91,6 +91,8 @@ class SolverParser(argparse.ArgumentParser, ABC):
     prog: str
     name: str
     solver: Type[Solver]
+    _cfl_default = 0.5
+    _mesh_size_default = defaults.CALCULATE_MESH_SIZE
 
     def __init__(self):
         argparse.ArgumentParser.__init__(
@@ -102,13 +104,17 @@ class SolverParser(argparse.ArgumentParser, ABC):
             add_help=False,
         )
 
+        self._add_standard_arguments()
         self._add_arguments()
 
-    def _add_arguments(self, mesh_size_default=None, cfl_default=None):
+    def _add_standard_arguments(self):
         self._add_name()
         self._add_short()
-        self._add_mesh_size(mesh_size_default)
-        self._add_cfl(cfl_default)
+        self._add_mesh_size()
+        self._add_cfl()
+
+    def _add_arguments(self):
+        ...
 
     def _add_name(self):
         self.add_argument(
@@ -220,7 +226,7 @@ class SolverAction(argparse.Action):
         solver_key = raw_solver_arguments[0]
         namespace = argparse.Namespace()
         try:
-            self.solver_parsers[solver_key]().parse_arguments(
+            self.solver_parsers[solver_key].parse_arguments(
                 raw_solver_arguments[1:], namespace
             )
         except KeyError:
