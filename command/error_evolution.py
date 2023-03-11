@@ -377,7 +377,3 @@ class PlotErrorEvolutionParser(PlotParser):
         assert (
             solver_num == 2
         ), f"Exactly two solver must be given. There are {solver_num}."
-
-    def _add_save_history_argument(self, arguments):
-        for solver_arguments in arguments.solver:
-            solver_arguments.save_history = True

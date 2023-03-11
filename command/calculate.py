@@ -207,3 +207,7 @@ class CalculateParser(CommandParser):
             solver_list.append(solver(arguments.benchmark, **vars(solver_arguments)))
 
         arguments.solver = solver_list
+
+    def _add_save_history_argument(self, arguments):
+        for solver_arguments in arguments.solver:
+            solver_arguments.save_history = True

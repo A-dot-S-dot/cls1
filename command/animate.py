@@ -525,7 +525,3 @@ class AnimateParser(PlotParser):
         del arguments.start_time
         del arguments.duration
         del arguments.show
-
-    def _add_save_history_argument(self, arguments):
-        for solver_arguments in arguments.solver:
-            solver_arguments.save_history = True
