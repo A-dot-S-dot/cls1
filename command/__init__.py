@@ -3,6 +3,7 @@ from .analyze_data import *
 from .animate import *
 from .calculate import *
 from .command import *
+from .delete_curvature import *
 from .error import *
 from .error_evolution import *
 from .generate_data import *
@@ -17,6 +18,7 @@ PARSER_COMMANDS = {
     "analyze-data": AnalazyDataParser(),
     "animate": AnimateParser(),
     "calculate": CalculateParser(),
+    "delete-curvature": DeleteCurvatureParser(),
     "eoc": CalculateEOCParser(),
     "error-evolution": PlotErrorEvolutionParser(),
     "generate-data": GenerateDataParser(),
