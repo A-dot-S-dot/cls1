@@ -51,7 +51,7 @@ def create_2d_scatter_plots(df_llf, df_mcl, save=False):
         xlabel="$\kappa_h$",
         ylabel="$G_{1.5}^h$",
         suptitle="Height curvature and subgrid flux",
-        save="kh_Gh.png" if save else None,
+        save="data/curvature-analysis/kh_Gh.png" if save else None,
     )
     compare_2d_scatter_plots(
         df_llf[("k", "q")],
@@ -61,7 +61,7 @@ def create_2d_scatter_plots(df_llf, df_mcl, save=False):
         xlabel="$\kappa_q$",
         ylabel="$G_{1.5}^h$",
         suptitle="Discharge curvature and height subgrid flux",
-        save="kq_Gh.png" if save else None,
+        save="data/curvature-analysis/kq_Gh.png" if save else None,
     )
     compare_2d_scatter_plots(
         df_llf[("k", "h")],
@@ -71,7 +71,7 @@ def create_2d_scatter_plots(df_llf, df_mcl, save=False):
         xlabel="$\kappa_h$",
         ylabel="$G_{1.5}^q$",
         suptitle="Height curvature and discharge subgrid flux",
-        save="kh_Gq.png" if save else None,
+        save="data/curvature-analysis/kh_Gq.png" if save else None,
     )
     compare_2d_scatter_plots(
         df_llf[("k", "q")],
@@ -81,7 +81,7 @@ def create_2d_scatter_plots(df_llf, df_mcl, save=False):
         xlabel="$\kappa_q$",
         ylabel="$G_{1.5}^q$",
         suptitle="Discharge curvature and subgrid flux",
-        save="kq_Gq.png" if save else None,
+        save="data/curvature-analysis/kq_Gq.png" if save else None,
     )
 
 
@@ -203,9 +203,12 @@ class AnalyzeCurvatureParser(CommandParser):
         parser.add_argument(
             "--hide",
             help=f"Do not show any figures.",
-            action="store_false",
-            dest="show",
+            action="store_true",
         )
+        parser.add_argument("--save", help="Save plots.", action="store_true")
 
     def postprocess(self, arguments):
+        arguments.show = not arguments.hide
         arguments.command = PlotCurvatureAgainstSubgridFlux
+
+        del arguments.hide
