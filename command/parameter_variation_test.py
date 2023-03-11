@@ -6,15 +6,15 @@ import defaults
 import numpy as np
 from benchmark import shallow_water
 from benchmark.shallow_water import HEIGHT_AVERAGE
-from finite_volume.shallow_water import solver
+from finite_volume.shallow_water.solver import ReducedSolver
 from tqdm.auto import tqdm, trange
 
-from .command import Command, CommandParser
+from .calculate import CalculateParser
+from .command import Command
 from .error_evolution import (
     GenerateShallowWaterErrorEvolutionSeries,
     PlotShallowWaterAverageErrorEvolution,
 )
-from .generate_data import DIRECTORIES
 
 
 class ParameterVariation:
@@ -155,28 +155,31 @@ class ParameterVariationTest(Command):
             ).execute()
 
 
-class ParameterVariationTestParser(CommandParser):
+class ParameterVariationTestParser(CalculateParser):
     def _get_parser(self, parsers) -> Any:
         return parsers.add_parser(
             "parameter-variation-test",
             help="Variate parameters and obtain errors.",
-            description="Variate parameters for certain benchmarks, calculate its errors and optionally plot, animate the solutions.",
+            description="""Variate parameters for certain benchmarks, calculate
+            its errors and optionally plot, animate the solutions. Note the
+            second solver is the reference solver, which ideally calculates the
+            best solution.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
 
     def _add_arguments(self, parser):
-        self._add_problem(parser)
+        self._add_shallow_water_solver(parser)
+        self._add_directory(parser)
         self._add_parameter_variations(parser)
         self._add_initial_data_number(parser)
         self._add_seed(parser)
         self._add_build_references(parser)
         self._add_save_plot(parser)
         self._add_save_animation(parser)
+        self._add_general_arguments(parser)
 
-    def _add_problem(self, parser):
-        parser.add_argument(
-            "problem", help="Specify problem for test.", choices=["llf"]
-        )
+    def _add_directory(self, parser):
+        parser.add_argument("directory", help="Specify where to save test results.")
 
     def _add_parameter_variations(self, parser):
         parser.add_argument(
@@ -229,33 +232,28 @@ class ParameterVariationTestParser(CommandParser):
         )
 
     def postprocess(self, arguments):
-        self._build_directory(arguments)
+        self._assert_two_solver(arguments)
+        self._add_save_history_argument(arguments)
+        arguments.benchmark = shallow_water.OscillationNoTopographyBenchmark()
         self._build_solver(arguments)
         self._build_variations(arguments)
 
         arguments.command = ParameterVariationTest
 
-        del arguments.problem
+        del arguments.benchmark
 
-    def _build_directory(self, arguments):
-        arguments.directory = DIRECTORIES[arguments.problem]
+    def _assert_two_solver(self, arguments):
+        solver_num = 0 if arguments.solver is None else len(arguments.solver)
+        assert (
+            solver_num == 2
+        ), f"Exactly two solver must be given. There are {solver_num}."
 
     def _build_solver(self, arguments):
-        benchmark = shallow_water.OscillationNoTopographyBenchmark()
-        flux_getter = solver.LaxFriedrichsFluxGetter()
-        arguments.solver_exact = solver.CoarseSolver(
-            benchmark,
-            flux_getter=flux_getter,
-            save_history=True,
-            name="Lax Friedrichs",
-            short="llf",
-        )
-        arguments.solver_approximation = solver.ReducedLaxFriedrichsSolver(
-            benchmark,
-            save_history=True,
-            name="Reduced Lax Friedrichs",
-            short="reduced-llf",
-        )
+        super()._build_solver(arguments)
+        arguments.solver_approximation = arguments.solver[0]
+        arguments.solver_exact = arguments.solver[1]
+
+        del arguments.solver
 
     def _build_variations(self, arguments):
         if arguments.variations:

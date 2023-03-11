@@ -233,7 +233,7 @@ class GenerateShallowWaterErrorEvolutionSeries(Command):
                 tqdm.write(f"WARNING: {error} No error plot for seed={i}.")
             else:
                 _time, _error = ErrorEvolutionCalculator()(
-                    self._solver_exact.solution, self._solver_approximation.solution
+                    self._solver_approximation.solution, self._solver_exact.solution
                 )
                 self.times.append(_time)
                 self.errors.append(_error)
