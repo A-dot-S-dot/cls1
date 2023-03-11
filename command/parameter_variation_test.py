@@ -6,7 +6,6 @@ import defaults
 import numpy as np
 from benchmark import shallow_water
 from benchmark.shallow_water import HEIGHT_AVERAGE
-from finite_volume.shallow_water.solver import ReducedSolver
 from tqdm.auto import tqdm, trange
 
 from .calculate import CalculateParser
@@ -34,7 +33,7 @@ class HeightAverageVariation(ParameterVariation):
 
 
 class WaveNumberVariation(ParameterVariation):
-    values = [1, 2, 5, 6, 9, 10, 15, 20, 25, 50]
+    values = [1, 2, 5, 6, 9, 10, 15]
     name = "height_wave_number"
     short = "kh"
     description = "Calculate Errors (kh-variation)"

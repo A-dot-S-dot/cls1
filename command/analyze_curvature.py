@@ -195,7 +195,7 @@ class AnalyzeCurvatureParser(CommandParser):
         return parsers.add_parser(
             "analyze-curvature",
             help="Analyze curvature.",
-            description="""Analye curvature by plotting it against subgrid flux.""",
+            description="""Analyze curvature by plotting it against subgrid flux.""",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
 

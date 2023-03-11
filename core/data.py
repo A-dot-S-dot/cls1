@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def save_data(data: pd.DataFrame, path: str, overwrite: bool):
+def save_data(data: pd.DataFrame, path: str, overwrite=True):
     data.to_csv(
         path,
         mode="w" if overwrite else "a",
