@@ -1,4 +1,3 @@
-import random
 from typing import Dict
 
 import defaults
@@ -7,7 +6,6 @@ from core import Interval
 from core.benchmark import Benchmark
 from scipy.optimize import newton
 
-# No topography benchmark
 LENGTH = 100.0
 HEIGHT_AVERAGE = 2.0
 HEIGHT_AMPLITUDE = 0.1 * HEIGHT_AVERAGE
@@ -140,7 +138,6 @@ class MovingWaterBumpBathymetryBenchmark(ShallowWaterBenchmark):
 
 class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
     domain = Interval(0, LENGTH)
-    _boundary_conditions = "periodic"
     height_average: float
     height_amplitude: float
     height_phase_shift: float
@@ -149,6 +146,8 @@ class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
     velocity_amplitude: float
     velocity_phase_shift: float
     velocity_wave_number: float
+
+    _boundary_conditions = "periodic"
 
     def __init__(
         self,
@@ -189,13 +188,13 @@ class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
 
 
 class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
-    domain = Interval(0, LENGTH)
-    _boundary_conditions = "periodic"
+    seed: int
+    _generator: np.random.Generator
 
     def __init__(
         self,
+        seed: int,
         end_time=40.0,
-        seed=None,
         height_average=None,
         height_amplitude=None,
         height_phase_shift=None,
@@ -205,20 +204,46 @@ class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
         velocity_phase_shift=None,
         velocity_wave_number=None,
     ):
-        if seed is not None:
-            random.seed(seed)
+        self.seed = seed
+        self._generator = np.random.default_rng(seed)
 
         super().__init__(
             end_time=end_time,
-            height_average=height_average or random.uniform(1.6, 2.4),
-            height_amplitude=height_amplitude or random.uniform(0.2, 0.6),
-            height_phase_shift=height_phase_shift or random.uniform(0, 2 * np.pi),
-            height_wave_number=height_wave_number or random.randint(1, 5),
-            velocity_average=velocity_average or random.uniform(1, 2),
-            velocity_amplitude=velocity_amplitude or random.uniform(0.2, 0.6),
-            velocity_phase_shift=velocity_phase_shift or random.uniform(0, 2 * np.pi),
-            velocity_wave_number=velocity_wave_number or random.randint(1, 4),
+            height_average=height_average or self._generator.uniform(1.6, 2.4),
+            height_amplitude=height_amplitude or self._generator.uniform(0.2, 0.6),
+            height_phase_shift=height_phase_shift
+            or self._generator.uniform(0, 2 * np.pi),
+            height_wave_number=height_wave_number or self._generator.integers(1, 6),
+            velocity_average=velocity_average or self._generator.uniform(1, 2),
+            velocity_amplitude=velocity_amplitude or self._generator.uniform(0.2, 0.6),
+            velocity_phase_shift=velocity_phase_shift
+            or self._generator.uniform(0, 2 * np.pi),
+            velocity_wave_number=velocity_wave_number or self._generator.integers(1, 5),
         )
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__ + f"(seed={self.seed})"
+
+
+class RandomBenchmarkGenerator:
+    _benchmark_kwargs: Dict
+    _seed_generator: np.random.Generator
+
+    def __init__(
+        self, seed=None, end_time=None, height_average=HEIGHT_AVERAGE, **kwargs
+    ):
+        self._seed_generator = np.random.default_rng(seed)
+        self._benchmark_kwargs = {
+            "end_time": end_time or 40.0,
+            "height_average": height_average,
+        } | kwargs
+
+    def __call__(self, seed=None) -> RandomOscillationNoTopographyBenchmark:
+        seed = seed or self._seed_generator.integers(int(1e9))
+        return RandomOscillationNoTopographyBenchmark(seed, **self._benchmark_kwargs)
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__
 
 
 class DammBreakBenchmark(ShallowWaterBenchmark):
@@ -326,25 +351,6 @@ class SinusInflowBenchmark(ShallowWaterBenchmark):
         height = 2.0
 
         return np.array([height, 0.0])
-
-
-class RandomBenchmarkGenerator:
-    _benchmark_kwargs: Dict
-
-    def __init__(
-        self, seed=None, end_time=None, height_average=HEIGHT_AVERAGE, **kwargs
-    ):
-        random.seed(seed)
-        self._benchmark_kwargs = {
-            "end_time": end_time or 40.0,
-            "height_average": height_average,
-        } | kwargs
-
-    def __call__(self) -> OscillationNoTopographyBenchmark:
-        return RandomOscillationNoTopographyBenchmark(**self._benchmark_kwargs)
-
-    def __repr__(self) -> str:
-        return self.__class__.__name__
 
 
 BENCHMARKS = {

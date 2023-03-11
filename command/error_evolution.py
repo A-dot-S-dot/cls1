@@ -9,9 +9,10 @@ import numpy as np
 from benchmark import shallow_water
 from tqdm.auto import tqdm, trange
 
+from .animate import Animate, ShallowWaterAnimator
 from .calculate import Calculate
 from .command import Command
-from .plot import PlotParser
+from .plot import Plot, PlotParser, ShallowWaterPlotter
 
 
 class ErrorEvolutionCalculator:
@@ -157,6 +158,7 @@ class PlotShallowWaterErrorEvolution(Command):
         plt.legend()
         plt.xlabel("time")
         plt.ylabel("relative error")
+        plt.legend()
 
         if self._save:
             plt.savefig(self._save)
@@ -165,181 +167,176 @@ class PlotShallowWaterErrorEvolution(Command):
         plt.show() if self._show else plt.close()
 
 
-# class GenerateShallowWaterErrorEvolutionSeries(cmd.Command):
-#     """Plot Error Evolution for considered benchmark parameters."""
+class GenerateShallowWaterErrorEvolutionSeries(Command):
+    errors: List[np.ndarray]
+    times: List[np.ndarray]
 
-#     errors: List[np.ndarray]
-#     times: List[np.ndarray]
+    _solver_approximation: core.Solver
+    _solver_exact: core.Solver
+    _get_benchmark: shallow_water.RandomBenchmarkGenerator
+    _seed: Optional[int]
+    _initial_conditions: int
+    _description: str
+    _directory: str
+    _save_plot: bool
+    _save_animation: bool
+    _save_error: bool
+    _benchmark_parameters: Dict
 
-#     _seed: int
-#     _initial_conditions: int
-#     _description: str
-#     _directory: str
-#     _save_plot: bool
-#     _save_animation: bool
-#     _save_error: bool
-#     _benchmark_parameters: Dict
+    def __init__(
+        self,
+        solver_approximation: core.Solver,
+        solver_exact: core.Solver,
+        seed=None,
+        initial_conditions=20,
+        description=None,
+        save_directory=None,
+        save_plot=False,
+        save_animation=False,
+        save_error=False,
+        **benchmark_parameters,
+    ):
+        self.errors = []
+        self.times = []
+        self._solver_approximation = solver_approximation
+        self._solver_exact = solver_exact
+        self._get_benchmark = shallow_water.RandomBenchmarkGenerator(
+            seed=seed, **benchmark_parameters
+        )
+        self._initial_conditions = initial_conditions
+        self._description = f"for {description}" or ""
+        self._directory = save_directory or ""
+        self._save_plot = save_plot
+        self._save_animation = save_animation
+        self._save_error = save_error
 
-#     def __init__(
-#         self,
-#         times: List[np.ndarray],
-#         errors: List[np.ndarray],
-#         seed=0,
-#         initial_conditions=20,
-#         description=None,
-#         save_directory=None,
-#         save_plot=False,
-#         save_animation=False,
-#         save_error=False,
-#         **benchmark_parameters,
-#     ):
-#         self.times = times
-#         self.errors = errors
+        if save_plot or save_animation or save_error:
+            assert self._directory != "", "SAVE_DIRECTORY must be specified"
+            os.makedirs(self._directory, exist_ok=True)
 
-#         self._seed = seed
-#         self._initial_conditions = initial_conditions
-#         self._description = f"for {description}" or ""
-#         self._directory = save_directory or ""
-#         self._save_plot = save_plot
-#         self._save_animation = save_animation
-#         self._save_error = save_error
-#         self._benchmark_parameters = benchmark_parameters
+    def execute(self):
+        for i in trange(
+            self._initial_conditions,
+            desc="Calculate Evolution Error",
+            unit="benchmark",
+            leave=False,
+        ):
+            benchmark = self._get_benchmark()
+            self._solver_approximation.reinitialize(benchmark)
+            self._solver_exact.reinitialize(benchmark)
 
-#         if save_plot or save_animation or save_error:
-#             assert self._directory != "", "SAVE_DIRECTORY must be specified"
-#             os.makedirs(self._directory, exist_ok=True)
+            try:
+                Calculate(
+                    [self._solver_exact, self._solver_approximation], leave=False
+                ).execute()
+            except Exception as error:
+                tqdm.write(f"WARNING: {error} No error plot for seed={i}.")
+            else:
+                _time, _error = ErrorEvolutionCalculator()(
+                    self._solver_exact.solution, self._solver_approximation.solution
+                )
+                self.times.append(_time)
+                self.errors.append(_error)
+                self._save(benchmark, i, _time, _error)
 
-#     def execute(self):
-#         for i in trange(
-#             self._initial_conditions,
-#             desc="Calculate Evolution Error",
-#             unit="benchmark",
-#             leave=False,
-#         ):
-#             benchmark = swe.RandomOscillationNoTopographyBenchmark(
-#                 seed=self._seed + i, **self._benchmark_parameters
-#             )
-#             approximated_solver = solver.SubgridNetworkSolver(
-#                 benchmark, save_history=True
-#             )
-#             exact_solver = sovler.CoarseLowOrderSolver(benchmark, save_history=True)
+    def _save(
+        self,
+        benchmark: shallow_water.RandomOscillationNoTopographyBenchmark,
+        index: int,
+        time: np.ndarray,
+        error: np.ndarray,
+    ):
+        solver = [self._solver_approximation, self._solver_exact]
 
-#             try:
-#                 cmd.Calculate(
-#                     [exact_solver, approximated_solver], leave=False
-#                 ).execute()
-#             except Exception as error:
-#                 tqdm.write(f"WARNING: {error} No error plot for seed={i}.")
-#             else:
-#                 _time, _error = ErrorEvolutionCalculator()(
-#                     exact_solver.solution, approximated_solver.solution
-#                 )
-#                 self.times.append(_time)
-#                 self.errors.append(_error)
-#                 self._save(
-#                     benchmark, i, approximated_solver, exact_solver, _time, _error
-#                 )
+        if self._save_error:
+            PlotShallowWaterErrorEvolution(
+                solver,
+                f"Relative $L^2$-Error {self._description} (seed={benchmark.seed})",
+                show=False,
+                save=f"{self._directory}/error_{index}.png",
+                solver_executed=True,
+            ).execute(time=time, error=error)
 
-#     def _save(
-#         self,
-#         benchmark: swe.ShallowWaterBenchmark,
-#         index: int,
-#         approximated_solver: core.Solver,
-#         exact_solver: core.Solver,
-#         time: np.ndarray,
-#         error: np.ndarray,
-#     ):
-#         solver = [approximated_solver, exact_solver]
+        if self._save_plot:
+            plotter = ShallowWaterPlotter(
+                benchmark, show=False, save=f"{self._directory}/plot_{index}.png"
+            )
+            Plot(
+                benchmark, solver, plotter, solver_executed=True, write_warnings=False
+            ).execute()
 
-#         if self._save_error:
-#             PlotShallowWaterErrorEvolution(
-#                 solver,
-#                 f"Relative $L^2$-Error {self._description} (seed={index})",
-#                 show=False,
-#                 save=f"{self._directory}/error_{index}.png",
-#                 solver_executed=True,
-#             ).execute(time=time, error=error)
-
-#         if self._save_plot:
-#             plotter = cmd.ShallowWaterPlotter(
-#                 benchmark, show=False, save=f"{self._directory}/plot_{index}.png"
-#             )
-#             cmd.Plot(
-#                 benchmark, solver, plotter, solver_executed=True, write_warnings=False
-#             ).execute()
-
-#         if self._save_animation:
-#             animator = cmd.ShallowWaterAnimator(
-#                 benchmark, show=False, save=f"{self._directory}/animation_{index}.mp4"
-#             )
-#             cmd.Animate(
-#                 benchmark, solver, animator, solver_executed=True, write_warnings=False
-#             ).execute()
+        if self._save_animation:
+            animator = ShallowWaterAnimator(
+                benchmark, show=False, save=f"{self._directory}/animation_{index}.mp4"
+            )
+            Animate(
+                benchmark, solver, animator, solver_executed=True, write_warnings=False
+            ).execute()
 
 
-# class PlotShallowWaterAverageErrorEvolution(cmd.Command):
-#     _times: Sequence[np.ndarray]
-#     _errors: Sequence[np.ndarray]
-#     _suptitle: Optional[str]
-#     _show: bool
-#     _save: Optional[str]
+class PlotShallowWaterAverageErrorEvolution(Command):
+    _times: Sequence[np.ndarray]
+    _errors: Sequence[np.ndarray]
+    _suptitle: Optional[str]
+    _show: bool
+    _save: Optional[str]
 
-#     def __init__(
-#         self,
-#         times: Sequence[np.ndarray],
-#         errors: Sequence[np.ndarray],
-#         suptitle=None,
-#         show=True,
-#         save=None,
-#     ):
-#         self._times = times
-#         self._errors = errors
-#         self._suptitle = suptitle or "$L^2$-Error between network and real solution"
-#         self._show = show
-#         self._save = save
+    def __init__(
+        self,
+        times: Sequence[np.ndarray],
+        errors: Sequence[np.ndarray],
+        suptitle=None,
+        show=True,
+        save=None,
+    ):
+        self._times = times
+        self._errors = errors
+        self._suptitle = suptitle or "$L^2$-Error between network and real solution"
+        self._show = show
+        self._save = save
 
-#     def execute(self):
-#         time, errors = self._adjust_errors()
-#         mean = np.mean(errors, axis=0)
-#         error_min = np.min(errors, axis=0)
-#         error_max = np.max(errors, axis=0)
+    def execute(self):
+        time, errors = self._adjust_errors()
+        mean = np.mean(errors, axis=0)
+        error_min = np.min(errors, axis=0)
+        error_max = np.max(errors, axis=0)
 
-#         fig, (height_ax, discharge_ax) = plt.subplots(1, 2)
+        fig, (height_ax, discharge_ax) = plt.subplots(1, 2)
 
-#         height_ax.plot(time, mean[:, 0], label="height error")
-#         height_ax.fill_between(time, error_min[:, 0], error_max[:, 0], alpha=0.2)
-#         height_ax.legend()
-#         height_ax.set_xlabel("time")
-#         height_ax.set_ylabel("error")
+        height_ax.plot(time, mean[:, 0], label="height error")
+        height_ax.fill_between(time, error_min[:, 0], error_max[:, 0], alpha=0.2)
+        height_ax.legend()
+        height_ax.set_xlabel("time")
+        height_ax.set_ylabel("error")
 
-#         discharge_ax.plot(time, mean[:, 1], label="discharge error")
-#         discharge_ax.fill_between(time, error_min[:, 1], error_max[:, 1], alpha=0.2)
-#         discharge_ax.legend()
-#         discharge_ax.set_xlabel("time")
-#         discharge_ax.set_ylabel("error")
+        discharge_ax.plot(time, mean[:, 1], label="discharge error")
+        discharge_ax.fill_between(time, error_min[:, 1], error_max[:, 1], alpha=0.2)
+        discharge_ax.legend()
+        discharge_ax.set_xlabel("time")
+        discharge_ax.set_ylabel("error")
 
-#         fig.suptitle(self._suptitle)
+        fig.suptitle(self._suptitle)
 
-#         if self._save:
-#             fig.savefig(self._save)
+        if self._save:
+            fig.savefig(self._save)
 
-#         plt.show() if self._show else plt.close()
+        plt.show() if self._show else plt.close()
 
-#     def _adjust_errors(self) -> Tuple[np.ndarray, np.ndarray]:
-#         interpolator = core.TemporalInterpolator()
-#         minimum_time = self._get_minimum_time()
-#         adjusted_errors = np.array(
-#             [
-#                 interpolator(time, error, minimum_time)
-#                 for time, error in zip(self._times, self._errors)
-#             ]
-#         )
+    def _adjust_errors(self) -> Tuple[np.ndarray, np.ndarray]:
+        interpolator = core.TemporalInterpolator()
+        minimum_time = self._get_minimum_time()
+        adjusted_errors = np.array(
+            [
+                interpolator(time, error, minimum_time)
+                for time, error in zip(self._times, self._errors)
+            ]
+        )
 
-#         return minimum_time, adjusted_errors
+        return minimum_time, adjusted_errors
 
-#     def _get_minimum_time(self) -> np.ndarray:
-#         time_lengths = [len(time) for time in self._times]
-#         return self._times[np.argmin(time_lengths)]
+    def _get_minimum_time(self) -> np.ndarray:
+        time_lengths = [len(time) for time in self._times]
+        return self._times[np.argmin(time_lengths)]
 
 
 class PlotErrorEvolutionParser(PlotParser):
@@ -367,12 +364,19 @@ class PlotErrorEvolutionParser(PlotParser):
         self._add_general_arguments(parser)
 
     def postprocess(self, arguments):
+        self._assert_two_solver(arguments)
         self._adjust_end_time(arguments)
         self._add_save_history_argument(arguments)
         self._build_solver(arguments)
         arguments.command = PlotShallowWaterErrorEvolution
 
         del arguments.benchmark
+
+    def _assert_two_solver(self, arguments):
+        solver_num = 0 if arguments.solver is None else len(arguments.solver)
+        assert (
+            solver_num == 2
+        ), f"Exactly two solver must be given. There are {solver_num}."
 
     def _add_save_history_argument(self, arguments):
         for solver_arguments in arguments.solver:

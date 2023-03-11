@@ -5,6 +5,7 @@ import core
 import finite_element.scalar.solver as fem_scalar
 import finite_volume.scalar.solver as fv_scalar
 import finite_volume.shallow_water.solver as fv_swe
+import numpy as np
 from benchmark import advection, burgers, shallow_water
 from tqdm.auto import tqdm
 
@@ -167,6 +168,7 @@ class CalculateParser(CommandParser):
         )
 
     def _add_random_benchmark(self, parser):
+        generator = np.random.default_rng()
         parser.add_argument(
             "-r",
             "--random-benchmark",
@@ -175,7 +177,9 @@ class CalculateParser(CommandParser):
                 seed=int(input)
             ),
             nargs="?",
-            const=shallow_water.RandomOscillationNoTopographyBenchmark(),
+            const=shallow_water.RandomOscillationNoTopographyBenchmark(
+                generator.integers(int(1e9))
+            ),
             metavar="<seed>",
             dest="benchmark",
         )

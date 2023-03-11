@@ -27,10 +27,16 @@ class CoarseSolver(swe.Solver):
     def solution(self) -> core.DiscreteSolution:
         if isinstance(self._solution, core.DiscreteSolutionWithHistory):
             return core.CoarseSolutionWithHistory(
-                self._solution, self._coarsening_degree
+                self._solution,
+                self._coarsening_degree,
+                space=self._solution.space.coarsen(self._coarsening_degree),
             )
         else:
-            return core.CoarseSolution(self._solution, self._coarsening_degree)
+            return core.CoarseSolution(
+                self._solution,
+                self._coarsening_degree,
+                space=self._solution.space.coarsen(self._coarsening_degree),
+            )
 
 
 class CoarseParser(finite_volume.SolverParser):

@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from typing import Any, Dict, Type
+from typing import Any, Dict
 
 from .command import Command, CommandParser
 
@@ -7,8 +7,8 @@ from .command import Command, CommandParser
 class Help(Command):
     parser: ArgumentParser
 
-    def __init__(self, parser: Type[ArgumentParser]):
-        self.parser = parser()
+    def __init__(self, parser: ArgumentParser):
+        self.parser = parser
 
     def execute(self):
         self.parser.print_help()

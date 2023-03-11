@@ -1,11 +1,10 @@
 import pickle
-from typing import Dict, Optional, Tuple, Type
+from typing import Dict, Optional, Tuple
 
 import defaults
 import finite_volume
 import finite_volume.shallow_water as swe
 import numpy as np
-from torch import nn
 
 from .lax_friedrichs import LaxFriedrichsFluxGetter
 

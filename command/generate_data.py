@@ -1,6 +1,5 @@
 import argparse
 import os
-import random
 from typing import Any, Tuple
 
 import core
@@ -14,7 +13,7 @@ from tqdm.auto import tqdm, trange
 from .calculate import Calculate, CalculateParser
 from .command import Command
 
-DIRECTORIES = {"mcl": "data/reduced-mcl/", "llf": "data/reduced-llf"}
+DIRECTORIES = {"mcl": "data/reduced-mcl/", "llf": "data/reduced-llf/"}
 
 
 class SubgridFluxDataBuilder:
@@ -123,7 +122,9 @@ class SubgridFluxDataFrameBuilder:
 
 
 class BenchparkParameterDataFrameBuilder:
-    def get_data_frame(self, benchmark, data=None) -> pd.DataFrame:
+    def get_data_frame(
+        self, benchmark: shallow_water.RandomOscillationNoTopographyBenchmark, data=None
+    ) -> pd.DataFrame:
         if data is None:
             data = pd.DataFrame(columns=self._create_columns())
 
@@ -132,19 +133,25 @@ class BenchparkParameterDataFrameBuilder:
         return data
 
     def _create_columns(self) -> pd.MultiIndex:
-        return pd.MultiIndex.from_product(
+        return pd.MultiIndex.from_tuples(
             [
-                ["height", "velocity"],
-                ["average", "amplitude", "wave_number", "phase_shift"],
-            ],
+                ("seed", ""),
+                *pd.MultiIndex.from_product(
+                    [
+                        ["height", "velocity"],
+                        ["average", "amplitude", "wave_number", "phase_shift"],
+                    ]
+                ),
+            ]
         )
 
     def _append_values(
         self,
         data: pd.DataFrame,
-        benchmark: shallow_water.OscillationNoTopographyBenchmark,
+        benchmark: shallow_water.RandomOscillationNoTopographyBenchmark,
     ):
         data.loc[len(data.index)] = [
+            benchmark.seed,
             benchmark.height_average,
             benchmark.height_amplitude,
             benchmark.height_wave_number,
@@ -338,7 +345,7 @@ class GenerateDataParser(CalculateParser):
         self._build_directory(arguments)
         arguments.overwrite = not arguments.append
         arguments.benchmark = shallow_water.OscillationNoTopographyBenchmark()
-        arguments.solver[0].solver_history = True
+        arguments.solver[0].save_history = True
         self._build_solver(arguments)
         arguments.solver = arguments.solver[0]
 

@@ -146,7 +146,7 @@ class SolverParser(argparse.ArgumentParser):
             help="Number of mesh cells. If not specified use the default size for the chosen task.",
             type=positive_int,
             metavar="<size>",
-            default=default or defaults.CALCULATE_MESH_SIZE,
+            default=default or self._mesh_size_default,
         )
 
     def _add_cfl(self, default=None):
@@ -156,7 +156,7 @@ class SolverParser(argparse.ArgumentParser):
             type=positive_float,
             metavar="<number>",
             dest="cfl_number",
-            default=default or 0.1,
+            default=default or self._cfl_default,
         )
 
     def _add_adaptive_time_stepping(self):
@@ -176,7 +176,7 @@ class SolverParser(argparse.ArgumentParser):
         self.add_argument(
             "+o",
             "++ode-solver",
-            help="Specify ode solver. Available solver are:"
+            help="Specify ode solver. Available solver are: "
             + ", ".join([*_ode_solver.keys()]),
             type=lambda input: _ode_solver[input],
             metavar="<solver>",

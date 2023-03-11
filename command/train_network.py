@@ -1,5 +1,6 @@
 import argparse
 import pickle
+import random
 from typing import Any
 
 import core
@@ -28,6 +29,7 @@ class TrainNetwork(Command):
         estimator_type=None,
         epochs=None,
         skip=None,
+        seed=None,
         plot_loss=False,
     ):
         self._network_path = network_path
@@ -35,8 +37,18 @@ class TrainNetwork(Command):
         self._skip = skip or defaults.SKIP
         self._plot_loss = plot_loss
 
+        if seed is not None:
+            self._set_seed(seed)
+
         estimator_type = estimator_type or ESTIMATOR_TYPES["llf"]
         self._estimator = estimator_type(max_epochs=epochs)
+
+    def _set_seed(self, seed: int):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+        random.seed(seed)
 
     def _get_device(self) -> str:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -94,6 +106,7 @@ class TrainNetworkParser(CommandParser):
         self._add_network_file_name(parser)
         self._add_epochs(parser)
         self._add_skip(parser)
+        self._add_seed(parser)
         self._add_plot_loss(parser)
 
     def _add_network(self, parser):
@@ -124,12 +137,19 @@ class TrainNetworkParser(CommandParser):
 
     def _add_skip(self, parser):
         parser.add_argument(
-            "-s",
             "--skip",
             help="Use every SKIP-th data point for training.",
             type=core.positive_int,
             metavar="<skip>",
             default=defaults.SKIP,
+        )
+
+    def _add_seed(self, parser):
+        parser.add_argument(
+            "--seed",
+            help="Seed for generating random benchmarks",
+            type=core.positive_int,
+            metavar="<seed>",
         )
 
     def _add_plot_loss(self, parser):
