@@ -13,7 +13,10 @@ from tqdm.auto import tqdm, trange
 from .calculate import Calculate, CalculateParser
 from .command import Command
 
-DIRECTORIES = {"mcl": "data/reduced-mcl/", "llf": "data/reduced-llf/"}
+DIRECTORIES = {
+    "llf": "data/reduced-llf/",
+    "es1": "data/reduced-es1/",
+}
 
 
 class SubgridFluxDataBuilder:

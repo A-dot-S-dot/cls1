@@ -58,8 +58,9 @@ class TrainNetwork(Command):
 
     def execute(self):
         df = core.load_data(self._data_path)
-        X = df.values[:: self._skip, :8].astype(np.float32)
-        y = df.values[:: self._skip, 8:].astype(np.float32)
+        input_dimension = df.shape[1] - 2
+        X = df.values[:: self._skip, :input_dimension].astype(np.float32)
+        y = df.values[:: self._skip, input_dimension:].astype(np.float32)
 
         self._estimator.fit(X, y)
         self._save_model()

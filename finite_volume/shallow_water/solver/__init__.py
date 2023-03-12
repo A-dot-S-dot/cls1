@@ -6,8 +6,8 @@ from .lax_friedrichs import *
 from .low_order import *
 from .mcl import *
 from .reduced_llf import *
-from .reduced_mcl import *
 from .reduced_model import *
+from .reduced_es1 import *
 
 SHALLOW_WATER_FLUX_GETTER = {
     "central": CentralFluxGetter(),
@@ -18,10 +18,15 @@ SHALLOW_WATER_FLUX_GETTER = {
     "reduced-llf": ReducedFluxGetter(
         LaxFriedrichsFluxGetter(), "data/reduced-llf/model.pkl"
     ),
-    "reduced-mcl": ReducedFluxGetter(MCLFluxGetter(), "data/reduced-mcl/model.pkl"),
+    "reduced-es1": ReducedFluxGetter(
+        FirstOrderDiffusiveEnergyStableFluxGetter(), "data/reduced-es1/model.pkl"
+    ),
 }
 
-ESTIMATOR_TYPES = {"llf": LaxFriedrichsEstimator, "mcl": MCLEstimator}
+ESTIMATOR_TYPES = {
+    "llf": LaxFriedrichsEstimator,
+    "es1": ES1Estimator,
+}
 SOLVER_PARSER = {
     "llf": LaxFriedrichsParser(),
     "low-order": LowOrderParser(),
@@ -30,7 +35,7 @@ SOLVER_PARSER = {
     "es1": FirstOrderDiffusiveEnergyStableParser(),
     "mcl": MCLParser(flux_getter=SHALLOW_WATER_FLUX_GETTER),
     "reduced-llf": ReducedLaxFriedrichsSolverParser(),
-    "reduced-mcl": ReducedMCLSolverParser(),
+    "reduced-es1": ReducedES1SolverParser(),
     "antidiffusion": AntidiffusionParser(flux_getter=SHALLOW_WATER_FLUX_GETTER),
     "coarse": CoarseParser(flux_getter=SHALLOW_WATER_FLUX_GETTER),
 }
