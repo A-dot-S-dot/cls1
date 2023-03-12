@@ -45,14 +45,14 @@ class FiniteVolumeSpace(core.SolverSpace, Generic[T]):
 
 class FiniteVolumeElement(core.CellDependentFunction, Generic[T]):
     def __init__(self, solver_space: FiniteVolumeSpace, dof_vector: np.ndarray):
-        self._solver_space = solver_space
-        self._dof_vector = dof_vector
+        self.space = solver_space
+        self.dof_vector = dof_vector
 
     def __call__(self, cell_index: int, x: float) -> T:
-        return self._dof_vector[cell_index]
+        return self.dof_vector[cell_index]
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + f"(dof={self._dof_vector})"
+        return self.__class__.__name__ + f"(dof={self.dof_vector})"
 
 
 def get_finite_volume_solution(

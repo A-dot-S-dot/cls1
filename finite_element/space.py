@@ -144,9 +144,9 @@ class LagrangeFiniteElement(core.CellDependentFunction[float]):
     """Finite element which is defined by coefficients each belonging to a basis
     element of the finite element space."""
 
-    _element_space: LagrangeSpace
+    space: LagrangeSpace
+    dof_vector: np.ndarray
     _mesh: core.Mesh
-    _dof_vector: np.ndarray
     _local_basis: LocalLagrangeBasis
     _affine_transformation: core.AffineTransformation
 
@@ -155,9 +155,9 @@ class LagrangeFiniteElement(core.CellDependentFunction[float]):
         element_space: LagrangeSpace,
         dof_vector: np.ndarray,
     ):
-        self._element_space = element_space
+        self.space = element_space
+        self.dof_vector = dof_vector
         self._mesh = element_space.mesh
-        self._dof_vector = dof_vector
         self._local_basis = LocalLagrangeBasis(element_space.polynomial_degree)
         self._affine_transformation = core.AffineTransformation()
 
@@ -166,8 +166,8 @@ class LagrangeFiniteElement(core.CellDependentFunction[float]):
         value = 0
 
         for local_index, local_element in enumerate(self._local_basis):
-            global_index = self._element_space.global_index(cell_index, local_index)
-            value += self._dof_vector[global_index] * local_element(
+            global_index = self.space.global_index(cell_index, local_index)
+            value += self.dof_vector[global_index] * local_element(
                 self._affine_transformation.inverse(point, cell)
             )
 
@@ -178,13 +178,13 @@ class LagrangeFiniteElement(core.CellDependentFunction[float]):
         value = 0
 
         for local_index, local_element in enumerate(self._local_basis):
-            global_index = self._element_space.global_index(cell_index, local_index)
+            global_index = self.space.global_index(cell_index, local_index)
             local_derivative = np.array(
                 local_element.derivative(
                     self._affine_transformation.inverse(point, cell)
                 )
             )
-            value += self._dof_vector[global_index] * local_derivative
+            value += self.dof_vector[global_index] * local_derivative
 
         return self._affine_transformation.inverse_derivative(cell) * value
 
