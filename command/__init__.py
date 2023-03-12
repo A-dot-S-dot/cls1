@@ -20,11 +20,11 @@ PARSER_COMMANDS = {
     "calculate": CalculateParser(),
     "delete-curvature": DeleteCurvatureParser(),
     "eoc": CalculateEOCParser(),
-    "error-evolution": PlotErrorEvolutionParser(),
     "generate-data": GenerateDataParser(),
     "help": HelpParser(SCALAR_SOLVER_PARSER | SHALLOW_WATER_SOLVER_PARSER),
     "parameter-variation-test": ParameterVariationTestParser(),
     "plot": PlotParser(),
+    "plot-error-evolution": PlotErrorEvolutionParser(),
     "test": TestParser(),
     "train-network": TrainNetworkParser(),
 }
