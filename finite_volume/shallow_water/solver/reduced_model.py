@@ -10,7 +10,10 @@ from .lax_friedrichs import LaxFriedrichsFluxGetter
 
 
 class Curvature:
-    step_length = 2.0
+    step_length: float
+
+    def __init__(self, step_length=2.0):
+        self.step_length = step_length
 
     def fit(self, X, y=None):
         return self

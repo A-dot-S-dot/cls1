@@ -38,13 +38,14 @@ class LinearAntidiffusiveSolver(swe.Solver):
 
 
 class AntidiffusionParser(finite_volume.SolverParser):
-    prog = "Antidiffusion"
+    prog = "antidiffusion"
     name = "Solver with antidiffusion."
     solver = LinearAntidiffusiveSolver
 
     def _add_arguments(self):
         self._add_flux()
-        self._add_gamma
+        self._add_gamma()
+        self._add_ode_solver()
 
     def _add_gamma(self):
         self.add_argument(

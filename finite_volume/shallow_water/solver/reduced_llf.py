@@ -1,3 +1,4 @@
+import defaults
 from finite_volume import shallow_water as swe
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -6,23 +7,19 @@ from skorch.callbacks import EarlyStopping
 from torch import nn
 
 from .lax_friedrichs import LaxFriedrichsFluxGetter
-from .reduced_model import ReducedSolver, ReducedSolverParser
+from .reduced_model import ReducedFluxGetter, ReducedSolverParser
 
 
 class LaxFriedrichsModule(nn.Module):
-    input_dimension = 8
-
     def __init__(self):
         nn.Module.__init__(self)
 
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(self.input_dimension, 32),
+            nn.Linear(8, 32),
             nn.LeakyReLU(),
             nn.Linear(32, 32),
             nn.LeakyReLU(),
-            nn.Linear(32, 16),
-            nn.LeakyReLU(),
-            nn.Linear(16, 2),
+            nn.Linear(32, 2),
         )
 
     def forward(self, x):
@@ -31,35 +28,40 @@ class LaxFriedrichsModule(nn.Module):
 
 class LaxFriedrichsEstimator(Pipeline):
     def __init__(self, **kwargs):
+        self._network = NeuralNetRegressor(
+            LaxFriedrichsModule,
+            callbacks=[EarlyStopping(threshold=1e-8)],
+            callbacks__print_log__floatfmt=".8f",
+            **kwargs,
+        )
+
         super().__init__(
             [
                 ("scale", StandardScaler()),
-                (
-                    "net",
-                    NeuralNetRegressor(
-                        LaxFriedrichsModule,
-                        callbacks=[EarlyStopping(threshold=1e-8)],
-                        callbacks__print_log__floatfmt=".8f",
-                        **kwargs,
-                    ),
-                ),
+                ("net", self._network),
             ]
         )
 
+    @property
+    def history(self):
+        return self._network.history
 
-class ReducedLaxFriedrichsSolver(ReducedSolver):
+
+class ReducedLaxFriedrichsSolver(swe.Solver):
     def __init__(
         self, benchmark: swe.ShallowWaterBenchmark, network_file_name="model", **kwargs
     ):
-        super().__init__(
-            benchmark,
+        self.flux_getter = ReducedFluxGetter(
+            4,
             flux_getter=LaxFriedrichsFluxGetter(),
             network_path="data/reduced-llf/" + network_file_name + ".pkl",
-            **kwargs,
         )
+        super().__init__(benchmark, **kwargs)
 
 
 class ReducedLaxFriedrichsSolverParser(ReducedSolverParser):
     prog = "reduced-llf"
     name = "Reduced Lax Friedrichs Solver"
     solver = ReducedLaxFriedrichsSolver
+    _mesh_size_default = 50
+    _cfl_default = defaults.FINITE_VOLUME_CFL_NUMBER / defaults.COARSENING_DEGREE

@@ -35,12 +35,11 @@ class NumericalFlux(finite_volume.NumericalFlux):
             self._bathymetry = np.array([0])
             self._bathymetry_step = np.array([0])
         else:
-            input_radius = self.input_dimension // 2
             self._bathymetry = np.array(
                 [
-                    *input_radius * [bathymetry[0]],
+                    bathymetry[0],
                     *bathymetry,
-                    *input_radius * [bathymetry[-1]],
+                    bathymetry[-1],
                 ]
             )
             self._bathymetry_step = np.diff(self._bathymetry)

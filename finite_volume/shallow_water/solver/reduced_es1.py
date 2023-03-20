@@ -3,8 +3,9 @@ from finite_volume import shallow_water as swe
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from skorch import NeuralNetRegressor
-from skorch.callbacks import EarlyStopping
+from skorch.callbacks import EarlyStopping, LRScheduler
 from torch import nn
+from torch.optim.lr_scheduler import MultiStepLR
 
 from .energy_stable import FirstOrderDiffusiveEnergyStableFluxGetter
 from .reduced_model import ReducedFluxGetter, ReducedSolverParser
@@ -15,9 +16,7 @@ class ES1Module(nn.Module):
         nn.Module.__init__(self)
 
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(12, 32),
-            nn.LeakyReLU(),
-            nn.Linear(32, 32),
+            nn.Linear(8, 32),
             nn.LeakyReLU(),
             nn.Linear(32, 32),
             nn.LeakyReLU(),
@@ -34,7 +33,10 @@ class ES1Module(nn.Module):
 
 class ES1Estimator(Pipeline):
     def __init__(self, **kwargs):
-        callbacks = [("early_stopping", EarlyStopping(threshold=1e-8, patience=5))]
+        callbacks = [
+            ("early_stopping", EarlyStopping(threshold=1e-8, patience=5)),
+            ("lr_scheduler", LRScheduler(MultiStepLR, milestones=[100])),
+        ]
         self._network = NeuralNetRegressor(
             ES1Module,
             lr=0.05,
@@ -54,7 +56,7 @@ class ReducedES1Solver(swe.Solver):
         self, benchmark: swe.ShallowWaterBenchmark, network_file_name="model", **kwargs
     ):
         self.flux_getter = ReducedFluxGetter(
-            6,
+            4,
             flux_getter=FirstOrderDiffusiveEnergyStableFluxGetter(),
             network_path="data/reduced-es1/" + network_file_name + ".pkl",
         )

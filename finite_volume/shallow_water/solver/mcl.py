@@ -29,9 +29,9 @@ class MCLFlux(LowOrderFlux):
 
     def __init__(
         self,
+        high_order_flux: finite_volume.NumericalFlux,
         gravitational_acceleration=None,
         boundary_conditions=None,
-        high_order_flux=None,
         bathymetry=None,
     ):
         LowOrderFlux.__init__(self, gravitational_acceleration, bathymetry)
@@ -40,30 +40,31 @@ class MCLFlux(LowOrderFlux):
             "outflow", "outflow"
         )
 
-        self._high_order_flux = high_order_flux or finite_volume.CentralFlux(
-            swe.Flux(gravitational_acceleration)
-        )
-
+        self._high_order_flux = high_order_flux
         self.input_dimension = self._high_order_flux.input_dimension
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        _, low_order_flux = LowOrderFlux.__call__(
+        low_order_flux_left, low_order_flux_right = LowOrderFlux.__call__(
             self, *finite_volume.get_required_values(2, *values)
         )
-        _, high_order_flux = self._high_order_flux(*values)
-        antidiffusive_flux = high_order_flux + -low_order_flux
+        high_order_flux_left, high_order_flux_right = self._high_order_flux(*values)
 
-        _, limited_fh = self._get_limited_height_fluxes(
-            swe.get_height(antidiffusive_flux)
+        antidiffusive_flux_right = high_order_flux_right + -low_order_flux_right
+        antidiffusive_flux_left = high_order_flux_left + -low_order_flux_left
+
+        limited_fh_left, limited_fh_right = self._get_limited_height_fluxes(
+            swe.get_height(antidiffusive_flux_right)
         )
-        self._build_limited_heights(limited_fh)
+        self._build_limited_heights(limited_fh_right)
 
-        _, limited_fq = self._get_limited_discharge_fluxes(
-            swe.get_discharge(antidiffusive_flux)
+        limited_fq_left, limited_fq_right = self._get_limited_discharge_fluxes(
+            swe.get_discharge(antidiffusive_flux_right)
         )
 
-        flux_left = -low_order_flux + np.array([-limited_fh, -limited_fq]).T
-        flux_right = low_order_flux + np.array([limited_fh, limited_fq]).T
+        flux_left = low_order_flux_left + np.array([limited_fh_left, limited_fq_left]).T
+        flux_right = (
+            low_order_flux_right + np.array([limited_fh_right, limited_fq_right]).T
+        )
 
         return flux_left, flux_right
 
@@ -184,7 +185,9 @@ class MCLFluxGetter(swe.FluxGetter):
         space: finite_volume.FiniteVolumeSpace,
         bathymetry=None,
     ) -> finite_volume.NumericalFlux:
-        high_order_flux = self._high_order_flux_getter(benchmark, space, bathymetry=0.0)
+        high_order_flux = self._high_order_flux_getter(
+            benchmark, space, bathymetry=bathymetry
+        )
         boundary_conditions = swe.get_boundary_conditions(
             *benchmark.boundary_conditions,
             inflow_left=benchmark.inflow_left,
@@ -193,9 +196,9 @@ class MCLFluxGetter(swe.FluxGetter):
         bathymetry = swe.build_bathymetry_discretization(benchmark, len(space.mesh))
 
         return MCLFlux(
+            high_order_flux,
             benchmark.gravitational_acceleration,
             boundary_conditions,
-            high_order_flux=high_order_flux,
             bathymetry=bathymetry,
         )
 

@@ -185,7 +185,7 @@ class ParameterVariationTestParser(CalculateParser):
             "-v",
             "--variations",
             help="Specify which variations should be performed. Available variations are: "
-            + ", ".join([*PARAMETER_VARIATIONS.keys()]),
+            + ", ".join(["all", *PARAMETER_VARIATIONS.keys()]),
             nargs="*",
             metavar="<variation>",
         )
@@ -255,11 +255,13 @@ class ParameterVariationTestParser(CalculateParser):
         del arguments.solver
 
     def _build_variations(self, arguments):
-        if arguments.variations:
+        if arguments.variations is None:
+            arguments.parameter_variations = []
+        elif "all" in arguments.variations:
+            arguments.parameter_variations = PARAMETER_VARIATIONS.values()
+        else:
             arguments.parameter_variations = [
                 PARAMETER_VARIATIONS[key] for key in arguments.variations
             ]
-        else:
-            arguments.parameter_variations = []
 
         del arguments.variations

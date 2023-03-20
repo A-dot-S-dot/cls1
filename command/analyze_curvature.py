@@ -13,8 +13,6 @@ from .command import Command, CommandParser
 def compare_2d_scatter_plots(
     x_llf,
     y_llf,
-    x_mcl,
-    y_mcl,
     x_es1,
     y_es1,
     xlabel="",
@@ -22,15 +20,15 @@ def compare_2d_scatter_plots(
     suptitle="",
     save=None,
 ):
-    fig, axs = plt.subplots(3, 1)
+    fig, axs = plt.subplots(2, 1)
     fig.suptitle(suptitle)
     xlim = (
-        np.min((np.min(x_llf), np.min(x_mcl), np.min(x_es1))),
-        np.max((np.max(x_llf), np.max(x_mcl), np.max(x_es1))),
+        np.min((np.min(x_llf), np.min(x_es1))),
+        np.max((np.max(x_llf), np.max(x_es1))),
     )
     ylim = (
-        np.min((np.min(y_llf), np.min(y_mcl), np.min(y_es1))),
-        np.max((np.max(y_llf), np.max(y_mcl), np.max(y_es1))),
+        np.min((np.min(y_llf), np.min(y_es1))),
+        np.max((np.max(y_llf), np.max(y_es1))),
     )
 
     axs[0].set_title("LLF")
@@ -40,30 +38,21 @@ def compare_2d_scatter_plots(
     axs[0].set_xlim(xlim[0], xlim[1])
     axs[0].set_ylim(ylim[0], ylim[1])
 
-    axs[1].set_title("MCL")
-    axs[1].scatter(x_mcl, y_mcl)
+    axs[1].set_title("ES1")
+    axs[1].scatter(x_es1, y_es1)
     axs[1].set_xlabel(xlabel)
     axs[1].set_ylabel(ylabel)
     axs[1].set_xlim(xlim[0], xlim[1])
     axs[1].set_ylim(ylim[0], ylim[1])
 
-    axs[2].set_title("ES1")
-    axs[2].scatter(x_es1, y_es1)
-    axs[2].set_xlabel(xlabel)
-    axs[2].set_ylabel(ylabel)
-    axs[2].set_xlim(xlim[0], xlim[1])
-    axs[2].set_ylim(ylim[0], ylim[1])
-
     if save:
         fig.savefig(save)
 
 
-def create_2d_scatter_plots(df_llf, df_mcl, df_es1, save=False):
+def create_2d_scatter_plots(df_llf, df_es1, save=False):
     compare_2d_scatter_plots(
         df_llf[("k", "h")],
         df_llf[("G_1.5", "h")],
-        df_mcl[("k", "h")],
-        df_mcl[("G_1.5", "h")],
         df_es1[("k", "h")],
         df_es1[("G_1.5", "h")],
         xlabel="$\kappa_h$",
@@ -74,8 +63,6 @@ def create_2d_scatter_plots(df_llf, df_mcl, df_es1, save=False):
     compare_2d_scatter_plots(
         df_llf[("k", "q")],
         df_llf[("G_1.5", "h")],
-        df_mcl[("k", "q")],
-        df_mcl[("G_1.5", "h")],
         df_es1[("k", "q")],
         df_es1[("G_1.5", "h")],
         xlabel="$\kappa_q$",
@@ -86,8 +73,6 @@ def create_2d_scatter_plots(df_llf, df_mcl, df_es1, save=False):
     compare_2d_scatter_plots(
         df_llf[("k", "h")],
         df_llf[("G_1.5", "q")],
-        df_mcl[("k", "h")],
-        df_mcl[("G_1.5", "q")],
         df_es1[("k", "h")],
         df_es1[("G_1.5", "q")],
         xlabel="$\kappa_h$",
@@ -98,8 +83,6 @@ def create_2d_scatter_plots(df_llf, df_mcl, df_es1, save=False):
     compare_2d_scatter_plots(
         df_llf[("k", "q")],
         df_llf[("G_1.5", "q")],
-        df_mcl[("k", "q")],
-        df_mcl[("G_1.5", "q")],
         df_es1[("k", "q")],
         df_es1[("G_1.5", "q")],
         xlabel="$\kappa_q$",
@@ -119,26 +102,15 @@ class PlotCurvatureAgainstSubgridFlux(Command):
 
     def execute(self):
         df_llf = core.load_data("data/reduced-llf/data.csv")
-        df_mcl = core.load_data("data/reduced-mcl/data.csv")
         df_es1 = core.load_data("data/reduced-es1/data.csv")
 
-        curvature = Curvature()
+        curvature = Curvature(2.0)
         curvature_llf = curvature.transform(df_llf.values[:, :8])
-        curvature.step_length = 1.0
-        curvature_mcl = curvature.transform(df_mcl.values[:, :8])
         curvature_es1 = curvature.transform(df_es1.values[:, :8])
 
         df_llf[("k", "h")] = curvature_llf[:, 8]
         df_llf[("k", "q")] = curvature_llf[:, 9]
         df_llf = df_llf.reindex(
-            columns=pd.MultiIndex.from_product(
-                [["U0", "U1", "U2", "U3", "k", "G_1.5"], ["h", "q"]]
-            )
-        )
-
-        df_mcl[("k", "h")] = curvature_mcl[:, 8]
-        df_mcl[("k", "q")] = curvature_mcl[:, 9]
-        df_mcl = df_mcl.reindex(
             columns=pd.MultiIndex.from_product(
                 [["U0", "U1", "U2", "U3", "k", "G_1.5"], ["h", "q"]]
             )
@@ -152,7 +124,7 @@ class PlotCurvatureAgainstSubgridFlux(Command):
             )
         )
 
-        create_2d_scatter_plots(df_llf, df_mcl, df_es1, self._save)
+        create_2d_scatter_plots(df_llf, df_es1, self._save)
 
         if self._show:
             plt.show()

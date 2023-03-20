@@ -16,10 +16,10 @@ SHALLOW_WATER_FLUX_GETTER = {
     "llf": LaxFriedrichsFluxGetter(),
     "low-order": LowOrderFluxGetter(),
     "reduced-llf": ReducedFluxGetter(
-        LaxFriedrichsFluxGetter(), "data/reduced-llf/model.pkl"
+        4, LaxFriedrichsFluxGetter(), "data/reduced-llf/model.pkl"
     ),
     "reduced-es1": ReducedFluxGetter(
-        FirstOrderDiffusiveEnergyStableFluxGetter(), "data/reduced-es1/model.pkl"
+        4, FirstOrderDiffusiveEnergyStableFluxGetter(), "data/reduced-es1/model.pkl"
     ),
 }
 
