@@ -1,13 +1,9 @@
 import defaults
 from finite_volume import shallow_water as swe
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from skorch import NeuralNetRegressor
-from skorch.callbacks import EarlyStopping
 from torch import nn
 
 from .lax_friedrichs import LaxFriedrichsFluxGetter
-from .reduced_model import ReducedFluxGetter, ReducedSolverParser
+from .reduced_model import ReducedFluxGetter, ReducedSolverParser, ReducedNetwork
 
 
 class LaxFriedrichsModule(nn.Module):
@@ -26,25 +22,8 @@ class LaxFriedrichsModule(nn.Module):
         return self.linear_relu_stack(x)
 
 
-class LaxFriedrichsEstimator(Pipeline):
-    def __init__(self, **kwargs):
-        self._network = NeuralNetRegressor(
-            LaxFriedrichsModule,
-            callbacks=[EarlyStopping(threshold=1e-8)],
-            callbacks__print_log__floatfmt=".8f",
-            **kwargs,
-        )
-
-        super().__init__(
-            [
-                ("scale", StandardScaler()),
-                ("net", self._network),
-            ]
-        )
-
-    @property
-    def history(self):
-        return self._network.history
+class LaxFriedrichsNetwork(ReducedNetwork):
+    module = LaxFriedrichsModule
 
 
 class ReducedLaxFriedrichsSolver(swe.Solver):
@@ -53,8 +32,9 @@ class ReducedLaxFriedrichsSolver(swe.Solver):
     ):
         self.flux_getter = ReducedFluxGetter(
             4,
+            LaxFriedrichsNetwork(),
+            "data/reduced-llf/" + network_file_name + ".pkl",
             flux_getter=LaxFriedrichsFluxGetter(),
-            network_path="data/reduced-llf/" + network_file_name + ".pkl",
         )
         super().__init__(benchmark, **kwargs)
 

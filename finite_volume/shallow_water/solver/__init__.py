@@ -5,9 +5,9 @@ from .energy_stable import *
 from .lax_friedrichs import *
 from .low_order import *
 from .mcl import *
+from .reduced_es1 import *
 from .reduced_llf import *
 from .reduced_model import *
-from .reduced_es1 import *
 
 SHALLOW_WATER_FLUX_GETTER = {
     "central": CentralFluxGetter(),
@@ -16,16 +16,22 @@ SHALLOW_WATER_FLUX_GETTER = {
     "llf": LaxFriedrichsFluxGetter(),
     "low-order": LowOrderFluxGetter(),
     "reduced-llf": ReducedFluxGetter(
-        4, LaxFriedrichsFluxGetter(), "data/reduced-llf/model.pkl"
+        4,
+        LaxFriedrichsNetwork(),
+        "data/reduced-llf/model.pkl",
+    ),
     ),
     "reduced-es1": ReducedFluxGetter(
-        4, FirstOrderDiffusiveEnergyStableFluxGetter(), "data/reduced-es1/model.pkl"
+        4,
+        ES1Network(),
+        "data/reduced-es1/model.pkl",
+        flux_getter=FirstOrderDiffusiveEnergyStableFluxGetter(),
     ),
 }
 
-ESTIMATOR_TYPES = {
-    "llf": LaxFriedrichsEstimator,
-    "es1": ES1Estimator,
+NETWORK_TYPES = {
+    "llf": LaxFriedrichsNetwork,
+    "es1": ES1Network,
 }
 SOLVER_PARSER = {
     "llf": LaxFriedrichsParser(),

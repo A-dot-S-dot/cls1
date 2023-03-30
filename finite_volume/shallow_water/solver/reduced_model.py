@@ -1,12 +1,28 @@
-import pickle
-from typing import Optional, Tuple
+from typing import Tuple, Type
 
 import defaults
 import finite_volume
 import finite_volume.shallow_water as swe
 import numpy as np
+from skorch import NeuralNetRegressor
+from skorch.callbacks import EarlyStopping
+from torch import nn
 
 from .lax_friedrichs import LaxFriedrichsFluxGetter
+
+
+class ReducedNetwork(NeuralNetRegressor):
+    module: Type[nn.Module]
+
+    def __init__(self, callbacks=None, **kwargs):
+        callbacks = callbacks or [EarlyStopping(threshold=1e-8)]
+
+        super().__init__(
+            self.module,
+            callbacks=callbacks,
+            callbacks__print_log__floatfmt=".8f",
+            **kwargs
+        )
 
 
 class Curvature:
@@ -42,12 +58,17 @@ class Curvature:
 class ApproximatedSubgridFlux(finite_volume.NumericalFlux):
     _network: ...
 
-    def __init__(self, input_dimension: int, network_path=None):
+    def __init__(
+        self, input_dimension: int, network: ReducedNetwork, network_path: str
+    ):
         self.input_dimension = input_dimension
-        network_path = network_path or defaults.LLF_NETWORK_PATH
+        network_path = network_path
+        self._network = network
+        self._setup_network(network_path)
 
-        with open(network_path, "rb") as f:
-            self._network = pickle.load(f)
+    def _setup_network(self, network_path: str):
+        self._network.initialize()
+        self._network.load_params(f_params=network_path)
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         subgrid_flux = self._network.predict(
@@ -58,14 +79,20 @@ class ApproximatedSubgridFlux(finite_volume.NumericalFlux):
 
 
 class ReducedFluxGetter(swe.FluxGetter):
-    _network_path: Optional[str]
     _flux_getter: finite_volume.FluxGetter
     _subgrid_flux: finite_volume.NumericalFlux
 
-    def __init__(self, input_dimension: int, flux_getter=None, network_path=None):
-        self._network_path = network_path
+    def __init__(
+        self,
+        input_dimension: int,
+        network: ReducedNetwork,
+        network_path: str,
+        flux_getter=None,
+    ):
         self._flux_getter = flux_getter or LaxFriedrichsFluxGetter()
-        self._subgrid_flux = ApproximatedSubgridFlux(input_dimension, network_path)
+        self._subgrid_flux = ApproximatedSubgridFlux(
+            input_dimension, network, network_path
+        )
 
     def __call__(
         self,
