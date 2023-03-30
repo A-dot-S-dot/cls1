@@ -283,6 +283,7 @@ class GenerateDataParser(CalculateParser):
     def _add_arguments(self, parser):
         self._add_directory(parser)
         self._add_end_time(parser)
+        self._add_coarsening_degree(parser)
         self._add_shallow_water_solver(parser)
         self._add_solution_number(parser)
         self._add_seed(parser)
@@ -296,6 +297,16 @@ class GenerateDataParser(CalculateParser):
             "-d",
             "--directory",
             help="Specify directory for storing data.",
+        )
+
+    def _add_coarsening_degree(self, parser):
+        parser.add_argument(
+            "-c",
+            "--coarsening-degree",
+            help="Specify the coarsening degree.",
+            type=core.positive_int,
+            metavar="<degree>",
+            default=defaults.COARSENING_DEGREE,
         )
 
     def _add_solution_number(self, parser):
