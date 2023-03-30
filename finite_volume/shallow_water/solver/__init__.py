@@ -7,6 +7,7 @@ from .low_order import *
 from .mcl import *
 from .reduced_es1 import *
 from .reduced_llf import *
+from .reduced_llf_2 import *
 from .reduced_model import *
 
 SHALLOW_WATER_FLUX_GETTER = {
@@ -20,6 +21,8 @@ SHALLOW_WATER_FLUX_GETTER = {
         LaxFriedrichsNetwork(),
         "data/reduced-llf/model.pkl",
     ),
+    "reduced-llf-2": ReducedFluxGetter(
+        4, LaxFriedrichsNetwork(), "data/reduced-llf-2/model.pkl"
     ),
     "reduced-es1": ReducedFluxGetter(
         4,
@@ -31,6 +34,7 @@ SHALLOW_WATER_FLUX_GETTER = {
 
 NETWORK_TYPES = {
     "llf": LaxFriedrichsNetwork,
+    "llf2": LaxFriedrichs2Network,
     "es1": ES1Network,
 }
 SOLVER_PARSER = {
@@ -41,6 +45,7 @@ SOLVER_PARSER = {
     "es1": FirstOrderDiffusiveEnergyStableParser(),
     "mcl": MCLParser(flux_getter=SHALLOW_WATER_FLUX_GETTER),
     "reduced-llf": ReducedLaxFriedrichsSolverParser(),
+    "reduced-llf-2": ReducedLaxFriedrichs2SolverParser(),
     "reduced-es1": ReducedES1SolverParser(),
     "antidiffusion": AntidiffusionParser(flux_getter=SHALLOW_WATER_FLUX_GETTER),
     "coarse": CoarseParser(flux_getter=SHALLOW_WATER_FLUX_GETTER),
