@@ -10,6 +10,7 @@ from .generate_data import *
 from .help import *
 from .parameter_variation_test import *
 from .plot import *
+from .print_network import *
 from .test import *
 from .train_network import *
 
@@ -25,6 +26,7 @@ PARSER_COMMANDS = {
     "parameter-variation-test": ParameterVariationTestParser(),
     "plot": PlotParser(),
     "plot-error-evolution": PlotErrorEvolutionParser(),
+    "print-network": PrintNetworkParser(),
     "test": TestParser(),
     "train-network": TrainNetworkParser(),
 }
