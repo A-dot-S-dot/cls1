@@ -169,16 +169,23 @@ class ParameterVariationTestParser(CalculateParser):
     def _add_arguments(self, parser):
         self._add_shallow_water_solver(parser)
         self._add_directory(parser)
+        self._add_build_references(parser)
         self._add_parameter_variations(parser)
         self._add_initial_data_number(parser)
         self._add_seed(parser)
-        self._add_build_references(parser)
         self._add_save_plot(parser)
         self._add_save_animation(parser)
         self._add_general_arguments(parser)
 
     def _add_directory(self, parser):
         parser.add_argument("directory", help="Specify where to save test results.")
+
+    def _add_build_references(self, parser):
+        parser.add_argument(
+            "--build-references",
+            help="Build a reference set of errors.",
+            action="store_true",
+        )
 
     def _add_parameter_variations(self, parser):
         parser.add_argument(
@@ -207,13 +214,6 @@ class ParameterVariationTestParser(CalculateParser):
             type=core.positive_int,
             default=defaults.SEED,
             metavar="<seed>",
-        )
-
-    def _add_build_references(self, parser):
-        parser.add_argument(
-            "--build-references",
-            help="Build a reference set of errors.",
-            action="store_true",
         )
 
     def _add_save_plot(self, parser):
