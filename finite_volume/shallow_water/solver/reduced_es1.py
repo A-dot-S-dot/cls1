@@ -29,7 +29,11 @@ class ES1Module(nn.Module):
 
 
 class ES1Network(ReducedNetwork):
-    module = ES1Module
+    module_type = ES1Module
+    data_path = "data/reduced-es1/data.csv"
+    network_path = "data/reduced-es1/model.pkl"
+    optimizer_path = "data/reduced-es1/opt.pkl"
+    history_path = "data/reduced-es1/history.json"
 
     def __init__(self, **kwargs):
         callbacks = [
@@ -40,13 +44,10 @@ class ES1Network(ReducedNetwork):
 
 
 class ReducedES1Solver(swe.Solver):
-    def __init__(
-        self, benchmark: swe.ShallowWaterBenchmark, network_file_name="model", **kwargs
-    ):
+    def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
         self.flux_getter = ReducedFluxGetter(
             4,
             ES1Network(),
-            "data/reduced-es1/" + network_file_name + ".pkl",
             flux_getter=FirstOrderDiffusiveEnergyStableFluxGetter(),
         )
         super().__init__(benchmark, **kwargs)

@@ -25,17 +25,18 @@ class LaxFriedrichs2Module(nn.Module):
 
 
 class LaxFriedrichs2Network(ReducedNetwork):
-    module = LaxFriedrichs2Module
+    module_type = LaxFriedrichs2Module
+    data_path = "data/reduced-llf-2/data.csv"
+    network_path = "data/reduced-llf-2/model.pkl"
+    optimizer_path = "data/reduced-llf-2/opt.pkl"
+    history_path = "data/reduced-llf-2/history.json"
 
 
 class ReducedLaxFriedrichs2Solver(swe.Solver):
-    def __init__(
-        self, benchmark: swe.ShallowWaterBenchmark, network_file_name="model", **kwargs
-    ):
+    def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
         self.flux_getter = ReducedFluxGetter(
             4,
             LaxFriedrichs2Network(),
-            "data/reduced-llf-2/" + network_file_name + ".pkl",
             flux_getter=LaxFriedrichsFluxGetter(),
         )
         super().__init__(benchmark, **kwargs)

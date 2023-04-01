@@ -12,17 +12,42 @@ from .lax_friedrichs import LaxFriedrichsFluxGetter
 
 
 class ReducedNetwork(NeuralNetRegressor):
-    module: Type[nn.Module]
+    module_type: Type[nn.Module]
+    data_path: str
+    network_path: str
+    optimizer_path: str
+    history_path: str
 
     def __init__(self, callbacks=None, **kwargs):
         callbacks = callbacks or [EarlyStopping(threshold=1e-8)]
 
         super().__init__(
-            self.module,
+            self.module_type,
             callbacks=callbacks,
             callbacks__print_log__floatfmt=".8f",
-            **kwargs
+            **kwargs,
         )
+
+    def save_params(self):
+        super().save_params(
+            f_params=self.network_path,
+            f_optimizer=self.optimizer_path,
+            f_history=self.history_path,
+        )
+        print(f"Saved network parameters in '{self.network_path}'.")
+        print(f"Saved optimizer parameters in '{self.optimizer_path}'.")
+        print(f"Saved history in '{self.history_path}'.")
+
+    def load_params(self):
+        self.initialize()
+        try:
+            super().load_params(
+                f_params=self.network_path,
+                f_optimizer=self.optimizer_path,
+                f_history=self.history_path,
+            )
+        except Exception as error:
+            print(f"{error}. Network could not be loaded. Use an untrained network.")
 
 
 class Curvature:
@@ -56,19 +81,12 @@ class Curvature:
 
 
 class ApproximatedSubgridFlux(finite_volume.NumericalFlux):
-    _network: ...
+    _network: ReducedNetwork
 
-    def __init__(
-        self, input_dimension: int, network: ReducedNetwork, network_path: str
-    ):
+    def __init__(self, input_dimension: int, network: ReducedNetwork):
         self.input_dimension = input_dimension
-        network_path = network_path
         self._network = network
-        self._setup_network(network_path)
-
-    def _setup_network(self, network_path: str):
-        self._network.initialize()
-        self._network.load_params(f_params=network_path)
+        self._network.load_params()
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         subgrid_flux = self._network.predict(
@@ -86,13 +104,10 @@ class ReducedFluxGetter(swe.FluxGetter):
         self,
         input_dimension: int,
         network: ReducedNetwork,
-        network_path: str,
         flux_getter=None,
     ):
         self._flux_getter = flux_getter or LaxFriedrichsFluxGetter()
-        self._subgrid_flux = ApproximatedSubgridFlux(
-            input_dimension, network, network_path
-        )
+        self._subgrid_flux = ApproximatedSubgridFlux(input_dimension, network)
 
     def __call__(
         self,
@@ -121,13 +136,3 @@ class ReducedSolverParser(finite_volume.SolverParser):
 
     def _add_arguments(self):
         self._add_ode_solver()
-        self._add_network()
-
-    def _add_network(self):
-        self.add_argument(
-            "++network-file",
-            help="Specify file name of the network (file ending is added automatically).",
-            metavar="<name>",
-            dest="network_file_name",
-            default="model",
-        )
