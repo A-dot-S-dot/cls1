@@ -54,7 +54,7 @@ class ErrorEvolutionCalculator:
     def _build_space(
         self, solution: core.DiscreteSolution, solution_exact: core.DiscreteSolution
     ) -> core.SolverSpace:
-        space = solution._space or solution_exact._space
+        space = solution.space or solution_exact.space
 
         if space is None:
             raise ValueError(

@@ -10,7 +10,7 @@ class Solver(core.Solver):
             len(self.solution.space.mesh),
             self.solution.space.polynomial_degree,
         )
-        self._solution.set_value(initial_data.value, initial_data.time)
+        self.solution.set_value(initial_data.value, initial_data.time)
         self._ode_solver.reinitialize(initial_data.value, initial_data.time)
 
 

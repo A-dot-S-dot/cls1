@@ -20,12 +20,11 @@ class Solver(core.Solver):
     flux_getter: FluxGetter
     _get_boundary_conditions = core.get_boundary_conditions
 
-    def __init__(self, benchmark: core.Benchmark, **kwargs):
-        args = self._build_args(benchmark, **kwargs)
+    def __init__(self, benchmark: core.Benchmark, **solver_args):
+        solver_args = self._get_solver_args(benchmark, **solver_args)
+        core.Solver.__init__(self, **solver_args)
 
-        core.Solver.__init__(self, **args)
-
-    def _build_args(
+    def _get_solver_args(
         self,
         benchmark: core.Benchmark,
         name=None,
@@ -66,9 +65,9 @@ class Solver(core.Solver):
 
     def reinitialize(self, benchmark: core.Benchmark):
         initial_data = get_finite_volume_solution(
-            benchmark, len(self._solution.space.mesh)
+            benchmark, len(self.solution.space.mesh)
         )
-        self._solution.set_value(initial_data.value, initial_data.time)
+        self.solution.set_value(initial_data.value, initial_data.time)
         self._ode_solver.reinitialize(initial_data.value, initial_data.time)
 
 

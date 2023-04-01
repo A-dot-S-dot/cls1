@@ -61,8 +61,8 @@ class EOCCalculator:
         eocs = np.empty((3, refine_number + 1))
 
         for index, (solver, solver_space) in enumerate(zip(solvers, solver_spaces)):
-            dofs[index] = solver._solution.dimension
-            errors[:, index] = self._calculate_error(solver._solution, solver_space)
+            dofs[index] = solver.solution.dimension
+            errors[:, index] = self._calculate_error(solver.solution, solver_space)
             eocs[:, index] = self._calculate_eoc(errors, index)
 
         return dofs, errors, eocs

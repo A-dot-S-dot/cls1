@@ -204,11 +204,11 @@ class MCLFluxGetter(swe.FluxGetter):
 
 
 class MCLSolver(swe.Solver):
-    def _build_args(
+    def _get_solver_args(
         self, benchmark: swe.ShallowWaterBenchmark, flux_getter=None, **kwargs
     ) -> Dict:
         self.flux_getter = MCLFluxGetter(flux_getter)
-        return super()._build_args(benchmark, **kwargs)
+        return super()._get_solver_args(benchmark, **kwargs)
 
 
 class MCLParser(finite_volume.SolverParser):

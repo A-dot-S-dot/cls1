@@ -18,7 +18,7 @@ T = TypeVar("T", bound=DiscreteSolution)
 class Solver(Generic[T], ABC):
     name: str
     short: str
-    _solution: T
+    solution: T
     _time_stepping: time_stepping.TimeStepping
     _ode_solver: ode_solver.ExplicitRungeKuttaMethod[np.ndarray]
     _right_hand_side: RightHandSide
@@ -34,39 +34,39 @@ class Solver(Generic[T], ABC):
         short=None,
         cfl_checker=None,
     ):
-        self._solution = solution
-        self._right_hand_side = right_hand_side
-        self._time_stepping = time_stepping
         self.name = name or "Solver"
         self.short = short or ""
+        self.solution = solution
+        self._right_hand_side = right_hand_side
+        self._time_stepping = time_stepping
         self._cfl_checker = cfl_checker
         self._ode_solver = ode_solver_type(
             self._right_hand_side,
-            self._solution.value,
-            initial_time=self._solution.time,
+            self.solution.value,
+            initial_time=self.solution.time,
         )
 
-    @property
-    def solution(self) -> T:
-        return self._solution
+    @abstractmethod
+    def reinitialize(self, benchmark: Benchmark):
+        ...
 
     def solve(self, **tqdm_kwargs):
         try:
             for time_step in tqdm(
                 self._time_stepping,
                 desc=self.name,
-                postfix={"DOFs": self._solution.dimension},
+                postfix={"DOFs": self.solution.dimension},
                 **tqdm_kwargs,
             ):
-                self.update(time_step)
+                self._update(time_step)
 
         except time_stepping.TimeStepTooSmallError:
             tqdm.write("WARNING: time step is too small calculation is interrupted")
 
-    def update(self, time_step: float):
+    def _update(self, time_step: float):
         self._ode_solver.execute(time_step)
         self._check_cfl_condition(time_step)
-        self._solution.update(time_step, self._ode_solver.solution)
+        self.solution.update(time_step, self._ode_solver.solution)
 
     def _check_cfl_condition(self, time_step: float):
         if self._cfl_checker:
@@ -80,10 +80,6 @@ class Solver(Generic[T], ABC):
                 tqdm.write(
                     f"WARNING: CFL condition is violated at time {self._time_stepping.time:.4f}"
                 )
-
-    @abstractmethod
-    def reinitialize(self, benchmark: Benchmark):
-        ...
 
     def __repr__(self) -> str:
         return (

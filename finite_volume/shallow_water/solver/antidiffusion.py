@@ -11,7 +11,7 @@ class LinearAntidiffusiveSolver(swe.Solver):
     _gamma: float
     _get_raw_flux: swe.FluxGetter
 
-    def _build_args(
+    def _get_solver_args(
         self,
         benchmark: swe.ShallowWaterBenchmark,
         gamma=None,
@@ -21,7 +21,7 @@ class LinearAntidiffusiveSolver(swe.Solver):
         self._gamma = gamma or defaults.ANTIDIFFUSION_GAMMA
         self._get_raw_flux = flux_getter or LaxFriedrichsFluxGetter()
 
-        return super()._build_args(benchmark, **kwargs)
+        return super()._get_solver_args(benchmark, **kwargs)
 
     def flux_getter(
         self,

@@ -442,7 +442,7 @@ class Animate(Command):
 
     def _add_discrete_solutions(self):
         for solver in self._solver:
-            self._animator.add_animatable(solver._solution, solver.short)
+            self._animator.add_animatable(solver.solution, solver.short)
 
 
 class AnimateParser(PlotParser):
