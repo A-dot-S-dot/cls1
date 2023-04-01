@@ -19,7 +19,7 @@ class CoarseSolver(swe.Solver):
     ):
         self.flux_getter = flux_getter or LaxFriedrichsFluxGetter()
         self.coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
-        super().__init__(benchmark, save_history=save_history, **kwargs)
+        super().__init__(benchmark, save_history=False, **kwargs)
 
         self.solution = (
             core.CoarseSolutionWithHistory(self.solution, self.coarsening_degree)

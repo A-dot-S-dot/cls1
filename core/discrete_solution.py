@@ -113,9 +113,9 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
         )
 
     def set_value(self, value: np.ndarray, time=0.0):
-        values_past = self._time_history < time
-        self._time_history = self._time_history[values_past]
-        self._value_history = self._value_history[values_past]
+        values_past = self.time_history < time
+        self._time_history = self.time_history[values_past]
+        self._value_history = self.value_history[values_past]
 
         self.update(time - self.time, value)
 
