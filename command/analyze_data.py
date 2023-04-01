@@ -1,25 +1,31 @@
 import argparse
-from typing import Any
+from typing import Any, List, Tuple
 
 import core
 import matplotlib.pyplot as plt
-import pandas as pd
 
 from .command import Command, CommandParser
 
 
 class AnalyzeData(Command):
-    _data: pd.DataFrame
+    _data_paths: List[str]
     _histogram: bool
 
-    def __init__(self, data_path: str, histogram=False):
-        self._data = core.load_data(data_path)
+    def __init__(self, data_paths: List[str], histogram=False):
+        self._data_paths = data_paths
         self._histogram = histogram
 
     def execute(self):
-        print(self._data.describe())
+        for data_path in self._data_paths:
+            data = core.load_data(data_path)
+            print(data_path.upper())
+            print("-" * len(data_path))
+            print(data.describe())
+            print("")
+            if self._histogram:
+                data.hist()
+
         if self._histogram:
-            self._data.hist()
             plt.show()
 
 
@@ -33,8 +39,11 @@ class AnalazyDataParser(CommandParser):
         )
 
     def _add_arguments(self, parser):
-        parser.add_argument("data_path", help="Specify data location.")
+        parser.add_argument("data_path", help="Specify data location.", nargs="+")
         parser.add_argument("--histogram", action="store_true", help="Plot historgram.")
 
     def postprocess(self, arguments):
+        arguments.data_paths = arguments.data_path
         arguments.command = AnalyzeData
+
+        del arguments.data_path
