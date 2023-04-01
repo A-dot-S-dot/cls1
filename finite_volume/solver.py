@@ -35,9 +35,7 @@ class Solver(core.Solver):
         ode_solver_type=None,
         save_history=False,
     ) -> Dict:
-        solution = get_finite_volume_solution(
-            benchmark, mesh_size or defaults.CALCULATE_MESH_SIZE, save_history
-        )
+        solution = get_finite_volume_solution(benchmark, mesh_size, save_history)
         step_length = solution.space.mesh.step_length
 
         numerical_flux = self.flux_getter(benchmark, solution.space)

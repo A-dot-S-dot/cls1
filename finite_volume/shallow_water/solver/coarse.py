@@ -1,5 +1,3 @@
-from typing import Dict
-
 import core
 import defaults
 import finite_volume
@@ -11,32 +9,32 @@ from .lax_friedrichs import LaxFriedrichsFluxGetter
 class CoarseSolver(swe.Solver):
     _coarsening_degree: int
 
-    def _build_args(
+    def __init__(
         self,
-        benchmark: swe.ShallowWaterBenchmark,
+        benchmark: core.Benchmark,
+        save_history=False,
         coarsening_degree=None,
         flux_getter=None,
         **kwargs
-    ) -> Dict:
+    ):
         self.flux_getter = flux_getter or LaxFriedrichsFluxGetter()
-        self._coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
+        self.coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
+        super().__init__(benchmark, save_history=save_history, **kwargs)
 
-        return super()._build_args(benchmark, **kwargs)
+        self.solution = (
+            core.CoarseSolutionWithHistory(self.solution, self.coarsening_degree)
+            if save_history
+            else core.CoarseSolution(self.solution, self.coarsening_degree)
+        )
 
-    @property
-    def solution(self) -> core.DiscreteSolution:
-        if isinstance(self._solution, core.DiscreteSolutionWithHistory):
-            return core.CoarseSolutionWithHistory(
-                self._solution,
-                self._coarsening_degree,
-                space=self._solution.space.coarsen(self._coarsening_degree),
-            )
-        else:
-            return core.CoarseSolution(
-                self._solution,
-                self._coarsening_degree,
-                space=self._solution.space.coarsen(self._coarsening_degree),
-            )
+    def reinitialize(self, benchmark: core.Benchmark):
+        mesh = core.UniformMesh(
+            benchmark.domain, len(self.solution.space.mesh) * self.coarsening_degree
+        )
+        interpolator = core.CellAverageInterpolator(mesh, 2)
+        value = interpolator.interpolate(benchmark.initial_data)
+        self.solution.set_value(value, benchmark.start_time)
+        self._ode_solver.reinitialize(value, benchmark.start_time)
 
 
 class CoarseParser(finite_volume.SolverParser):

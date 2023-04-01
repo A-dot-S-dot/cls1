@@ -74,7 +74,7 @@ def get_cg_low_right_hand_side(
     return LowOrderCGRightHandSide(lumped_mass, artificial_diffusion, flux_gradient)
 
 
-class LowOrderContinuousGalerkinSolver(core.Solver):
+class LowOrderContinuousGalerkinSolver(finite_element.Solver):
     def __init__(
         self,
         benchmark: core.Benchmark,
@@ -89,14 +89,16 @@ class LowOrderContinuousGalerkinSolver(core.Solver):
     ):
         name = name or "Low order Continuous Galerkin"
         short = short or "cg_low"
-        mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE
-        polynomial_degree = polynomial_degree or defaults.POLYNOMIAL_DEGREE
-        cfl_number = cfl_number or defaults.MCL_CFL_NUMBER
+        cfl_number = cfl_number or defaults.FINITE_ELEMENT_CFL_NUMBER
         ode_solver_type = ode_solver_type or os.Heun
 
         solution = finite_element.get_finite_element_solution(
-            benchmark, mesh_size, polynomial_degree, save_history=save_history
+            benchmark,
+            mesh_size=mesh_size,
+            polynomial_degree=polynomial_degree,
+            save_history=save_history,
         )
+
         right_hand_side = get_cg_low_right_hand_side(benchmark.problem, solution.space)
         optimal_time_step = OptimalTimeStep(
             finite_element.LumpedMassVector(solution.space),

@@ -1,7 +1,8 @@
 from typing import Generic, TypeVar
 
-import numpy as np
 import core
+import defaults
+import numpy as np
 
 T = TypeVar("T", float, np.ndarray)
 
@@ -56,17 +57,18 @@ class FiniteVolumeElement(core.CellDependentFunction, Generic[T]):
 
 
 def get_finite_volume_solution(
-    benchmark: core.Benchmark, mesh_size: int, save_history=False
+    benchmark: core.Benchmark, mesh_size=None, save_history=False
 ) -> core.DiscreteSolution[FiniteVolumeSpace]:
-    mesh = core.UniformMesh(benchmark.domain, mesh_size)
+    mesh = core.UniformMesh(benchmark.domain, mesh_size or defaults.CALCULATE_MESH_SIZE)
     space = FiniteVolumeSpace(mesh)
     interpolator = core.CellAverageInterpolator(mesh, 2)
-    solution_type = (
-        core.DiscreteSolutionWithHistory if save_history else core.DiscreteSolution
-    )
-
-    return solution_type(
+    solution = core.DiscreteSolution(
         interpolator.interpolate(benchmark.initial_data),
         initial_time=benchmark.start_time,
         space=space,
     )
+
+    if save_history:
+        solution = core.DiscreteSolutionWithHistory(solution)
+
+    return solution

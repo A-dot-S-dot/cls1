@@ -42,7 +42,7 @@ def get_cg_right_hand_side(
     return CGRightHandSide(mass, flux_gradient)
 
 
-class ContinuousGalerkinSolver(core.Solver):
+class ContinuousGalerkinSolver(finite_element.Solver):
     def __init__(
         self,
         benchmark: core.Benchmark,
@@ -56,13 +56,14 @@ class ContinuousGalerkinSolver(core.Solver):
     ):
         name = name or "Continuous Galerkin"
         short = short or "cg"
-        mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE
-        polynomial_degree = polynomial_degree or defaults.POLYNOMIAL_DEGREE
         cfl_number = cfl_number or defaults.FINITE_ELEMENT_CFL_NUMBER
         exact_flux = exact_flux
 
         solution = finite_element.get_finite_element_solution(
-            benchmark, mesh_size, polynomial_degree, save_history=save_history
+            benchmark,
+            mesh_size=mesh_size,
+            polynomial_degree=polynomial_degree,
+            save_history=save_history,
         )
 
         right_hand_side = get_cg_right_hand_side(

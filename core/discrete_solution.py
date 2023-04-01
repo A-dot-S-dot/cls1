@@ -27,23 +27,20 @@ class DiscreteSolution(Generic[T]):
         self._space = space
 
     @property
+    def time(self) -> float:
+        return self._time
+
+    @property
+    def value(self) -> np.ndarray:
+        return self._value.copy()
+
+    @property
     def dimension(self) -> float | Tuple[float, ...]:
         dimension = self.value.shape
         if len(dimension) == 1:
             return dimension[0]
         else:
             return dimension
-
-    @property
-    def time(self) -> float:
-        return self._time
-
-    @property
-    def grid(self) -> np.ndarray:
-        if self._space is not None:
-            return self._space.grid
-        else:
-            raise AttributeError("Grid attribute does not exist.")
 
     @property
     def space(self) -> T:
@@ -53,8 +50,8 @@ class DiscreteSolution(Generic[T]):
             raise AttributeError("Solver space attribute does not exist.")
 
     @property
-    def value(self) -> np.ndarray:
-        return self._value.copy()
+    def grid(self) -> np.ndarray:
+        return self.space.grid
 
     def update(self, time_step: float, value: np.ndarray):
         if not np.isfinite(value).all():
@@ -74,29 +71,31 @@ class DiscreteSolution(Generic[T]):
 
 
 class DiscreteSolutionWithHistory(DiscreteSolution[T]):
+    _solution: DiscreteSolution
     _time_history: np.ndarray
     _time_step_history: np.ndarray
     _value_history: np.ndarray
 
-    def __init__(
-        self,
-        initial_value: np.ndarray,
-        initial_time=0.0,
-        space=None,
-    ):
-        DiscreteSolution.__init__(
-            self,
-            initial_value,
-            initial_time=initial_time,
-            space=space,
-        )
-
+    def __init__(self, solution: DiscreteSolution):
+        self._solution = solution
         self._time_history = np.array([self.time])
         self._value_history = np.array([self.value])
 
     @property
+    def time(self) -> float:
+        return self._solution.time
+
+    @property
+    def value(self) -> np.ndarray:
+        return self._solution.value
+
+    @property
+    def space(self) -> T:
+        return self._solution.space
+
+    @property
     def time_history(self) -> np.ndarray:
-        return self._time_history.copy()
+        return self._time_history
 
     @property
     def time_step_history(self) -> np.ndarray:
@@ -106,11 +105,11 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
     def value_history(self) -> np.ndarray:
         return self._value_history.copy()
 
-    def update(self, time_step: float, solution: np.ndarray):
-        DiscreteSolution.update(self, time_step, solution)
+    def update(self, time_step: float, value: np.ndarray):
+        self._solution.update(time_step, value)
         self._time_history = np.append(self.time_history, self.time)
         self._value_history = np.append(
-            self.value_history, np.array([solution.copy()]), axis=0
+            self.value_history, np.array([value.copy()]), axis=0
         )
 
     def set_value(self, value: np.ndarray, time=0.0):
@@ -118,27 +117,109 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
         self._time_history = self._time_history[values_past]
         self._value_history = self._value_history[values_past]
 
-        self.update(time - self._time, value)
+        self.update(time - self.time, value)
 
 
-class CoarseSolution(DiscreteSolution):
+class DiscreteSolutionWithNodeNeighboursHistory(DiscreteSolution[T]):
+    def __init__(self, solution: DiscreteSolution, input_radius: int, node_index=None):
+        self._solution = solution
+        node_index = node_index or input_radius
+        self._left_cell_index = node_index - input_radius
+        self._right_cell_index = node_index + input_radius
+        self._node_neighbours_history = np.array([self.node_neighbours])
+        self._time_history = np.array([self.time])
+
+    @property
+    def node_neighbours(self) -> np.ndarray:
+        return self.value[self._left_cell_index : self._right_cell_index]
+
+    @property
+    def time_history(self) -> np.ndarray:
+        return self._time_history
+
+    @property
+    def time_step_history(self) -> np.ndarray:
+        return np.diff(self.time_history)
+
+    @property
+    def node_neighbours_history(self) -> np.ndarray:
+        return self._node_neighbours_history.copy()
+
+    @property
+    def time(self) -> float:
+        return self._solution.time
+
+    @property
+    def value(self) -> np.ndarray:
+        return self._solution.value
+
+    @property
+    def space(self) -> T:
+        return self._solution.space
+
+    def update(self, time_step: float, value: np.ndarray):
+        self._solution.update(time_step, value)
+        self._time_history = np.append(self.time_history, self.time)
+        self._node_neighbours_history = np.append(
+            self.node_neighbours_history, np.array([self.node_neighbours]), axis=0
+        )
+
+    def set_value(self, value: np.ndarray, time=0.0):
+        values_past = self._time_history < time
+        self._time_history = self.time_history[values_past]
+        self._node_neighbours_history = self.node_neighbours_history[values_past]
+
+        self.update(
+            time - self.time, value[self._left_cell_index : self._right_cell_index]
+        )
+
+
+class CoarseSolution(DiscreteSolution[T]):
     _coarsener: VectorCoarsener
 
-    def __init__(self, solution: DiscreteSolution, coarsening_degree: int, space=None):
-        self._time = solution.time
-
+    def __init__(self, solution: DiscreteSolution, coarsening_degree: int):
+        self._solution = solution
         self._coarsener = VectorCoarsener(coarsening_degree)
-        self._value = self._coarsener(solution.value)
 
-        self._space = space
+    @property
+    def time(self) -> float:
+        return self._solution.time
+
+    @property
+    def value(self) -> np.ndarray:
+        return self._coarsener(self._solution.value)
+
+    @property
+    def space(self) -> T:
+        return self._solution.space.coarsen(self._coarsener.coarsening_degree)
+
+    @property
+    def grid(self) -> np.ndarray:
+        return self.space.grid
+
+    def update(self, time_step: float, value: np.ndarray):
+        self._solution.update(time_step, value)
+
+    def set_value(self, value: np.ndarray, time=0.0):
+        self._solution.set_value(value, time=time)
 
 
-class CoarseSolutionWithHistory(DiscreteSolutionWithHistory, CoarseSolution):
-    def __init__(
-        self, solution: DiscreteSolutionWithHistory, coarsening_degree: int, space=None
-    ):
-        CoarseSolution.__init__(self, solution, coarsening_degree, space=space)
-        self._time_history = solution.time_history
-        self._value_history = np.array(
-            [self._coarsener(dof) for dof in solution.value_history]
+class CoarseSolutionWithHistory(DiscreteSolutionWithHistory[T]):
+    def __init__(self, solution: DiscreteSolution, coarsening_degree: int):
+        self._coarsener = VectorCoarsener(coarsening_degree)
+        super().__init__(solution)
+
+    @property
+    def value(self) -> np.ndarray:
+        return self._coarsener(self._solution.value)
+
+    @property
+    def space(self) -> T:
+        return self._solution.space.coarsen(self._coarsener.coarsening_degree)
+
+    def update(self, time_step: float, value: np.ndarray):
+        self._solution.update(time_step, value)
+        self._time_history = np.append(self.time_history, self.time)
+        self._value_history = np.append(
+            self.value_history, np.array([self._coarsener(value)]), axis=0
         )

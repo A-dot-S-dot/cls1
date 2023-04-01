@@ -1,5 +1,6 @@
 from typing import Callable, Iterator, List, Sequence
 
+import defaults
 import numpy as np
 import core
 from scipy.interpolate import lagrange
@@ -334,19 +335,20 @@ class AnchorNodesFastFiniteElement(FastFiniteElement):
 
 def get_finite_element_solution(
     benchmark: core.Benchmark,
-    mesh_size: int,
-    polynomial_degree: int,
+    mesh_size=None,
+    polynomial_degree=None,
     save_history=False,
 ) -> core.DiscreteSolution[LagrangeSpace]:
-    mesh = core.UniformMesh(benchmark.domain, mesh_size)
-    space = LagrangeSpace(mesh, polynomial_degree)
+    mesh = core.UniformMesh(benchmark.domain, mesh_size or defaults.CALCULATE_MESH_SIZE)
+    space = LagrangeSpace(mesh, polynomial_degree or defaults.POLYNOMIAL_DEGREE)
     interpolator = core.NodeValuesInterpolator(*space.basis_nodes)
-    solution_type = (
-        core.DiscreteSolutionWithHistory if save_history else core.DiscreteSolution
-    )
-
-    return solution_type(
+    solution = core.DiscreteSolution(
         interpolator.interpolate(benchmark.initial_data),
         initial_time=benchmark.start_time,
         space=space,
     )
+
+    if save_history:
+        return core.DiscreteSolutionWithHistory(solution)
+    else:
+        return solution

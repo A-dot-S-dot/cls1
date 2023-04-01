@@ -109,7 +109,7 @@ def get_mcl_right_hand_side(
     return MCLRightHandSide(element_space, low_cg_right_hand_side, flux_approximation)
 
 
-class MCLSolver(core.Solver):
+class MCLSolver(finite_element.Solver):
     def __init__(
         self,
         benchmark: core.Benchmark,
@@ -124,13 +124,14 @@ class MCLSolver(core.Solver):
     ):
         name = name or "MCL Solver"
         short = short or "mcl"
-        mesh_size = mesh_size or defaults.CALCULATE_MESH_SIZE
-        polynomial_degree = polynomial_degree or defaults.POLYNOMIAL_DEGREE
-        cfl_number = cfl_number or defaults.MCL_CFL_NUMBER
+        cfl_number = cfl_number or defaults.FINITE_ELEMENT_CFL_NUMBER
         ode_solver_type = ode_solver_type or core.Heun
         adaptive = adaptive
         solution = finite_element.get_finite_element_solution(
-            benchmark, mesh_size, polynomial_degree, save_history=save_history
+            benchmark,
+            mesh_size=mesh_size,
+            polynomial_degree=polynomial_degree,
+            save_history=save_history,
         )
         right_hand_side = get_mcl_right_hand_side(benchmark.problem, solution.space)
         optimal_time_step = cg_low.OptimalTimeStep(
