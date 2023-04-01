@@ -22,17 +22,19 @@ DIRECTORIES = {
 
 
 class SubgridFluxDataBuilder:
-    coarsening_degree: int
-    input_radius: int
-    node_index: int
     print_output: bool
+    coarsening_degree: int
+    node_index: int
+    input_radius: int
 
+    _solver: core.Solver
     _fine_flux: finite_volume.NumericalFlux
     _coarse_flux: finite_volume.NumericalFlux
     _coarsener: core.VectorCoarsener
 
     def __init__(
         self,
+        solver: core.Solver,
         fine_flux: finite_volume.NumericalFlux,
         coarse_flux: finite_volume.NumericalFlux,
         coarsening_degree=None,
@@ -40,21 +42,31 @@ class SubgridFluxDataBuilder:
         node_index=None,
         print_output=True,
     ):
-        self._fine_flux = finite_volume.NumericalFluxWithArbitraryInput(fine_flux)
-        self._coarse_flux = finite_volume.NumericalFluxWithArbitraryInput(coarse_flux)
+        self._solver = solver
         self.coarsening_degree = coarsening_degree or defaults.COARSENING_DEGREE
-        self._coarsener = core.VectorCoarsener(self.coarsening_degree)
         self.input_radius = input_radius or defaults.INPUT_RADIUS
         self.node_index = node_index or self.input_radius
+        assert self.node_index >= self.input_radius
         self.print_output = print_output
 
-        assert self.node_index >= self.input_radius
+        self._solver.solution = DiscreteSolutionWithNodeNeighboursHistory(
+            solver.solution,
+            self.coarsening_degree * self.input_radius,
+            node_index=self.node_index * self.coarsening_degree,
+        )
+        self._fine_flux = finite_volume.NumericalFluxWithArbitraryInput(fine_flux)
+        self._coarse_flux = finite_volume.NumericalFluxWithArbitraryInput(coarse_flux)
+        self._coarsener = core.VectorCoarsener(self.coarsening_degree)
+
+    @property
+    def time_history(self) -> np.ndarray:
+        return self._solver.solution.time_history
 
     def __call__(
-        self, solver: core.Solver
+        self, benchmark: core.Benchmark
     ) -> Tuple[Tuple[np.ndarray, ...], np.ndarray]:
         """Returns coarse solution and subgrid fluxes at node."""
-        fine_values, coarse_values = self._get_values(solver)
+        fine_values, coarse_values = self._get_values(benchmark)
 
         _, fine_flux = self._fine_flux(*fine_values)
         _, coarse_flux = self._coarse_flux(*coarse_values)
@@ -62,16 +74,12 @@ class SubgridFluxDataBuilder:
         return coarse_values, fine_flux - coarse_flux
 
     def _get_values(
-        self, solver: core.Solver
+        self, benchmark: core.Benchmark
     ) -> Tuple[Tuple[np.ndarray, ...], Tuple[np.ndarray, ...]]:
-        solver.solution = DiscreteSolutionWithNodeNeighboursHistory(
-            solver.solution,
-            self.coarsening_degree * self.input_radius,
-            node_index=self.node_index * self.coarsening_degree,
-        )
-        Calculate(solver, disable=not self.print_output, leave=False).execute()
+        self._solver.reinitialize(benchmark)
+        Calculate(self._solver, disable=not self.print_output, leave=False).execute()
 
-        fine_values = np.moveaxis(solver.solution.node_neighbours_history, 1, 0)
+        fine_values = np.moveaxis(self._solver.solution.node_neighbours_history, 1, 0)
         coarse_values = self._coarsener(fine_values)
 
         return tuple(fine_values), tuple(coarse_values)
@@ -86,11 +94,11 @@ class SubgridFluxDataFrameBuilder:
 
     def get_data_frame(
         self,
-        solver: core.Solver[DiscreteSolutionWithNodeNeighboursHistory],
+        benchmark: core.Benchmark,
         data=None,
     ) -> pd.DataFrame:
-        coarse_values, subgrid_flux = self._data_builder(solver)
-        time = solver.solution.time_history
+        coarse_values, subgrid_flux = self._data_builder(benchmark)
+        time = self._data_builder.time_history
 
         new_data = pd.DataFrame(
             np.concatenate([*coarse_values, subgrid_flux], axis=1),
@@ -208,7 +216,11 @@ class GenerateData(Command):
     def _get_subgrid_flux_data_frame_builder(self, coarsening_degree: int, **kwargs):
         fine_flux, coarse_flux = self._get_fluxes(coarsening_degree)
         data_builder = SubgridFluxDataBuilder(
-            fine_flux, coarse_flux, coarsening_degree=coarsening_degree, **kwargs
+            self._solver,
+            fine_flux,
+            coarse_flux,
+            coarsening_degree=coarsening_degree,
+            **kwargs,
         )
 
         return SubgridFluxDataFrameBuilder(data_builder)
@@ -248,10 +260,9 @@ class GenerateData(Command):
 
     def _build_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         benchmark = self._get_benchmark()
-        self._solver.reinitialize(benchmark)
 
         benchmark_data = self._benchmark_df_builder.get_data_frame(benchmark)
-        subgrid_flux_data = self._subgrid_flux_df_builder.get_data_frame(self._solver)
+        subgrid_flux_data = self._subgrid_flux_df_builder.get_data_frame(benchmark)
 
         return subgrid_flux_data, benchmark_data
 
