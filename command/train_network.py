@@ -1,7 +1,6 @@
 import argparse
-import pickle
 import random
-from typing import Any, Optional, Type
+from typing import Any, Dict
 
 import core
 import defaults
@@ -11,42 +10,32 @@ import torch
 from finite_volume.shallow_water.solver import NETWORK_TYPES, ReducedNetwork
 
 from .command import Command, CommandParser
-from .generate_data import DIRECTORIES
 
 
 class TrainNetwork(Command):
-    _data_path: str
-    _network_path: str
+    _network: ReducedNetwork
+    _epochs: int
     _skip: int
     _plot_loss: bool
-    _network: ...
-    _pipeline: ...
+    _confirm_save: bool
 
     def __init__(
         self,
-        data_path: str,
-        network_path: str,
-        network_type: Type[ReducedNetwork],
+        network: ReducedNetwork,
         epochs=None,
         skip=None,
         seed=None,
         plot_loss=False,
-        resume_training=False,
+        confirm_save=False,
     ):
-        self._network_path = network_path
-        self._data_path = data_path
+        self._network = network
+        self._epochs = epochs or defaults.EPOCHS
         self._skip = skip or defaults.SKIP
         self._plot_loss = plot_loss
-        self._network = network_type(max_epochs=epochs)
+        self._confirm_save = confirm_save
 
-        if resume_training:
-            self._load_parameters()
         if seed is not None:
             self._set_seed(seed)
-
-    def _load_parameters(self):
-        self._network.initialize()
-        self._network.load_params(f_params=self._network_path)
 
     def _set_seed(self, seed: int):
         torch.manual_seed(seed)
@@ -62,16 +51,33 @@ class TrainNetwork(Command):
         return device
 
     def execute(self):
-        df = core.load_data(self._data_path)
+        df = core.load_data(self._network.data_path)
         input_dimension = df.shape[1] - 2
         X = df.values[:: self._skip, :input_dimension].astype(np.float32)
         y = df.values[:: self._skip, input_dimension:].astype(np.float32)
 
-        self._network.fit(X, y)
-        self._network.save_params(f_params=self._network_path)
+        self._network.fit(X, y, epochs=self._epochs)
+
+        if self._save_params:
+            self._network.save_params()
 
         if self._plot_loss:
             self._plot_losses()
+
+    @property
+    def _save_params(self) -> bool:
+        save = None if self._confirm_save else True
+
+        while save is None:
+            answer = input("Save network params?(Y/n) ")
+            if answer.lower() in ["y", "yes"]:
+                save = True
+            elif answer.lower() in ["n", "no"]:
+                save = False
+            else:
+                print(f"Input {answer} is not valid.")
+
+        return save
 
     def _plot_losses(self):
         training_loss = self._network.history[:, "train_loss"]
@@ -105,12 +111,13 @@ class TrainNetworkParser(CommandParser):
 
     def _add_arguments(self, parser):
         self._add_network(parser)
-        self._add_network_file_name(parser)
+        self._add_network_parameters(parser)
         self._add_epochs(parser)
         self._add_skip(parser)
         self._add_seed(parser)
-        self._add_plot_loss(parser)
         self._add_resume_training(parser)
+        self._add_confirm_save(parser)
+        self._add_plot_loss(parser)
 
     def _add_network(self, parser):
         parser.add_argument(
@@ -119,13 +126,15 @@ class TrainNetworkParser(CommandParser):
             choices=NETWORK_TYPES.keys(),
         )
 
-    def _add_network_file_name(self, parser):
+    def _add_network_parameters(self, parser):
         parser.add_argument(
-            "-f",
-            "--file",
-            help="Specify network file name (file-ending is generated automatically).",
-            metavar="<name>",
-            default="model",
+            "-p",
+            "--parameter",
+            help="Add network parameter which will be parsed directly to the network.",
+            nargs=2,
+            action="append",
+            metavar=("<key>", "<value>"),
+            default=list(),
         )
 
     def _add_epochs(self, parser):
@@ -155,13 +164,6 @@ class TrainNetworkParser(CommandParser):
             metavar="<seed>",
         )
 
-    def _add_plot_loss(self, parser):
-        parser.add_argument(
-            "--plot-loss",
-            help="Plot training and validation loss.",
-            action="store_true",
-        )
-
     def _add_resume_training(self, parser):
         parser.add_argument(
             "--resume",
@@ -170,13 +172,37 @@ class TrainNetworkParser(CommandParser):
             dest="resume_training",
         )
 
-    def postprocess(self, arguments):
-        arguments.network_type = NETWORK_TYPES[arguments.network]
-        arguments.data_path = DIRECTORIES[arguments.network] + "data.csv"
-        arguments.network_path = (
-            DIRECTORIES[arguments.network] + arguments.file + ".pkl"
+    def _add_confirm_save(self, parser):
+        parser.add_argument(
+            "--confirm-save",
+            help="confirm to save after training. Otherwise training will be aborted.",
+            action="store_true",
         )
+
+    def _add_plot_loss(self, parser):
+        parser.add_argument(
+            "--plot-loss",
+            help="Plot training and validation loss.",
+            action="store_true",
+        )
+
+    def postprocess(self, arguments):
+        arguments.network = NETWORK_TYPES[arguments.network](warm_start=True)
+        self._load_network(arguments)
+        arguments.network.set_params(**self._get_network_parameters(arguments))
         arguments.command = TrainNetwork
 
-        del arguments.network
-        del arguments.file
+    def _load_network(self, arguments):
+        if arguments.resume_training:
+            arguments.network.load_params()
+
+        del arguments.resume_training
+
+    def _get_network_parameters(self, arguments) -> Dict:
+        kwargs = dict()
+        for key, value in arguments.parameter:
+            kwargs[key] = float(value)
+
+        del arguments.parameter
+
+        return kwargs
