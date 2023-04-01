@@ -28,6 +28,29 @@ class TestSubgridFlux:
         return dof_vector[::2], dof_vector[1::2]
 
 
+class TestDiscreteSolutionWithInputData(TestCase):
+    def test_history(self):
+        solution = core.DiscreteSolution(
+            np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]]),
+        )
+        solution = DiscreteSolutionWithInputData(solution, 1, 1, 2, 1)
+        solution.update(1.0, np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]]))
+        expected_coarse_node_neighbours_history = np.array(
+            [[[2.0, 3.0], [6.0, 7.0]], [[2.0, 3.0], [6.0, 7.0]]]
+        )
+        expected_fine_node_neighbours_history = np.array(
+            [[[3.0, 4.0], [5.0, 6.0]], [[3.0, 4.0], [5.0, 6.0]]]
+        )
+
+        assert_equal(
+            solution.coarse_node_neighbours_history,
+            expected_coarse_node_neighbours_history,
+        )
+        assert_equal(
+            solution.fine_node_neighbours_history, expected_fine_node_neighbours_history
+        )
+
+
 class TestSubgridFluxDataBuilder(TestCase):
     def test_builder(self):
         value = np.array([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0], [4.0, 4.0]])

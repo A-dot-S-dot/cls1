@@ -143,20 +143,6 @@ class TestDiscreteSolutionWithHistory(TestCase):
         assert_equal(solution.time_history, 0.0)
 
 
-class TestDiscreteSolutionWithNodeHistory(TestCase):
-    def test_history(self):
-        solution = DiscreteSolution(
-            np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]]),
-        )
-        solution = DiscreteSolutionWithNodeNeighboursHistory(solution, 1, node_index=2)
-        solution.update(1.0, np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]]))
-        expected_node_neighbours_history = np.array(
-            [[[3.0, 4.0], [5.0, 6.0]], [[3.0, 4.0], [5.0, 6.0]]]
-        )
-
-        assert_equal(solution.node_neighbours_history, expected_node_neighbours_history)
-
-
 class TestCoarseSolution(TestCase):
     def test_coarse_solution(self):
         solution = DiscreteSolution(

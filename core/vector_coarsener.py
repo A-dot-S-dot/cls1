@@ -18,7 +18,7 @@ class VectorCoarsener:
     def __init__(self, coarsening_degree: int):
         self.coarsening_degree = coarsening_degree
 
-    def __call__(self, vector: np.ndarray) -> ...:
+    def __call__(self, vector: np.ndarray) -> np.ndarray:
         self._assert_admissible_vector(vector)
 
         return self._coarsen_vector(vector)

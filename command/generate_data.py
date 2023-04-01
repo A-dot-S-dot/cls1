@@ -1,9 +1,8 @@
 import argparse
 import os
-from typing import Any, Tuple
+from typing import Any, Tuple, TypeVar
 
 import core
-from core.discrete_solution import DiscreteSolutionWithNodeNeighboursHistory
 import defaults
 import finite_volume
 import numpy as np
@@ -19,6 +18,105 @@ DIRECTORIES = {
     "llf2": "data/reduced-llf-2/",
     "es1": "data/reduced-es1/",
 }
+
+T = TypeVar("T", bound=core.SolverSpace)
+
+
+class DiscreteSolutionWithInputData(core.DiscreteSolution[T]):
+    _coarse_left_cell_index: int
+    _coarse_right_cell_index: int
+    _fine_left_cell_index: int
+    _fine_right_cell_index: int
+    _coarse_node_neighbours_history: np.ndarray
+    _fine_node_neighbours_history: np.ndarray
+    _time_history: np.ndarray
+
+    def __init__(
+        self,
+        solution: core.DiscreteSolution,
+        node_index: int,
+        input_radius: int,
+        coarsening_degree: int,
+        fine_input_radius: int,
+    ):
+        self._solution = solution
+        self._coarsener = core.VectorCoarsener(coarsening_degree)
+        node_index *= coarsening_degree
+        input_radius *= coarsening_degree
+
+        self._coarse_left_cell_index = node_index - input_radius
+        self._coarse_right_cell_index = node_index + input_radius
+        self._fine_left_cell_index = node_index - fine_input_radius
+        self._fine_right_cell_index = node_index + fine_input_radius
+
+        self._coarse_node_neighbours_history = np.array([self.coarse_node_neighbours])
+        self._fine_node_neighbours_history = np.array([self.fine_node_neighbours])
+        self._time_history = np.array([self.time])
+
+    @property
+    def time(self) -> float:
+        return self._solution.time
+
+    @property
+    def value(self) -> np.ndarray:
+        return self._solution.value
+
+    @property
+    def fine_node_neighbours(self) -> np.ndarray:
+        return self.value[self._fine_left_cell_index : self._fine_right_cell_index]
+
+    @property
+    def coarse_node_neighbours(self) -> np.ndarray:
+        fine_values = self.value[
+            self._coarse_left_cell_index : self._coarse_right_cell_index
+        ]
+        return self._coarsener(fine_values)
+
+    @property
+    def space(self) -> T:
+        return self._solution.space
+
+    @property
+    def time_history(self) -> np.ndarray:
+        return self._time_history
+
+    @property
+    def time_step_history(self) -> np.ndarray:
+        return np.diff(self.time_history)
+
+    @property
+    def coarse_node_neighbours_history(self) -> np.ndarray:
+        return self._coarse_node_neighbours_history.copy()
+
+    @property
+    def fine_node_neighbours_history(self) -> np.ndarray:
+        return self._fine_node_neighbours_history.copy()
+
+    def update(self, time_step: float, value: np.ndarray):
+        self._solution.update(time_step, value)
+        self._time_history = np.append(self.time_history, self.time)
+        self._coarse_node_neighbours_history = np.append(
+            self.coarse_node_neighbours_history,
+            np.array([self.coarse_node_neighbours]),
+            axis=0,
+        )
+        self._fine_node_neighbours_history = np.append(
+            self.fine_node_neighbours_history,
+            np.array([self.fine_node_neighbours]),
+            axis=0,
+        )
+
+    def set_value(self, value: np.ndarray, time=0.0):
+        values_past = self._time_history < time
+        self._time_history = self.time_history[values_past]
+        self._coarse_node_neighbours_history = self.coarse_node_neighbours_history[
+            values_past
+        ]
+        self._fine_node_neighbours_history = self.fine_node_neighbours_history[
+            values_past
+        ]
+
+        self.update(time - self.time, value)
 
 
 class SubgridFluxDataBuilder:
@@ -49,14 +147,15 @@ class SubgridFluxDataBuilder:
         assert self.node_index >= self.input_radius
         self.print_output = print_output
 
-        self._solver.solution = DiscreteSolutionWithNodeNeighboursHistory(
+        self._solver.solution = DiscreteSolutionWithInputData(
             solver.solution,
-            self.coarsening_degree * self.input_radius,
-            node_index=self.node_index * self.coarsening_degree,
+            self.node_index,
+            self.input_radius,
+            self.coarsening_degree,
+            fine_flux.input_dimension // 2,
         )
-        self._fine_flux = finite_volume.NumericalFluxWithArbitraryInput(fine_flux)
+        self._fine_flux = fine_flux
         self._coarse_flux = finite_volume.NumericalFluxWithArbitraryInput(coarse_flux)
-        self._coarsener = core.VectorCoarsener(self.coarsening_degree)
 
     @property
     def time_history(self) -> np.ndarray:
@@ -79,8 +178,12 @@ class SubgridFluxDataBuilder:
         self._solver.reinitialize(benchmark)
         Calculate(self._solver, disable=not self.print_output, leave=False).execute()
 
-        fine_values = np.moveaxis(self._solver.solution.node_neighbours_history, 1, 0)
-        coarse_values = self._coarsener(fine_values)
+        coarse_values = np.moveaxis(
+            self._solver.solution.coarse_node_neighbours_history, 1, 0
+        )
+        fine_values = np.moveaxis(
+            self._solver.solution.fine_node_neighbours_history, 1, 0
+        )
 
         return tuple(fine_values), tuple(coarse_values)
 
