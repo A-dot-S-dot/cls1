@@ -47,6 +47,21 @@ class MCLFlux(LowOrderFlux):
         low_order_flux_left, low_order_flux_right = LowOrderFlux.__call__(
             self, *finite_volume.get_required_values(2, *values)
         )
+        limited_flux_left, limited_flux_right = self._get_limited_fluxes(
+            low_order_flux_left, low_order_flux_right, *values
+        )
+
+        flux_left = low_order_flux_left + limited_flux_left
+        flux_right = low_order_flux_right + limited_flux_right
+
+        return flux_left, flux_right
+
+    def _get_limited_fluxes(
+        self,
+        low_order_flux_left: np.ndarray,
+        low_order_flux_right: np.ndarray,
+        *values: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
         high_order_flux_left, high_order_flux_right = self._high_order_flux(*values)
 
         antidiffusive_flux_right = high_order_flux_right + -low_order_flux_right
@@ -61,12 +76,10 @@ class MCLFlux(LowOrderFlux):
             swe.get_discharge(antidiffusive_flux_right)
         )
 
-        flux_left = low_order_flux_left + np.array([limited_fh_left, limited_fq_left]).T
-        flux_right = (
-            low_order_flux_right + np.array([limited_fh_right, limited_fq_right]).T
+        return (
+            np.array([limited_fh_left, limited_fq_left]).T,
+            np.array([limited_fh_right, limited_fq_right]).T,
         )
-
-        return flux_left, flux_right
 
     def _get_limited_height_fluxes(
         self, antidiffusive_flux: np.ndarray
