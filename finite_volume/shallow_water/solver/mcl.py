@@ -231,3 +231,4 @@ class MCLParser(finite_volume.SolverParser):
 
     def _add_arguments(self):
         self._add_flux()
+        self._add_ode_solver()

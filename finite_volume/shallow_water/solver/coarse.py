@@ -45,6 +45,7 @@ class CoarseParser(finite_volume.SolverParser):
     def _add_arguments(self):
         self._add_flux()
         self._add_coarsening_degree()
+        self._add_ode_solver()
 
     def _add_coarsening_degree(self):
         self.add_argument(

@@ -163,8 +163,14 @@ class EnergyStableParser(finite_volume.SolverParser):
     name = "Energy stable finite volume scheme"
     solver = EnergyStableSolver
 
+    def _add_arguments(self):
+        self._add_ode_solver()
+
 
 class FirstOrderDiffusiveEnergyStableParser(finite_volume.SolverParser):
     prog = "es1"
     name = "Energy stable finite volume scheme with first order diffusion"
     solver = FirstOrderDiffusiveEnergyStableSolver
+
+    def _add_arguments(self):
+        self._add_ode_solver()

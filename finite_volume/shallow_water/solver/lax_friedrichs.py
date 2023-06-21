@@ -20,3 +20,6 @@ class LaxFriedrichsParser(finite_volume.SolverParser):
     prog = "llf"
     name = "Lax-Friedrichs finite volume scheme"
     solver = LaxFriedrichsSolver
+
+    def _add_arguments(self):
+        self._add_ode_solver()

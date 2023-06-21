@@ -139,3 +139,6 @@ class LowOrderParser(finite_volume.SolverParser):
     prog = "low-order"
     name = "Low order finite volume scheme"
     solver = LowOrderSolver
+
+    def _add_arguments(self):
+        self._add_ode_solver()
