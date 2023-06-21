@@ -32,7 +32,7 @@ CALCULATE_MESH_SIZE = 400
 ################################################################################
 # finite element based solver
 POLYNOMIAL_DEGREE = 1
-ODE_SOLVER = "heun"
+ODE_SOLVER = "euler"
 FLUX_APPROXIMATION = True
 FINITE_ELEMENT_CFL_NUMBER = 0.1
 

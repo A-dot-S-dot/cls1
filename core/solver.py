@@ -162,7 +162,7 @@ class SolverParser(argparse.ArgumentParser):
             action="store_true",
         )
 
-    def _add_ode_solver(self):
+    def _add_ode_solver(self, default_ode_solver=None):
         _ode_solver = {
             "euler": ode_solver.ForwardEuler,
             "heun": ode_solver.Heun,
@@ -177,7 +177,7 @@ class SolverParser(argparse.ArgumentParser):
             type=lambda input: _ode_solver[input],
             metavar="<solver>",
             dest="ode_solver_type",
-            default=_ode_solver[defaults.ODE_SOLVER],
+            default=_ode_solver[default_ode_solver or defaults.ODE_SOLVER],
         )
 
     def parse_arguments(self, *arguments) -> argparse.Namespace:
