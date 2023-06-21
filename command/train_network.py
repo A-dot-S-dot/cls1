@@ -44,12 +44,6 @@ class TrainNetwork(Command):
         np.random.seed(seed)
         random.seed(seed)
 
-    def _get_device(self) -> str:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"INFO: Using {device} device.")
-
-        return device
-
     def execute(self):
         df = core.load_data(self._network.data_path)
         input_dimension = df.shape[1] - 2
