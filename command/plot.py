@@ -227,7 +227,7 @@ class Plot(Command):
             self._solver = solver
 
     def execute(self):
-        if not self._solver_executed:
+        if self._solver is not None and not self._solver_executed:
             self._calculate_solutions()
 
         self._add_plots()
@@ -261,7 +261,9 @@ class Plot(Command):
 
     def _add_plots(self):
         self._add_exact_solution()
-        self._add_discrete_solutions()
+
+        if self._solver is not None:
+            self._add_discrete_solutions()
 
         if self._initial:
             self._plotter.add_initial_data()

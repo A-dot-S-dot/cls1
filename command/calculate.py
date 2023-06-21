@@ -200,13 +200,16 @@ class CalculateParser(CommandParser):
     def _build_solver(self, arguments):
         solver_list = []
 
-        for solver_arguments in arguments.solver:
-            solver = solver_arguments.solver
-            del solver_arguments.solver
+        if arguments.solver is not None:
+            for solver_arguments in arguments.solver:
+                solver = solver_arguments.solver
+                del solver_arguments.solver
 
-            solver_list.append(solver(arguments.benchmark, **vars(solver_arguments)))
+                solver_list.append(
+                    solver(arguments.benchmark, **vars(solver_arguments))
+                )
 
-        arguments.solver = solver_list
+            arguments.solver = solver_list
 
     def _add_save_history_argument(self, arguments):
         for solver_arguments in arguments.solver:
