@@ -5,7 +5,6 @@ import defaults
 import finite_volume
 import finite_volume.shallow_water as swe
 import numpy as np
-import torch
 from sklearn.preprocessing import StandardScaler
 from skorch import NeuralNetRegressor
 from skorch.callbacks import EarlyStopping
