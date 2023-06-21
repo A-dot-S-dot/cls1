@@ -16,6 +16,7 @@ from .command import Command
 DIRECTORIES = {
     "llf": "data/reduced-llf/",
     "llf2": "data/reduced-llf-2/",
+    "llf3": "data/reduced-llf-3/",
     "es1": "data/reduced-es1/",
 }
 
