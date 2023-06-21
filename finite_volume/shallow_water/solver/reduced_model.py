@@ -1,9 +1,12 @@
+import pickle
 from typing import Tuple, Type
 
 import defaults
 import finite_volume
 import finite_volume.shallow_water as swe
 import numpy as np
+import torch
+from sklearn.preprocessing import StandardScaler
 from skorch import NeuralNetRegressor
 from skorch.callbacks import EarlyStopping
 from torch import nn
@@ -17,9 +20,16 @@ class ReducedNetwork(NeuralNetRegressor):
     network_path: str
     optimizer_path: str
     history_path: str
+    input_scaler_path: str
+    output_scaler_path: str
+
+    _input_scaler: StandardScaler
+    _output_scaler: StandardScaler
 
     def __init__(self, callbacks=None, **kwargs):
         callbacks = callbacks or [EarlyStopping(threshold=1e-8)]
+        self._input_scaler = StandardScaler()
+        self._output_scaler = StandardScaler()
 
         super().__init__(
             self.module_type,
@@ -28,15 +38,33 @@ class ReducedNetwork(NeuralNetRegressor):
             **kwargs,
         )
 
+    def fit(self, X, y, **fit_params):
+        X = self._input_scaler.fit_transform(X)
+        y = self._output_scaler.fit_transform(y)
+
+        return super().fit(X, y, **fit_params)
+
+    def predict(self, X):
+        X = self._input_scaler.transform(X)
+        y = super().predict(X)
+        return self._output_scaler.inverse_transform(y)
+
     def save_params(self):
         super().save_params(
             f_params=self.network_path,
             f_optimizer=self.optimizer_path,
             f_history=self.history_path,
         )
+        with open(self.input_scaler_path, "wb") as f:
+            pickle.dump(self._input_scaler, f)
+        with open(self.output_scaler_path, "wb") as f:
+            pickle.dump(self._output_scaler, f)
+
         print(f"Saved network parameters in '{self.network_path}'.")
         print(f"Saved optimizer parameters in '{self.optimizer_path}'.")
         print(f"Saved history in '{self.history_path}'.")
+        print(f"Saved input scaler in '{self.input_scaler_path}'.")
+        print(f"Saved output scaler in '{self.output_scaler_path}'.")
 
     def load_params(self):
         self.initialize()
@@ -46,6 +74,11 @@ class ReducedNetwork(NeuralNetRegressor):
                 f_optimizer=self.optimizer_path,
                 f_history=self.history_path,
             )
+            with open(self.input_scaler_path, "rb") as f:
+                self._input_scaler = pickle.load(f)
+            with open(self.output_scaler_path, "rb") as f:
+                self._output_scaler = pickle.load(f)
+
         except Exception as error:
             print(f"{error}. Network could not be loaded. Use an untrained network.")
 

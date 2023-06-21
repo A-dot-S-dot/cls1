@@ -30,6 +30,8 @@ class LaxFriedrichs2Network(ReducedNetwork):
     network_path = "data/reduced-llf-2/model.pkl"
     optimizer_path = "data/reduced-llf-2/opt.pkl"
     history_path = "data/reduced-llf-2/history.json"
+    input_scaler_path = "data/reduced-llf-2/input_scaler.pkl"
+    output_scaler_path = "data/reduced-llf-2/output_scaler.pkl"
 
 
 class ReducedLaxFriedrichs2Solver(swe.Solver):
