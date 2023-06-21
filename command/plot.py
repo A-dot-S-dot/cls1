@@ -1,4 +1,5 @@
 import argparse
+import os
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Generic, List, Optional, TypeVar
 
@@ -21,7 +22,6 @@ class NothingToPlotError(Exception):
 
 class Plotter(ABC, Generic[T]):
     _benchmark: core.Benchmark
-    _figure: plt.Figure
     _grid: np.ndarray
     _save: Optional[str]
     _show: bool
@@ -36,9 +36,6 @@ class Plotter(ABC, Generic[T]):
         )
         self._save = save
         self._show = show
-
-    def set_suptitle(self, suptitle: str):
-        self._figure.suptitle(suptitle, fontsize=14, fontweight="bold")
 
     @abstractmethod
     def add_initial_data(self):
@@ -58,20 +55,8 @@ class Plotter(ABC, Generic[T]):
     ):
         ...
 
-    def show(self):
-        if self._plot_available:
-            self._setup()
-
-            if self._save:
-                self._figure.savefig(self._save)
-                tqdm.write(f"Plot is saved in '{self._save}'.")
-
-            plt.show() if self._show else plt.close()
-        else:
-            raise NothingToPlotError
-
     @abstractmethod
-    def _setup(self):
+    def show(self):
         ...
 
     def __repr__(self) -> str:
@@ -108,37 +93,57 @@ class ScalarPlotter(Plotter[float]):
         self._axes.plot(grid, function_values, label=label)
         self._plot_available = True
 
-    def _setup(self):
-        self._axes.set_xlabel("x")
-        self._axes.legend()
+    def show(self):
+        if self._plot_available:
+            self._axes.set_xlabel("x")
+            self._axes.legend()
+
+            if self._save:
+                self._figure.savefig(self._save)
+                tqdm.write(f"Plot is saved in '{self._save}'.")
+
+            plt.show() if self._show else plt.close()
+        else:
+            raise NothingToPlotError
 
 
 class ShallowWaterPlotter(Plotter[np.ndarray]):
     _benchmark: swe.ShallowWaterBenchmark
-    _figure: plt.Figure
-    _height_axes: plt.Axes
-    _discharge_axes: plt.Axes
-    _velocity_axes: plt.Axes
+    _height_figure: ...
+    _height_axes: ...
+    _discharge_figure: ...
+    _discharge_axes: ...
+    _velocity_figure: ...
+    _velocity_axes: ...
+    _constant_bathymetry: bool
 
     def __init__(self, benchmark: swe.ShallowWaterBenchmark, **kwargs):
         Plotter.__init__(self, benchmark, **kwargs)
-        self._figure, (
-            self._height_axes,
-            self._discharge_axes,
-            self._velocity_axes,
-        ) = plt.subplots(1, 3)
 
-    def set_suptitle(self, suptitle: str):
-        self._figure.suptitle(suptitle, fontsize=14, fontweight="bold")
+        self._height_figure, self._height_axes = plt.subplots(num="Height Plot")
+        self._discharge_figure, self._discharge_axes = plt.subplots(
+            num="Discharge Plot"
+        )
+        self._velocity_figure, self._velocity_axes = plt.subplots(num="Velocity Plot")
+
+        self._build_constant_bathymetry()
+
+    def _build_constant_bathymetry(self):
+        bathymetry = swe.build_bathymetry_discretization(
+            self._benchmark, len(self._grid)
+        )
+        self._constant_bathymetry = swe.is_constant(bathymetry)
 
     def add_initial_data(self):
-        self.add_function(self._benchmark.initial_data, "$h_0$", "$q_0$", "$u_0$")
+        self.add_function(self._benchmark.initial_data, "$h_0$", "$q_0$", "$v_0$")
 
     def add_exact_solution(self):
         end_time = self._benchmark.end_time
         self.add_function(
             self._benchmark.exact_solution_at_end_time,
-            f"$h+b(t={end_time:.1f})$",
+            f"$h(t={end_time:.1f})$"
+            if self._constant_bathymetry
+            else f"$h+b(t={end_time:.1f})$",
             f"$q(t={end_time:.1f})$",
             f"$u(t={end_time:.1f})$",
         )
@@ -176,26 +181,49 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
         velocity = swe.get_velocity(values)
         self._velocity_axes.plot(grid, velocity, label=label)
 
-    def _setup(self):
-        self._add_bathymetry()
-
-        self._height_axes.set_xlabel("x")
-        self._height_axes.set_ylabel("h+b")
-        self._height_axes.legend()
-
-        self._discharge_axes.set_xlabel("x")
-        self._discharge_axes.set_ylabel("discharge")
-        self._discharge_axes.legend()
-
-        self._velocity_axes.set_xlabel("x")
-        self._velocity_axes.set_ylabel("velocity")
-        self._velocity_axes.legend()
-
     def _add_bathymetry(self):
         bathymetry_values = np.array(
             [self._benchmark.bathymetry(x) for x in self._grid]
         )
         self._height_axes.plot(self._grid, bathymetry_values, label="$b$")
+
+    def show(self):
+        if self._plot_available:
+            self._setup()
+            self._save_plots()
+            self._show_plots()
+        else:
+            raise NothingToPlotError
+
+    def _setup(self):
+        if not self._constant_bathymetry:
+            self._add_bathymetry()
+
+        self._height_axes.set_ylim(bottom=0.0)
+
+        for ax in [self._height_axes, self._discharge_axes, self._velocity_axes]:
+            ax.legend(loc="center left", fontsize="large")
+            ax.grid()
+            ax.grid(which="minor")
+
+    def _save_plots(self):
+        if self._save:
+            base_name, extension = os.path.splitext(self._save)
+
+            height_file_name = base_name + "_h" + extension
+            discharge_file_name = base_name + "_q" + extension
+            velocity_file_name = base_name + "_v" + extension
+
+            self._height_figure.savefig(height_file_name)
+            self._discharge_figure.savefig(discharge_file_name)
+            self._velocity_figure.savefig(velocity_file_name)
+
+            tqdm.write(
+                f"Plots are saved in '{height_file_name}', '{discharge_file_name}' and '{velocity_file_name}."
+            )
+
+    def _show_plots(self):
+        plt.show() if self._show else plt.close()
 
 
 class Plot(Command):
@@ -231,7 +259,6 @@ class Plot(Command):
             self._calculate_solutions()
 
         self._add_plots()
-        self._plotter.set_suptitle(f"T={self._benchmark.end_time}")
 
         try:
             self._plotter.show()
