@@ -162,14 +162,35 @@ class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
         velocity_wave_number=None,
     ):
         self.end_time = end_time
-        self.height_average = height_average or HEIGHT_AVERAGE
-        self.height_amplitude = height_amplitude or HEIGHT_AMPLITUDE
-        self.height_phase_shift = height_phase_shift or HEIGHT_PHASE_SHIFT
-        self.height_wave_number = height_wave_number or HEIGHT_WAVE_NUMBER
-        self.velocity_average = velocity_average or VELOCITY_AVERAGE
-        self.velocity_amplitude = velocity_amplitude or VELOCITY_AMPLITUDE
-        self.velocity_phase_shift = velocity_phase_shift or VELOCITY_PHASE_SHIFT
-        self.velocity_wave_number = velocity_wave_number or VELOCITY_WAVE_NUMBER
+
+        self.height_average = (
+            height_average if height_average is not None else HEIGHT_AVERAGE
+        )
+        self.height_amplitude = (
+            height_amplitude if height_amplitude is not None else HEIGHT_AMPLITUDE
+        )
+        self.height_phase_shift = (
+            height_phase_shift if height_phase_shift is not None else HEIGHT_PHASE_SHIFT
+        )
+        self.height_wave_number = (
+            height_wave_number if height_wave_number is not None else HEIGHT_WAVE_NUMBER
+        )
+        self.velocity_average = (
+            velocity_average if velocity_average is not None else VELOCITY_AVERAGE
+        )
+        self.velocity_amplitude = (
+            velocity_amplitude if velocity_amplitude is not None else VELOCITY_AMPLITUDE
+        )
+        self.velocity_phase_shift = (
+            velocity_phase_shift
+            if velocity_phase_shift is not None
+            else VELOCITY_PHASE_SHIFT
+        )
+        self.velocity_wave_number = (
+            velocity_wave_number
+            if velocity_wave_number is not None
+            else VELOCITY_WAVE_NUMBER
+        )
 
     def bathymetry(self, x: float) -> float:
         return 0
