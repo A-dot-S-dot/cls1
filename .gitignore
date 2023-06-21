@@ -1,12 +1,10 @@
 __pycache__/
 data/
+venv/
+.mypy_cache/
 
-todo.org
-test.py
-parameter-variation-test.py
 *.mp4
 *.png
 *.csv
 *.ipynb
 *.pth
-!data/subgrid_network.pth
