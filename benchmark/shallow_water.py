@@ -58,7 +58,7 @@ class LakeAtRestBenchmark(ShallowWaterBenchmark):
         return (4 - (x - 10) ** 2) / 20 if x >= 8.0 and x < 12.0 else 0.0
 
     def initial_data(self, x: float) -> np.ndarray:
-        return np.array([1.0 - self.bathymetry(x), 0])
+        return np.array([2.0 - self.bathymetry(x), 0])
 
     def exact_solution(self, x: float, t: float) -> np.ndarray:
         return self.initial_data(x)
