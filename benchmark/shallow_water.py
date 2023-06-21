@@ -32,7 +32,7 @@ class ShallowWaterBenchmark(Benchmark[np.ndarray]):
 
 class LakeAtRestNoBathymetryBenchmark(ShallowWaterBenchmark):
     domain = Interval(0, 20)
-    _boundary_conditions = ("outflow", "outflow")
+    _boundary_conditions = "periodic"
 
     def __init__(self, end_time=100.0):
         self.end_time = end_time
@@ -49,7 +49,7 @@ class LakeAtRestNoBathymetryBenchmark(ShallowWaterBenchmark):
 
 class LakeAtRestBenchmark(ShallowWaterBenchmark):
     domain = Interval(0, 20)
-    _boundary_conditions = ("wall", "wall")
+    _boundary_conditions = ("outflow", "outflow")
 
     def __init__(self, end_time=100.0):
         self.end_time = end_time
