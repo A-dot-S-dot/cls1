@@ -115,18 +115,25 @@ class Curvature:
 
 class ApproximatedSubgridFlux(finite_volume.NumericalFlux):
     _network: ReducedNetwork
+    _loaded = False
 
     def __init__(self, input_dimension: int, network: ReducedNetwork):
         self.input_dimension = input_dimension
         self._network = network
-        self._network.load_params()
 
     def __call__(self, *values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        if not self._loaded:
+            self._load_network()
+
         subgrid_flux = self._network.predict(
             np.concatenate(values, axis=1, dtype=np.float32)
         )
 
         return -subgrid_flux, subgrid_flux
+
+    def _load_network(self):
+        self._network.load_params()
+        self._loaded = True
 
 
 class ReducedFluxGetter(swe.FluxGetter):
