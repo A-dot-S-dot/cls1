@@ -17,7 +17,7 @@ class TrainNetwork(Command):
     _epochs: int
     _skip: int
     _plot_loss: bool
-    _confirm_save: bool
+    _confirm: bool
 
     def __init__(
         self,
@@ -26,13 +26,13 @@ class TrainNetwork(Command):
         skip=None,
         seed=None,
         plot_loss=False,
-        confirm_save=False,
+        confirm=False,
     ):
         self._network = network
         self._epochs = epochs or defaults.EPOCHS
         self._skip = skip or defaults.SKIP
         self._plot_loss = plot_loss
-        self._confirm_save = confirm_save
+        self._confirm = confirm
 
         if seed is not None:
             self._set_seed(seed)
@@ -66,7 +66,7 @@ class TrainNetwork(Command):
 
     @property
     def _save_params(self) -> bool:
-        save = None if self._confirm_save else True
+        save = None if self._confirm else True
 
         while save is None:
             answer = input("Save network params?(Y/n) ")
@@ -116,7 +116,7 @@ class TrainNetworkParser(CommandParser):
         self._add_skip(parser)
         self._add_seed(parser)
         self._add_resume_training(parser)
-        self._add_confirm_save(parser)
+        self._add_confirm(parser)
         self._add_plot_loss(parser)
 
     def _add_network(self, parser):
@@ -172,9 +172,9 @@ class TrainNetworkParser(CommandParser):
             dest="resume_training",
         )
 
-    def _add_confirm_save(self, parser):
+    def _add_confirm(self, parser):
         parser.add_argument(
-            "--confirm-save",
+            "--confirm",
             help="confirm to save after training. Otherwise training will be aborted.",
             action="store_true",
         )
