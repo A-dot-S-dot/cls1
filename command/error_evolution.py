@@ -230,7 +230,7 @@ class GenerateShallowWaterErrorEvolutionSeries(Command):
                     [self._solver_exact, self._solver_approximation], leave=False
                 ).execute()
             except Exception as error:
-                tqdm.write(f"WARNING: {error} No error plot for seed={i}.")
+                tqdm.write(f"WARNING: {error} No error plot for seed={benchmark.seed}.")
             else:
                 _time, _error = ErrorEvolutionCalculator()(
                     self._solver_approximation.solution, self._solver_exact.solution

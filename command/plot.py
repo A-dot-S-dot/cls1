@@ -223,7 +223,7 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
             )
 
     def _show_plots(self):
-        plt.show() if self._show else plt.close()
+        plt.show() if self._show else plt.close("all")
 
 
 class Plot(Command):
