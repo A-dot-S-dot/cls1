@@ -242,7 +242,7 @@ class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
 
         super().__init__(
             end_time=end_time,
-            height_average=height_average or self._generator.uniform(1.6, 2.4),
+            height_average=height_average or HEIGHT_AVERAGE,
             height_amplitude=height_amplitude or self._generator.uniform(0.2, 0.6),
             height_phase_shift=height_phase_shift
             or self._generator.uniform(0, 2 * np.pi),
