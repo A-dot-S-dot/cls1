@@ -207,6 +207,18 @@ class OscillationNoTopographyBenchmark(ShallowWaterBenchmark):
 
         return np.array([height, height * velocity])
 
+    def as_dict(self) -> Dict:
+        return ShallowWaterBenchmark.as_dict(self) | {
+            "h0": self.height_average,
+            "Ah": self.height_amplitude,
+            "ph": self.height_phase_shift,
+            "kh": self.height_wave_number,
+            "v0": self.velocity_average,
+            "Av": self.velocity_amplitude,
+            "pv": self.velocity_phase_shift,
+            "kv": self.velocity_wave_number,
+        }
+
 
 class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
     seed: int
@@ -242,22 +254,17 @@ class RandomOscillationNoTopographyBenchmark(OscillationNoTopographyBenchmark):
             velocity_wave_number=velocity_wave_number or self._generator.integers(1, 5),
         )
 
-    def __repr__(self) -> str:
-        return self.__class__.__name__ + f"(seed={self.seed})"
+    def as_dict(self) -> Dict:
+        return OscillationNoTopographyBenchmark.as_dict(self) | {"seed": self.seed}
 
 
 class RandomBenchmarkGenerator:
     _benchmark_kwargs: Dict
     _seed_generator: np.random.Generator
 
-    def __init__(
-        self, seed=None, end_time=None, height_average=HEIGHT_AVERAGE, **kwargs
-    ):
+    def __init__(self, seed=None, end_time=None, **kwargs):
         self._seed_generator = np.random.default_rng(seed)
-        self._benchmark_kwargs = {
-            "end_time": end_time or 40.0,
-            "height_average": height_average,
-        } | kwargs
+        self._benchmark_kwargs = {"end_time": end_time or 40.0} | kwargs
 
     def __call__(self, seed=None) -> RandomOscillationNoTopographyBenchmark:
         seed = seed or self._seed_generator.integers(int(1e9))

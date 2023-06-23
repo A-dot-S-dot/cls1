@@ -9,7 +9,7 @@ More information are available with "cls1 --help".
 
 from typing import Dict
 import profiler
-from pprint import pprint
+from pprint import pp
 from command import PARSER_COMMANDS
 
 from parser import CustomArgumentParser
@@ -19,7 +19,7 @@ def print_arguments(arguments):
     if arguments.args:
         print("ARGUMENTS:")
         print("----------")
-        pprint(_get_deep_dict(vars(arguments)))
+        pp(_get_deep_dict(vars(arguments)))
         print("")
 
     del arguments.args
