@@ -81,11 +81,13 @@ class Solver(Generic[T], ABC):
                     f"WARNING: CFL condition is violated at time {self._time_stepping.time:.4f}"
                 )
 
-    def __repr__(self) -> str:
-        return (
-            self.__class__.__name__
-            + f"(right_side={self._right_hand_side}, ode_solver={self._ode_solver}, time_stepping={self._time_stepping})"
-        )
+    def as_dict(self) -> Dict:
+        return {
+            "name": self.__class__.__name__,
+            "right_hand_side": self._right_hand_side,
+            "ode_solver": self._ode_solver,
+            "time_stepping": self._time_stepping,
+        }
 
 
 class SolverParser(argparse.ArgumentParser):

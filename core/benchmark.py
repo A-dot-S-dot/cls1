@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Tuple, TypeVar
+from typing import Dict, Generic, Tuple, TypeVar
 
 import numpy as np
 
@@ -42,8 +42,10 @@ class Benchmark(ABC, Generic[T]):
     def exact_solution_at_end_time(self, x: float) -> T:
         return self.exact_solution(x, self.end_time)
 
-    def __repr__(self) -> str:
-        return (
-            self.__class__.__name__
-            + f"(domain={self.domain}, start_time={self.start_time}, end_time={self.end_time})"
-        )
+    def as_dict(self) -> Dict:
+        return {
+            "name": self.__class__.__name__,
+            "domain": self.domain,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+        }

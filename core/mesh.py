@@ -14,7 +14,7 @@ class Interval:
 
         assert self.a < self.b, f"{a} is not strictly less than {b}"
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"[{self.a}, {self.b}]"
 
     @property

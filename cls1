@@ -7,7 +7,9 @@ More information are available with "cls1 --help".
 
 """
 
+from typing import Dict
 import profiler
+from pprint import pprint
 from command import PARSER_COMMANDS
 
 from parser import CustomArgumentParser
@@ -15,9 +17,36 @@ from parser import CustomArgumentParser
 
 def print_arguments(arguments):
     if arguments.args:
-        print(arguments)
+        print("ARGUMENTS:")
+        print("----------")
+        pprint(_get_deep_dict(vars(arguments)))
+        print("")
 
     del arguments.args
+
+
+def _get_deep_dict(dictionary: Dict):
+    new_dict = {}
+    for key, value in dictionary.items():
+        if hasattr(value, "as_dict") and callable(getattr(value, "as_dict")):
+            value_as_dict = _get_deep_dict(value.as_dict())
+            new_dict[key] = value_as_dict
+
+        elif isinstance(value, list):
+            new_list = []
+
+            for x in value:
+                if hasattr(x, "as_dict") and callable(getattr(x, "as_dict")):
+                    new_list.append(_get_deep_dict(x.as_dict()))
+                else:
+                    new_list.append(x)
+
+            new_dict[key] = new_list
+
+        else:
+            new_dict[key] = value
+
+    return new_dict
 
 
 def print_profile(arguments):
@@ -30,6 +59,8 @@ def execute_command(arguments):
     command = arguments.command
     del arguments.command
 
+    print("COMMAND OUTPUT")
+    print("--------------")
     command(**vars(arguments)).execute()
 
 

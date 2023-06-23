@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Tuple, TypeVar
+from typing import Callable, Dict, Tuple, TypeVar
 
 import core
 import numpy as np
@@ -185,5 +185,5 @@ class NumericalFluxDependentRightHandSide:
     ) -> Tuple[np.ndarray, np.ndarray]:
         return node_flux_right[:-1], node_flux_left[1:]
 
-    def __repr__(self) -> str:
-        return self.__class__.__name__ + f"(numerical_flux={self._numerical_flux})"
+    def as_dict(self) -> Dict:
+        return {"numerical_flux": self._numerical_flux}

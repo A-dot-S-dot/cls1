@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, Dict, List
 
 import numpy as np
 
@@ -74,11 +74,12 @@ class TimeStepGenerator:
     def __call__(self) -> float:
         return self._get_time_step()
 
-    def __repr__(self) -> str:
-        return (
-            self.__class__.__name__
-            + f"(time_step={self._time_step:.1e}, cfl={self._cfl_number}, adaptive={self._adaptive})"
-        )
+    def as_dict(self) -> Dict:
+        return {
+            "time_step": f"{self._time_step:.1e}",
+            "cfl": self._cfl_number,
+            "adaptive": self._adaptive,
+        }
 
 
 class TimeStepping:
@@ -154,11 +155,12 @@ class TimeStepping:
             self.time = self._end_time
             self._stop_iteration = True
 
-    def __repr__(self) -> str:
-        return (
-            self.__class__.__name__
-            + f"(start_time={self._start_time}, end_time={self._end_time}, time_step_generator={self._time_step_generator})"
-        )
+    def as_dict(self) -> Dict:
+        return {
+            "start_time": self._start_time,
+            "end_time": self._end_time,
+            "time_step_generator": self._time_step_generator,
+        }
 
 
 def get_mesh_dependent_time_stepping(
