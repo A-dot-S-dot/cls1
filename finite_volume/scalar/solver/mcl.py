@@ -106,4 +106,4 @@ class MCLParser(finite_volume.SolverParser):
     solver = MCLSolver
 
     def _add_arguments(self):
-        self._add_ode_solver(default_ode_solver="heun")
+        self._add_ode_solver()
