@@ -21,6 +21,8 @@ def print_arguments(arguments):
         print("----------")
         pp(_get_deep_dict(vars(arguments)))
         print("")
+        print("COMMAND OUTPUT")
+        print("--------------")
 
     del arguments.args
 
@@ -59,8 +61,6 @@ def execute_command(arguments):
     command = arguments.command
     del arguments.command
 
-    print("COMMAND OUTPUT")
-    print("--------------")
     command(**vars(arguments)).execute()
 
 
