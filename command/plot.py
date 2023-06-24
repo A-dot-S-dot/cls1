@@ -199,28 +199,21 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
         if not self._constant_bathymetry:
             self._add_bathymetry()
 
-        self._height_axes.set_ylim(bottom=0.0)
+        self._height_axes.set_ylim(bottom=0.0, auto=True)
 
         for ax in [self._height_axes, self._discharge_axes, self._velocity_axes]:
             ax.legend(loc="center left", fontsize="large")
             ax.grid()
-            ax.grid(which="minor")
 
     def _save_plots(self):
         if self._save:
             base_name, extension = os.path.splitext(self._save)
 
-            height_file_name = base_name + "_h" + extension
-            discharge_file_name = base_name + "_q" + extension
-            velocity_file_name = base_name + "_v" + extension
+            self._height_figure.savefig(base_name + "_h" + extension)
+            self._discharge_figure.savefig(base_name + "_q" + extension)
+            self._velocity_figure.savefig(base_name + "_v" + extension)
 
-            self._height_figure.savefig(height_file_name)
-            self._discharge_figure.savefig(discharge_file_name)
-            self._velocity_figure.savefig(velocity_file_name)
-
-            tqdm.write(
-                f"Plots are saved in '{height_file_name}', '{discharge_file_name}' and '{velocity_file_name}."
-            )
+            tqdm.write(f"Plots are saved in '{base_name}_{{h,q,l}}{extension}'.")
 
     def _show_plots(self):
         plt.show() if self._show else plt.close("all")
