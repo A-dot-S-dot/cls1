@@ -43,11 +43,8 @@ class DiscreteSolution(Generic[T]):
             return dimension
 
     @property
-    def space(self) -> T:
-        if self._space is not None:
-            return self._space
-        else:
-            raise AttributeError("Solver space attribute does not exist.")
+    def space(self) -> Optional[T]:
+        return self._space
 
     @property
     def grid(self) -> np.ndarray:

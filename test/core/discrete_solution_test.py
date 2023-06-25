@@ -58,10 +58,6 @@ class TestDiscreteSolution(TestCase):
         solution = self.create_solution(space=None)
         self.assertRaises(AttributeError, lambda: solution.grid)
 
-    def test_no_space_error(self):
-        solution = self.create_solution(space=None)
-        self.assertRaises(AttributeError, lambda: solution.space)
-
     def test_value_before_update(self):
         solution = self.create_solution()
         assert_equal(solution.value, 0.0)

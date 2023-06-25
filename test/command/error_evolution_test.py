@@ -14,14 +14,14 @@ class TestErrorEvolutionCalculator(TestCase):
 
     def test_different_spatial_dimension_error(self):
         vector = np.array([[0.25, 0.25], [0.75, 0.75]])
-        solution = core.DiscreteSolutionWithHistory(vector + 0.1)
+        solution = core.DiscreteSolutionWithHistory(core.DiscreteSolution(vector + 0.1))
         solution.update(1.0, vector + 0.9)
 
         vector_exact = np.array(
             [[1 / 8, 1 / 8], [3 / 8, 3 / 8], [5 / 8, 5 / 8], [7 / 8, 7 / 8]]
         )
         solution_exact = core.DiscreteSolutionWithHistory(
-            vector_exact, space=VOLUME_SPACE
+            core.DiscreteSolution(vector_exact, space=VOLUME_SPACE)
         )
         solution_exact.update(0.5, vector_exact + 0.5)
         solution_exact.update(0.5, vector_exact + 0.5)
@@ -30,10 +30,10 @@ class TestErrorEvolutionCalculator(TestCase):
 
     def test_no_norm_can_be_created_error(self):
         vector = np.array([[0.25, 0.25], [0.75, 0.75]])
-        solution = core.DiscreteSolutionWithHistory(vector + 0.1)
+        solution = core.DiscreteSolutionWithHistory(core.DiscreteSolution(vector + 0.1))
         solution.update(1.0, vector + 0.9)
 
-        solution_exact = core.DiscreteSolutionWithHistory(vector)
+        solution_exact = core.DiscreteSolutionWithHistory(core.DiscreteSolution(vector))
         solution_exact.update(0.5, vector + 0.5)
         solution_exact.update(0.5, vector + 0.5)
 
@@ -44,11 +44,13 @@ class TestErrorEvolutionCalculator(TestCase):
         vector2 = np.array([[1 / 2, 1 / 2], [3 / 2, 3 / 2]])
         vector3 = np.array([[0.0, 0.0], [2.0, 2.0]])
         space = FiniteVolumeSpace(core.UniformMesh(core.Interval(0, 1), 2))
-        solution_exact = core.DiscreteSolutionWithHistory(vector, space=space)
+        solution_exact = core.DiscreteSolutionWithHistory(
+            core.DiscreteSolution(vector, space=space)
+        )
         solution_exact.update(0.5, vector2)
         solution_exact.update(0.5, vector3)
 
-        solution = core.DiscreteSolutionWithHistory(vector + 0.1)
+        solution = core.DiscreteSolutionWithHistory(core.DiscreteSolution(vector + 0.1))
         solution.update(1.0, vector3 + 0.1)
 
         time, error = self.calculator(
