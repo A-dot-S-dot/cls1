@@ -152,13 +152,10 @@ class PlotShallowWaterErrorEvolution(Command):
         Calculate(self._solver).execute()
 
     def _plot(self, time: np.ndarray, error: np.ndarray):
-        plt.plot(time, error[:, 0], label="height error")
-        plt.plot(time, error[:, 1], label="discharge error")
-        plt.suptitle(self._suptitle)
-        plt.legend()
-        plt.xlabel("time")
-        plt.ylabel("relative error")
-        plt.legend()
+        plt.plot(time, error[:, 0], label="Height $L^2$-Error")
+        plt.plot(time, error[:, 1], label="Discharge $L^2$-Error")
+        plt.grid()
+        plt.legend(loc="upper right", fontsize="large")
 
         if self._save:
             plt.savefig(self._save)
@@ -188,6 +185,7 @@ class GenerateShallowWaterErrorEvolutionSeries(Command):
         solver_approximation: core.Solver,
         solver_exact: core.Solver,
         seed=None,
+        end_time=None,
         initial_conditions=20,
         description=None,
         save_directory=None,
@@ -201,7 +199,7 @@ class GenerateShallowWaterErrorEvolutionSeries(Command):
         self._solver_approximation = solver_approximation
         self._solver_exact = solver_exact
         self._get_benchmark = shallow_water.RandomBenchmarkGenerator(
-            seed=seed, **benchmark_parameters
+            seed=seed, end_time=end_time, **benchmark_parameters
         )
         self._initial_conditions = initial_conditions
         self._description = f"for {description}" or ""
@@ -251,7 +249,7 @@ class GenerateShallowWaterErrorEvolutionSeries(Command):
         if self._save_error:
             PlotShallowWaterErrorEvolution(
                 solver,
-                f"Relative $L^2$-Error {self._description} (seed={benchmark.seed})",
+                suptitle=f"Relative $L^2$-Error {self._description} (seed={benchmark.seed})",
                 show=False,
                 save=f"{self._directory}/error_{index}.png",
                 solver_executed=True,
@@ -277,7 +275,6 @@ class GenerateShallowWaterErrorEvolutionSeries(Command):
 class PlotShallowWaterAverageErrorEvolution(Command):
     _times: Sequence[np.ndarray]
     _errors: Sequence[np.ndarray]
-    _suptitle: Optional[str]
     _show: bool
     _save: Optional[str]
 
@@ -285,13 +282,11 @@ class PlotShallowWaterAverageErrorEvolution(Command):
         self,
         times: Sequence[np.ndarray],
         errors: Sequence[np.ndarray],
-        suptitle=None,
         show=True,
         save=None,
     ):
         self._times = times
         self._errors = errors
-        self._suptitle = suptitle or "$L^2$-Error between network and real solution"
         self._show = show
         self._save = save
 
@@ -301,26 +296,25 @@ class PlotShallowWaterAverageErrorEvolution(Command):
         error_min = np.min(errors, axis=0)
         error_max = np.max(errors, axis=0)
 
-        fig, (height_ax, discharge_ax) = plt.subplots(1, 2)
+        height_figure, height_axes = plt.subplots(num="Height L2-Error")
+        discharge_figure, discharge_axes = plt.subplots(num="Discharge L2-Error")
 
-        height_ax.plot(time, mean[:, 0], label="height error")
-        height_ax.fill_between(time, error_min[:, 0], error_max[:, 0], alpha=0.2)
-        height_ax.legend()
-        height_ax.set_xlabel("time")
-        height_ax.set_ylabel("error")
-
-        discharge_ax.plot(time, mean[:, 1], label="discharge error")
-        discharge_ax.fill_between(time, error_min[:, 1], error_max[:, 1], alpha=0.2)
-        discharge_ax.legend()
-        discharge_ax.set_xlabel("time")
-        discharge_ax.set_ylabel("error")
-
-        fig.suptitle(self._suptitle)
+        for i, ax in enumerate([height_axes, discharge_axes]):
+            ax.plot(time, mean[:, i])
+            ax.fill_between(time, error_min[:, i], error_max[:, i], alpha=0.2)
+            ax.grid()
 
         if self._save:
-            fig.savefig(self._save)
+            base_name, extension = os.path.splitext(self._save)
 
-        plt.show() if self._show else plt.close()
+            height_figure.savefig(base_name + "_h" + extension)
+            discharge_figure.savefig(base_name + "_q" + extension)
+
+            tqdm.write(
+                f"Average error plots are saved in '{base_name}_{{h,q}}{extension}'."
+            )
+
+        plt.show() if self._show else plt.close("all")
 
     def _adjust_errors(self) -> Tuple[np.ndarray, np.ndarray]:
         interpolator = core.TemporalInterpolator()
