@@ -289,7 +289,6 @@ class ShallowWaterAnimator(Animator[np.ndarray]):
         for spatial_grid, values, label in zip(
             self._spatial_grids, self._values_per_solver, self._labels
         ):
-
             height_label = label[0]
 
             if len(label) == 1:
@@ -414,8 +413,6 @@ class Animate(Command):
                 tqdm.write("WARNING: Nothing to animate...")
 
     def _calculate_solutions(self):
-        tqdm.write("\nCalculate solutions")
-        tqdm.write("-------------------")
         for solver in tqdm(self._solver, desc="Calculate", unit="solver", leave=False):
             try:
                 Calculate(solver).execute()

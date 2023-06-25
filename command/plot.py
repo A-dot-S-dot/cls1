@@ -260,8 +260,6 @@ class Plot(Command):
                 tqdm.write("WARNING: Nothing to plot...")
 
     def _calculate_solutions(self):
-        tqdm.write("\nCalculate solutions")
-        tqdm.write("-------------------")
         for solver in tqdm(self._solver, desc="Calculate", unit="solver", leave=False):
             try:
                 Calculate(solver).execute()
