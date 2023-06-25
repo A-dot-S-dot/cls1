@@ -49,3 +49,6 @@ class Benchmark(ABC, Generic[T]):
             "start_time": self.start_time,
             "end_time": self.end_time,
         }
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__
