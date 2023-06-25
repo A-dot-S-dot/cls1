@@ -54,23 +54,25 @@ PARAMETER_VARIATIONS = {
 
 
 class ParameterVariationTest(Command):
-    _parameter_variations: List[ParameterVariation]
     _directory: str
-    _save_animation: bool
-    _save_plot: bool
     _initial_data_number: int
     _seed: Optional[int]
+    _end_time: Optional[float]
     _build_references: bool
+    _parameter_variations: List[ParameterVariation]
+    _save_plot: bool
+    _save_animation: bool
 
     def __init__(
         self,
         solver_approximation: core.Solver,
         solver_exact: core.Solver,
         directory: str,
-        parameter_variations=None,
         initial_data_number=None,
         seed=None,
+        end_time=None,
         build_references=False,
+        parameter_variations=None,
         save_plot=False,
         save_animation=False,
     ):
@@ -78,9 +80,10 @@ class ParameterVariationTest(Command):
         self._solver_exact = solver_exact
         self._directory = directory
         self._initial_data_number = initial_data_number or defaults.INITIAL_DATA_NUMBER
-        self._parameter_variations = parameter_variations or []
         self._seed = seed
+        self._end_time = end_time
         self._build_references = build_references
+        self._parameter_variations = parameter_variations or []
         self._save_plot = save_plot
         self._save_animation = save_animation
 
@@ -95,6 +98,29 @@ class ParameterVariationTest(Command):
             disable=len(self._parameter_variations) == 0,
         ):
             self._execute_parameter_variation_test(parameter_variation)
+
+    def _build_reference_errors(self):
+        for _ in trange(1, desc="Build reference errors"):
+            generator = GenerateShallowWaterErrorEvolutionSeries(
+                self._solver_approximation,
+                self._solver_exact,
+                seed=self._seed,
+                end_time=self._end_time,
+                save_directory=self._directory + "reference",
+                save_animation=self._save_animation,
+                save_plot=self._save_plot,
+                save_error=True,
+                initial_conditions=self._initial_data_number,
+                description="reference",
+            )
+            generator.execute()
+
+            PlotShallowWaterAverageErrorEvolution(
+                generator.times,
+                generator.errors,
+                show=False,
+                save=self._directory + f"reference/error_average.png",
+            ).execute()
 
     def _execute_parameter_variation_test(
         self, parameter_variation: ParameterVariation
@@ -111,6 +137,7 @@ class ParameterVariationTest(Command):
                 self._solver_approximation,
                 self._solver_exact,
                 seed=self._seed,
+                end_time=self._end_time,
                 save_directory=self._directory + f"{name}/{param}",
                 save_animation=self._save_animation,
                 save_plot=self._save_plot,
@@ -127,30 +154,6 @@ class ParameterVariationTest(Command):
                 generator.errors,
                 show=False,
                 save=self._directory + f"{name}/{short}_{param}_average.png",
-                suptitle=f"Relative $L^2$-Error (${short}={param}$)",
-            ).execute()
-
-    def _build_reference_errors(self):
-        for _ in trange(1, desc="Build reference errors"):
-            generator = GenerateShallowWaterErrorEvolutionSeries(
-                self._solver_approximation,
-                self._solver_exact,
-                seed=self._seed,
-                save_directory=self._directory + "reference",
-                save_animation=self._save_animation,
-                save_plot=self._save_plot,
-                save_error=True,
-                initial_conditions=self._initial_data_number,
-                description="reference",
-            )
-            generator.execute()
-
-            PlotShallowWaterAverageErrorEvolution(
-                generator.times,
-                generator.errors,
-                show=False,
-                save=self._directory + f"reference/error_average.png",
-                suptitle=f"Relative $L^2$-Error",
             ).execute()
 
 
@@ -168,6 +171,7 @@ class ParameterVariationTestParser(CalculateParser):
 
     def _add_arguments(self, parser):
         self._add_shallow_water_solver(parser)
+        self._add_end_time(parser)
         self._add_directory(parser)
         self._add_build_references(parser)
         self._add_parameter_variations(parser)
@@ -233,7 +237,9 @@ class ParameterVariationTestParser(CalculateParser):
     def postprocess(self, arguments):
         self._assert_two_solver(arguments)
         self._add_save_history_argument(arguments)
-        arguments.benchmark = shallow_water.OscillationNoTopographyBenchmark()
+        arguments.benchmark = shallow_water.OscillationNoTopographyBenchmark(
+            end_time=arguments.end_time
+        )
         self._build_solver(arguments)
         self._build_variations(arguments)
 
