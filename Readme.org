@@ -1,14 +1,18 @@
 #+title: Collection of Conservation Laws Solver in 1D
 
-This repository provides my code for solving Conservation Law problems in 1D
-with finite elements which I have written during my master thesis. Execute the
-program with =cls1= (Conservation Laws Solver 1D).
+This repository provides a framework for solving Conservation Law problems in 1D
+with finite elements and finite volume. Execute the program with =cls1=
+(Conservation Laws Solver 1D).
 
-To get started just type
+The program uses =Python 3.10.6=. We suggest to use a virtual environment. The
+needed packages can be installed via:
+
+#+begin_src bash
+pip install -r requirements.txt
+#+end_src
+
+After installation feel free to inspect the program by typing:
 
 #+begin_src bash
 ./cls1 -h
 #+end_src
-
-in the console.
-
