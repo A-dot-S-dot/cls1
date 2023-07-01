@@ -11,13 +11,13 @@ class LaxFriedrichs2Module(nn.Module):
         nn.Module.__init__(self)
 
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(8, 64),
+            nn.Linear(8, 128),
             nn.LeakyReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.LeakyReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.LeakyReLU(),
-            nn.Linear(64, 2),
+            nn.Linear(128, 2),
         )
 
     def forward(self, x):
@@ -49,4 +49,4 @@ class ReducedLaxFriedrichs2SolverParser(ReducedSolverParser):
     name = "Second Reduced Lax Friedrichs Solver"
     solver = ReducedLaxFriedrichs2Solver
     _mesh_size_default = 50
-    _cfl_default = defaults.FINITE_VOLUME_CFL_NUMBER / 20
+    _cfl_default = defaults.FINITE_VOLUME_CFL_NUMBER / 40
