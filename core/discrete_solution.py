@@ -87,7 +87,7 @@ class DiscreteSolutionWithHistory(DiscreteSolution[T]):
         return self._solution.value
 
     @property
-    def space(self) -> T:
+    def space(self) -> Optional[T]:
         return self._solution.space
 
     @property

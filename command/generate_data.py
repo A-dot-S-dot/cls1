@@ -303,7 +303,7 @@ class GenerateData(Command):
         self._solver = solver
         self._solution_number = solution_number or defaults.SOLUTION_NUMBER
         self._get_benchmark = shallow_water.RandomBenchmarkGenerator(
-            seed or defaults.SEED, end_time
+            seed=seed or defaults.SEED, end_time=end_time
         )
         self._benchmark_df_builder = BenchparkParameterDataFrameBuilder()
         self._subgrid_flux_df_builder = self._get_subgrid_flux_data_frame_builder(

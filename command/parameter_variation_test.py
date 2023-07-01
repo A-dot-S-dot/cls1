@@ -237,9 +237,8 @@ class ParameterVariationTestParser(CalculateParser):
     def postprocess(self, arguments):
         self._assert_two_solver(arguments)
         self._add_save_history_argument(arguments)
-        arguments.benchmark = shallow_water.OscillationNoTopographyBenchmark(
-            end_time=arguments.end_time
-        )
+        arguments.benchmark = shallow_water.OscillationNoTopographyBenchmark()
+        self._adjust_end_time(arguments)
         self._build_solver(arguments)
         self._build_variations(arguments)
 
