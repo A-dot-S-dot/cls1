@@ -152,10 +152,12 @@ class PlotShallowWaterErrorEvolution(Command):
         Calculate(self._solver).execute()
 
     def _plot(self, time: np.ndarray, error: np.ndarray):
-        plt.plot(time, error[:, 0], label="Height $L^2$-Error")
-        plt.plot(time, error[:, 1], label="Discharge $L^2$-Error")
+        plt.plot(time, error[:, 0], label="Height $L^2$-Error", linewidth=3)
+        plt.plot(time, error[:, 1], label="Discharge $L^2$-Error", linewidth=3)
         plt.grid()
-        plt.legend(loc="upper right", fontsize="large")
+        plt.legend(loc="upper right", fontsize="x-large")
+        plt.suptitle(self._suptitle)
+        plt.tick_params(labelsize="xx-large")
 
         if self._save:
             plt.savefig(self._save)
@@ -293,16 +295,18 @@ class PlotShallowWaterAverageErrorEvolution(Command):
     def execute(self):
         time, errors = self._adjust_errors()
         mean = np.mean(errors, axis=0)
-        error_min = np.min(errors, axis=0)
         error_max = np.max(errors, axis=0)
 
         height_figure, height_axes = plt.subplots(num="Height L2-Error")
         discharge_figure, discharge_axes = plt.subplots(num="Discharge L2-Error")
 
         for i, ax in enumerate([height_axes, discharge_axes]):
-            ax.plot(time, mean[:, i])
-            ax.fill_between(time, error_min[:, i], error_max[:, i], alpha=0.2)
+            ax.plot(time, mean[:, i], linewidth=3)
+            ax.fill_between(time, mean[:, i], error_max[:, i], alpha=0.2)
             ax.grid()
+            vals = ax.get_yticks()
+            ax.set_yticklabels(["{:,.2%}".format(x) for x in vals])
+            ax.tick_params(labelsize="xx-large")
 
         if self._save:
             base_name, extension = os.path.splitext(self._save)

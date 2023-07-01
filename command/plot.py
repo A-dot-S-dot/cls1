@@ -171,15 +171,15 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
     def add_height(self, grid: np.ndarray, values: np.ndarray, label: str):
         height = swe.get_height(values)
         total_height = height + [self._benchmark.bathymetry(x) for x in grid]
-        self._height_axes.plot(grid, total_height, label=label)
+        self._height_axes.plot(grid, total_height, label=label, linewidth=3)
 
     def add_discharge(self, grid: np.ndarray, values: np.ndarray, label: str):
         discharge = swe.get_discharge(values)
-        self._discharge_axes.plot(grid, discharge, label=label)
+        self._discharge_axes.plot(grid, discharge, label=label, linewidth=3)
 
     def add_velocity(self, grid: np.ndarray, values: np.ndarray, label: str):
         velocity = swe.get_velocity(values)
-        self._velocity_axes.plot(grid, velocity, label=label)
+        self._velocity_axes.plot(grid, velocity, label=label, linewidth=3)
 
     def _add_bathymetry(self):
         bathymetry_values = np.array(
@@ -199,11 +199,13 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
         if not self._constant_bathymetry:
             self._add_bathymetry()
 
-        self._height_axes.set_ylim(bottom=0.0, auto=True)
+        _, y_max = self._height_axes.get_ylim()
+        self._height_axes.set_ylim(bottom=0.0, top=1.05 * y_max, auto=True)
 
         for ax in [self._height_axes, self._discharge_axes, self._velocity_axes]:
-            ax.legend(loc="center left", fontsize="large")
+            ax.legend(loc="center left", fontsize="x-large")
             ax.grid()
+            ax.tick_params(labelsize="xx-large")
 
     def _save_plots(self):
         if self._save:
