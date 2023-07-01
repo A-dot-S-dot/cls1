@@ -25,7 +25,7 @@ class ParameterVariation:
 
 
 class HeightAverageVariation(ParameterVariation):
-    values = np.array([0.8, 0.9, 1.0, 1.1, 1.2]) * HEIGHT_AVERAGE
+    values = np.array([0.8, 1.2]) * HEIGHT_AVERAGE
     name = "height_average"
     short = "H0"
     description = "Calculate Errors (H0-variation)"
@@ -33,14 +33,14 @@ class HeightAverageVariation(ParameterVariation):
 
 
 class WaveNumberVariation(ParameterVariation):
-    values = [1, 2, 5, 6, 9, 10, 15]
+    values = [5, 10, 15]
     name = "height_wave_number"
     short = "kh"
     description = "Calculate Errors (kh-variation)"
 
 
 class AmplitudeVariation(ParameterVariation):
-    values = [0.6, 0.8, 1.0, 1.5]
+    values = [0.8, 1.0, 1.5]
     name = "height_amplitude"
     short = "A"
     description = "Calculate errors (A-variation)"
