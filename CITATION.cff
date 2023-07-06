@@ -1,0 +1,15 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: clf1
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Alexey
+    family-names: Schwarzmann
+    email: alexey.schwarzmann@math.tu-dortmund.de
+repository-code: 'https://github.com/A-dot-S-dot/cls1'
+license: MIT
