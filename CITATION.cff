@@ -2,7 +2,9 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: clf1: A  collection of finite element and finite volume solver for one-dimensional conservation law problems
+title: >-
+  clf1: A  collection of finite element and finite volume
+  solver for one-dimensional conservation law problems
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
