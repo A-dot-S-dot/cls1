@@ -304,8 +304,6 @@ class PlotShallowWaterAverageErrorEvolution(Command):
             ax.plot(time, mean[:, i], linewidth=3)
             ax.fill_between(time, mean[:, i], error_max[:, i], alpha=0.2)
             ax.grid()
-            vals = ax.get_yticks()
-            ax.set_yticklabels(["{:,.2%}".format(x) for x in vals])
             ax.tick_params(labelsize="xx-large")
 
         if self._save:
