@@ -58,7 +58,8 @@ class ParameterVariationTest(Command):
     _initial_data_number: int
     _seed: Optional[int]
     _end_time: Optional[float]
-    _build_references: bool
+    _references: Optional[str]
+    _references_prefix=str
     _parameter_variations: List[ParameterVariation]
     _save_plot: bool
     _save_animation: bool
@@ -71,7 +72,8 @@ class ParameterVariationTest(Command):
         initial_data_number=None,
         seed=None,
         end_time=None,
-        build_references=False,
+        references=None,
+        references_prefix=None,
         parameter_variations=None,
         save_plot=False,
         save_animation=False,
@@ -82,13 +84,14 @@ class ParameterVariationTest(Command):
         self._initial_data_number = initial_data_number or defaults.INITIAL_DATA_NUMBER
         self._seed = seed
         self._end_time = end_time
-        self._build_references = build_references
+        self._references = references
+        self._references_prefix = references_prefix or "error"
         self._parameter_variations = parameter_variations or []
         self._save_plot = save_plot
         self._save_animation = save_animation
 
     def execute(self):
-        if self._build_references:
+        if self._references:
             self._build_reference_errors()
 
         for parameter_variation in tqdm(
@@ -106,7 +109,7 @@ class ParameterVariationTest(Command):
                 self._solver_exact,
                 seed=self._seed,
                 end_time=self._end_time,
-                save_directory=self._directory + "reference",
+                save_directory=self._directory + self._references,
                 save_animation=self._save_animation,
                 save_plot=self._save_plot,
                 save_error=True,
@@ -119,7 +122,7 @@ class ParameterVariationTest(Command):
                 generator.times,
                 generator.errors,
                 show=False,
-                save=self._directory + f"reference/error_average.png",
+                save=self._directory + f"{self._references}/{self._references_prefix}_average.png",
             ).execute()
 
     def _execute_parameter_variation_test(
@@ -173,7 +176,8 @@ class ParameterVariationTestParser(CalculateParser):
         self._add_shallow_water_solver(parser)
         self._add_end_time(parser)
         self._add_directory(parser)
-        self._add_build_references(parser)
+        self._add_references(parser)
+        self._add_references_prefix(parser)
         self._add_parameter_variations(parser)
         self._add_initial_data_number(parser)
         self._add_seed(parser)
@@ -184,11 +188,21 @@ class ParameterVariationTestParser(CalculateParser):
     def _add_directory(self, parser):
         parser.add_argument("directory", help="Specify where to save test results.")
 
-    def _add_build_references(self, parser):
+    def _add_references(self, parser):
         parser.add_argument(
-            "--build-references",
-            help="Build a reference set of errors.",
-            action="store_true",
+            "--references",
+            help="Build a reference set of errors. Store the results in 'references/'.",
+            nargs="?",
+            const="references",
+            metavar="<directory>"
+        )
+
+    def _add_references_prefix(self, parser):
+        parser.add_argument(
+            "--references-prefix",
+            help="Change prefix for error average plots.",
+            default="error",
+            metavar="<prefix>"
         )
 
     def _add_parameter_variations(self, parser):
