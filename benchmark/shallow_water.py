@@ -274,6 +274,48 @@ class RandomBenchmarkGenerator:
         return self.__class__.__name__
 
 
+class FirstBenchmark(OscillationNoTopographyBenchmark):
+    def __init__(self, end_time=40):
+        super().__init__(end_time, height_wave_number=1, velocity_amplitude=0.0)
+
+
+class SecondBenchmark(OscillationNoTopographyBenchmark):
+    def __init__(self, end_time=40):
+        super().__init__(end_time, height_amplitude=0.0, velocity_phase_shift=0.0)
+
+
+class ThirdBenchmark(OscillationNoTopographyBenchmark):
+    def __init__(self, end_time=40):
+        super().__init__(end_time, height_wave_number=3, velocity_amplitude=0.0)
+
+
+class FourthBenchmark(OscillationNoTopographyBenchmark):
+    def __init__(self, end_time=40):
+        super().__init__(
+            end_time,
+            height_amplitude=0.45,
+            height_wave_number=4,
+            height_phase_shift=2.78,
+            velocity_average=1.1,
+            velocity_amplitude=0.5,
+            velocity_phase_shift=4.5,
+            velocity_wave_number=3,
+        )
+
+
+class FifthBenchmark(OscillationNoTopographyBenchmark):
+    def __init__(self, end_time=40):
+        super().__init__(
+            end_time,
+            height_amplitude=0.45,
+            height_wave_number=3,
+            height_phase_shift=2.78,
+            velocity_average=1.1,
+            velocity_amplitude=0.5,
+            velocity_phase_shift=4.5,
+            velocity_wave_number=4,
+        )
+
 class DammBreakBenchmark(ShallowWaterBenchmark):
     h_left: float
     h_right: float
@@ -393,6 +435,11 @@ BENCHMARKS = {
     "cylindrical-damm-break": CylindricalDammBreakWithOutflowBenchmark,
     "cylindrical-damm-break-with-wall": CylindricalDammBreakWithReflectingBoundaryBenchmark,
     "sinus-inflow": SinusInflowBenchmark,
+    "b1": FirstBenchmark,
+    "b2": SecondBenchmark,
+    "b3": ThirdBenchmark,
+    "b4": FourthBenchmark,
+    "b5": FifthBenchmark,
 }
 BENCHMARK_DEFAULTS = {
     "plot": OscillationNoTopographyBenchmark,

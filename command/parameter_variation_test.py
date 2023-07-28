@@ -33,7 +33,7 @@ class HeightAverageVariation(ParameterVariation):
 
 
 class WaveNumberVariation(ParameterVariation):
-    values = [5, 10, 15]
+    values = [10, 15]
     name = "height_wave_number"
     short = "kh"
     description = "Calculate Errors (kh-variation)"
