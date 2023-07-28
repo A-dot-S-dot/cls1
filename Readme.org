@@ -16,3 +16,9 @@ After installation feel free to inspect the program by typing:
 #+begin_src bash
 ./cls1 -h
 #+end_src
+
+The results of the authors thesis can be reproduced via
+
+#+begin_src bash
+sh script.sh
+#+end_src
