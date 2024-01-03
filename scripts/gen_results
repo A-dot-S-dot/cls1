@@ -14,16 +14,6 @@ message () {
   echo "---------------------"
 }
 
-test_solver_exists () {
-  if [ ! -f data/reduced-llf/model.pkl ]; then
-    "ERROR: 'reduced-llf' solver does not exist. Please run: scripts/gen_solver_1"
-    exit 0
-  # elif [ ! -f data/reduced-llf-2/model.pkl ]; then
-  #   "ERROR: 'reduced-llf-2' solver does not exist. Please run: scripts/gen_solver_2"
-  #   exit 0
-  fi
-}
-
 plot_initial_data () {
   header "Generate initial Conditions"
   ./cls1 plot swe -b b1 --initial --hide --save $1/initial_b1.png
@@ -226,6 +216,11 @@ cfl_variation_test_2_lim() {
 }
 
 generate_results_1 () {
+  if [ ! -f data/reduced-llf/model.pkl ]; then
+    "ERROR: 'reduced-llf' solver does not exist. Please run: scripts/gen_solver_1"
+    exit 0
+  fi
+
   header "Generate Results of the First Model"
 
   source_dir="data/reduced-llf/"
@@ -243,6 +238,11 @@ generate_results_1 () {
 }
 
 generate_results_2 () {
+  if [ ! -f data/reduced-llf-2/model.pkl ]; then
+    "ERROR: 'reduced-llf-2' solver does not exist. Please run: scripts/gen_solver_2"
+    exit 0
+  fi
+
   header "Generate Results of the Second Model"
 
   source_dir_lim="data/limited-reduced-llf-2/"
@@ -256,8 +256,6 @@ generate_results_2 () {
 }
 
 # Main script
-test_solver_exists
-
 dest_dir="data/media"
 mkdir -pv $dest_dir
 
