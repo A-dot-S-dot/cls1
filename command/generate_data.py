@@ -407,6 +407,7 @@ class GenerateDataParser(CalculateParser):
             "-d",
             "--directory",
             help="Specify directory for storing data.",
+            metavar="<directory>"
         )
 
     def _add_coarsening_degree(self, parser):
