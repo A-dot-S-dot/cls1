@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+message () {
+}
+
+source_dir="data/reduced-llf/"
+mkdir -pv $source_dir
+
+echo
+echo "######################################################################"
+echo "Generate First Model"
+echo "######################################################################"
+echo
+echo "---------------------"
+echo "Generate Data for the network"
+echo "---------------------"
+./cls1 generate-data -d $source_dir-s llf
+echo
+echo "---------------------"
+echo "Train network"
+echo "---------------------"
+./cls1 train-network llf -e 2000 --seed 1
