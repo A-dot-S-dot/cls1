@@ -13,7 +13,8 @@ After installation feel free to inspect the program by typing:
 
     ./cls1 -h
 
-Due to storage issues, the data-driven solvers must be generated.
-Use the commands `scripts/gen_solver_1` and `scripts/gen_solver_2` for this. Note, this may take some time.
+The data-driven solver were generated with `scripts/gen_solver_1` and
+`scripts/gen_solver_2`.
 
-The results of the authors thesis can be reproduced via `scripts/gen_results` and are stored in in the `data/media` directory.
+The results of the authors thesis can be reproduced via `scripts/gen_results`
+and are stored in the `data/media` directory.

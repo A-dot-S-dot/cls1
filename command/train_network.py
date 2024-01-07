@@ -188,7 +188,7 @@ class TrainNetworkParser(CommandParser):
 
     def _load_network(self, arguments):
         if arguments.resume_training:
-            arguments.network.load_params()
+            arguments.network.load_params(load_history=True)
 
         del arguments.resume_training
 

@@ -1,3 +1,4 @@
+import os
 import pickle
 from typing import Tuple, Type
 
@@ -65,21 +66,56 @@ class ReducedNetwork(NeuralNetRegressor):
         print(f"Saved input scaler in '{self.input_scaler_path}'.")
         print(f"Saved output scaler in '{self.output_scaler_path}'.")
 
-    def load_params(self):
+    def load_params(self, load_history=False):
         self.initialize()
         try:
-            super().load_params(
-                f_params=self.network_path,
-                f_optimizer=self.optimizer_path,
-                f_history=self.history_path,
-            )
-            with open(self.input_scaler_path, "rb") as f:
-                self._input_scaler = pickle.load(f)
-            with open(self.output_scaler_path, "rb") as f:
-                self._output_scaler = pickle.load(f)
-
+            self._load_network_params(load_history)
+            self._load_input_scaler()
+            self._load_output_scaler()
         except Exception as error:
             print(f"{error}. Network could not be loaded. Use an untrained network.")
+
+    def _load_network_params(self, load_history: bool):
+        optimizer_path = None
+        history_path = None
+
+        if (
+            load_history
+            and os.path.isfile(self.optimizer_path)
+            and os.path.isfile(self.history_path)
+        ):
+            optimizer_path = self.optimizer_path
+            history_path = self.history_path
+        elif load_history:
+            print("WARNING: History and optimizer parameters could not be loaded.")
+
+        super().load_params(
+            f_params=self.network_path,
+            f_optimizer=optimizer_path,
+            f_history=history_path,
+        )
+
+    def _get_history_and_optimizer(self, load_history: bool):
+        if load_history:
+            if os.path.isfile(self.optimizer_path) and os.path.isfile(
+                self.history_path
+            ):
+                super().load_params(
+                    f_params=self.network_path,
+                    f_optimizer=self.optimizer_path,
+                    f_history=self.history_path,
+                )
+            else:
+                print("WARNING: History and optimizer parameters could not be loaded.")
+                super().load_params(f_params=self.network_path)
+
+    def _load_input_scaler(self):
+        with open(self.input_scaler_path, "rb") as f:
+            self._input_scaler = pickle.load(f)
+
+    def _load_output_scaler(self):
+        with open(self.output_scaler_path, "rb") as f:
+            self._output_scaler = pickle.load(f)
 
 
 class Curvature:

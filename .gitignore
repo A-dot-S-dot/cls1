@@ -1,6 +1,14 @@
 __pycache__/
-data/
 venv/
+
+data/*
+!data/reduced-llf
+!data/reduced-llf-2
+data/reduced-llf/*
+data/reduced-llf-2/*
+!*model.pkl
+!*input_scaler.pkl
+!*output_scaler.pkl
 
 *.csv
 *.pth
