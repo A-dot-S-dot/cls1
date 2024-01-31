@@ -54,8 +54,15 @@ class TestGenerateData(TestCase):
         )
         command.execute()
 
-        self.subgrid_flux_data = core.load_data(directory + "data.csv")
-        self.benchmark_data = core.load_data(directory + "benchmark.csv")
+        self.subgrid_flux_data = pd.read_csv(
+            directory + "data.csv", header=[0, 1], skipinitialspace=True, index_col=0
+        )
+        self.benchmark_data = pd.read_csv(
+            directory + "benchmark.csv",
+            header=[0, 1],
+            skipinitialspace=True,
+            index_col=0,
+        )
 
     def test_data_shape(self):
         assert_equal(self.subgrid_flux_data.shape, (6, 6))
