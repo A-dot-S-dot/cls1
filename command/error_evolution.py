@@ -359,6 +359,15 @@ class PlotErrorEvolutionParser(PlotParser):
         self._add_hide(parser)
         self._add_general_arguments(parser)
 
+    def _add_save(self, parser):
+        parser.add_argument(
+            "--save",
+            help=f"Save error evolution plot in specified direction. (const: {self._save_default})",
+            nargs="?",
+            const=self._save_default,
+            metavar="<file>",
+        )
+
     def postprocess(self, arguments):
         self._assert_two_solver(arguments)
         self._adjust_end_time(arguments)
