@@ -1,8 +1,8 @@
 # Collection of Conservation Laws Solver in 1D
 
 This repository provides a framework for solving Conservation Law problems in 1D
-with finite element and finite volume methods. Execute the program with `cls1`
-(Conservation Laws Solver 1D).
+with finite element, finite volume and machine learning methods. Execute the 
+program with `cls1` (Conservation Laws Solver 1D).
 
 The program uses `Python 3.10.6`. We suggest to use a virtual environment. For
 that simply run
