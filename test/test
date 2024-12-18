@@ -10,6 +10,6 @@ fi
 for arg in "$@"; do
     echo "${arg}_test.py"
     echo "----------------------------------------------------------------------"
-    python -m unittest discover . "${arg}_test.py"
+    python -m unittest "${arg}_test.py"
     echo
 done
