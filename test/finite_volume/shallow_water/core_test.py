@@ -82,6 +82,25 @@ class TestFlux(TestCase):
         assert_equal(flux(input), expected_flux)
 
 
+class TestFluxJacobian(TestCase):
+    def test_flux_jacobian(self):
+        flux_jacobian = FluxJacobian(1)
+        dof_vector = np.array([[1.0, 1.0], [0.0, 0.0], [1.0, -1.0], [2.0, 0.0]])
+        expected_flux_jacobian = np.array(
+            [
+                [[0.0, 1.0], [2.0, 0.0]],
+                [[0.0, 1.0], [0.0, 0.0]],
+                [[0.0, 1.0], [-2.0, 0.0]],
+                [[0.0, 1.0], [0.0, 2.0]],
+            ]
+        )
+
+        assert_equal(flux_jacobian(dof_vector), expected_flux_jacobian)
+
+    def test_negative_height_error(self):
+        self.assertRaises(ValueError, FluxJacobian(1), np.array([[-1, 2], [2, 3]]))
+
+
 class TestWaveSpeed(TestCase):
     wave_speed = WaveSpeed(1)
 

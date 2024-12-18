@@ -130,6 +130,53 @@ class Flux:
         height[height < self._eps] = np.nan
 
 
+class FluxJacobian:
+    """Returns shallow water flux jacobian:
+
+    0,      1
+    2*q/h,  -(q/h)**2 + g*h
+
+    """
+
+    _gravitational_acceleration: float
+    _eps: float
+
+    def __init__(self, gravitational_acceleration=None, eps=defaults.EPSILON):
+        self._gravitational_acceleration = (
+            gravitational_acceleration or defaults.GRAVITATIONAL_ACCELERATION
+        )
+        self._eps = eps
+
+    def __call__(self, dof_vector: np.ndarray) -> np.ndarray:
+        height = get_height(dof_vector)
+        discharge = get_discharge(dof_vector)
+
+        if isinstance(height, float):
+            raise NotImplementedError
+        else:
+            self._adjust_height_vector(height)
+
+        flux_jacobian = np.array(
+            [
+                [np.zeros(len(dof_vector)), np.ones(len(dof_vector))],
+                [
+                    2 * discharge / height,
+                    -((discharge / height) ** 2)
+                    + self._gravitational_acceleration * height,
+                ],
+            ]
+        ).transpose((2, 0, 1))
+        flux_jacobian[np.isnan(height)] = np.array([[0.0, 1.0], [0.0, 0.0]])
+
+        return flux_jacobian
+
+    def _adjust_height_vector(self, height: np.ndarray):
+        if (height < 0).any():
+            raise ValueError("Height is negative.")
+
+        height[height < self._eps] = np.nan
+
+
 class WaveSpeed:
     """Calculates local wave velocities for each  Riemann Problem, i.e. it contains
 
