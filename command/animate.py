@@ -463,6 +463,15 @@ class AnimateParser(PlotParser):
         self._add_start_time(parser)
         self._add_duration(parser)
 
+    def _add_save(self, parser):
+        parser.add_argument(
+            "--save",
+            help=f"Save animation in specified direction. (const: {self._save_default})",
+            nargs="?",
+            const=self._save_default,
+            metavar="<file>",
+        )
+
     def _add_time_steps(self, parser):
         parser.add_argument(
             "--time_steps",

@@ -6,6 +6,7 @@ import core
 import defaults
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 from finite_volume.shallow_water.solver import NETWORK_TYPES, ReducedNetwork
 
@@ -45,7 +46,9 @@ class TrainNetwork(Command):
         random.seed(seed)
 
     def execute(self):
-        df = core.load_data(self._network.data_path)
+        df = pd.read_csv(
+            self._network.data_path, header=[0, 1], skipinitialspace=True, index_col=0
+        )
         input_dimension = df.shape[1] - 2
         X = df.values[:: self._skip, :input_dimension].astype(np.float32)
         y = df.values[:: self._skip, input_dimension:].astype(np.float32)

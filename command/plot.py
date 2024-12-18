@@ -1,5 +1,6 @@
 import argparse
 import os
+import pickle
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Generic, List, Optional, TypeVar
 
@@ -23,19 +24,28 @@ class NothingToPlotError(Exception):
 class Plotter(ABC, Generic[T]):
     _benchmark: core.Benchmark
     _grid: np.ndarray
-    _save: Optional[str]
     _show: bool
+    _save_plot: Optional[str]
+    _save_data: Optional[str]
     _plot_available = False
 
-    def __init__(self, benchmark: core.Benchmark, mesh_size=None, save=None, show=True):
+    def __init__(
+        self,
+        benchmark: core.Benchmark,
+        mesh_size=None,
+        show=True,
+        save_plot=None,
+        save_data=None,
+    ):
         self._benchmark = benchmark
         self._grid = np.linspace(
             self._benchmark.domain.a,
             self._benchmark.domain.b,
             mesh_size or defaults.PLOT_MESH_SIZE,
         )
-        self._save = save
         self._show = show
+        self._save_plot = save_plot
+        self._save_data = save_data
 
     @abstractmethod
     def add_initial_data(self):
@@ -55,9 +65,29 @@ class Plotter(ABC, Generic[T]):
     ):
         ...
 
-    @abstractmethod
     def show(self):
+        if self._plot_available:
+            self._setup()
+            self._save_plots()
+            self._save_results()
+            self._show_plots()
+        else:
+            raise NothingToPlotError
+
+    @abstractmethod
+    def _setup(self):
         ...
+
+    @abstractmethod
+    def _save_plots(self):
+        ...
+
+    @abstractmethod
+    def _save_results(self):
+        ...
+
+    def _show_plots(self):
+        plt.show() if self._show else plt.close()
 
     def __repr__(self) -> str:
         return self.__class__.__name__
@@ -93,18 +123,29 @@ class ScalarPlotter(Plotter[float]):
         self._axes.plot(grid, function_values, label=label)
         self._plot_available = True
 
-    def show(self):
-        if self._plot_available:
-            self._axes.set_xlabel("x")
-            self._axes.legend()
+    def _setup(self):
+        self._axes.set_xlabel("x")
+        self._axes.legend()
 
-            if self._save:
-                self._figure.savefig(self._save)
-                tqdm.write(f"Plot is saved in '{self._save}'.")
+    def _save_plots(self):
+        if self._save_plot:
+            self._figure.savefig(self._save_plot)
+            tqdm.write(f"Plot is saved in '{self._save_plot}'.")
 
-            plt.show() if self._show else plt.close()
-        else:
-            raise NothingToPlotError
+    def _save_results(self):
+        if self._save_data:
+            results = dict()
+
+            for line in self._axes.get_lines():
+                results[line.get_label()] = {
+                    "xdata": line.get_xdata(),
+                    "ydata": line.get_ydata(),
+                }
+
+            with open(self._save_data, "wb") as f:
+                pickle.dump(results, f)
+
+            tqdm.write(f"Plots data are saved in '{self._save_data}'.")
 
 
 class ShallowWaterPlotter(Plotter[np.ndarray]):
@@ -187,14 +228,6 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
         )
         self._height_axes.plot(self._grid, bathymetry_values, label="$b$")
 
-    def show(self):
-        if self._plot_available:
-            self._setup()
-            self._save_plots()
-            self._show_plots()
-        else:
-            raise NothingToPlotError
-
     def _setup(self):
         if not self._constant_bathymetry:
             self._add_bathymetry()
@@ -208,8 +241,8 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
             ax.tick_params(labelsize="xx-large")
 
     def _save_plots(self):
-        if self._save:
-            base_name, extension = os.path.splitext(self._save)
+        if self._save_plot:
+            base_name, extension = os.path.splitext(self._save_plot)
 
             self._height_figure.savefig(base_name + "_h" + extension)
             self._discharge_figure.savefig(base_name + "_q" + extension)
@@ -217,8 +250,29 @@ class ShallowWaterPlotter(Plotter[np.ndarray]):
 
             tqdm.write(f"Plots are saved in '{base_name}_{{h,q,l}}{extension}'.")
 
-    def _show_plots(self):
-        plt.show() if self._show else plt.close("all")
+    def _save_results(self):
+        if self._save_data:
+            base_name, extension = os.path.splitext(self._save_data)
+
+            for ax, suffix in zip(
+                [self._height_axes, self._discharge_axes, self._velocity_axes],
+                ["_h", "_q", "_v"],
+            ):
+                path = base_name + suffix + extension
+                self._save_result(ax, path)
+
+            tqdm.write(f"Plots data are saved in '{base_name}_{{h,q,l}}{extension}'.")
+
+    def _save_result(self, axes: ..., path: str):
+        results = dict()
+        for line in axes.get_lines():
+            results[line.get_label()] = {
+                "xdata": line.get_xdata(),
+                "ydata": line.get_ydata(),
+            }
+
+        with open(path, "wb") as f:
+            pickle.dump(results, f)
 
 
 class Plot(Command):
@@ -305,7 +359,7 @@ class Plot(Command):
 
 class PlotParser(CalculateParser):
     _benchmark_default = "plot"
-    _save_default = defaults.PLOT_TARGET
+    _save_plot_default = defaults.PLOT_TARGET
 
     def _get_parser(self, parsers) -> Any:
         return parsers.add_parser(
@@ -318,7 +372,8 @@ class PlotParser(CalculateParser):
     def _add_command_arguments(self, parser):
         self._add_plot_mesh_size(parser)
         self._add_initial_data(parser)
-        self._add_save(parser)
+        self._add_save_plot(parser)
+        self._add_save_data(parser)
         self._add_hide(parser)
 
     def _add_plot_mesh_size(self, parser):
@@ -334,12 +389,21 @@ class PlotParser(CalculateParser):
     def _add_initial_data(self, parser):
         parser.add_argument("--initial", help="Show initial data.", action="store_true")
 
-    def _add_save(self, parser):
+    def _add_save_plot(self, parser):
         parser.add_argument(
             "--save",
-            help=f"Save file in specified direction. (const: {self._save_default})",
+            help=f"Save plot in specified direction. (const: {self._save_plot_default})",
             nargs="?",
-            const=self._save_default,
+            const=self._save_plot_default,
+            metavar="<file>",
+            dest="save_plot",
+        )
+
+    def _add_save_data(self, parser):
+        parser.add_argument(
+            "--save-data",
+            help=f"Save plot data in specified direction. (const: {{save_plot_path}}.pkl or {defaults.PLOT_DATA_TARGET})",
+            nargs="?",
             metavar="<file>",
         )
 
@@ -354,10 +418,19 @@ class PlotParser(CalculateParser):
     def postprocess(self, arguments):
         self._adjust_end_time(arguments)
         self._build_solver(arguments)
+        self._build_save_data(arguments)
         self._build_plotter(arguments)
         arguments.command = Plot
 
         del arguments.problem
+
+    def _build_save_data(self, arguments):
+        if arguments.save_data is None:
+            if arguments.save_plot:
+                base_name, extension = os.path.splitext(arguments.save_plot)
+                arguments.save_data = base_name + ".pkl"
+            else:
+                arguments.save_data = defaults.PLOT_DATA_TARGET
 
     def _build_plotter(self, arguments):
         plotter = {
@@ -369,10 +442,12 @@ class PlotParser(CalculateParser):
         arguments.plotter = plotter[arguments.problem](
             arguments.benchmark,
             mesh_size=arguments.mesh_size,
-            save=arguments.save,
+            save_plot=arguments.save_plot,
+            save_data=arguments.save_data,
             show=arguments.show,
         )
 
         del arguments.mesh_size
-        del arguments.save
+        del arguments.save_plot
+        del arguments.save_data
         del arguments.show

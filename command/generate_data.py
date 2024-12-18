@@ -376,8 +376,12 @@ class GenerateData(Command):
         benchmark_data: pd.DataFrame,
         overwrite: bool,
     ):
-        core.save_data(subgrid_flux_data, self._subgrid_flux_path, overwrite)
-        core.save_data(benchmark_data, self._benchmark_path, overwrite)
+        subgrid_flux_data.to_csv(
+            self._subgrid_flux_path, mode="w" if overwrite else "a", header=overwrite
+        )
+        benchmark_data.to_csv(
+            self._benchmark_path, mode="w" if overwrite else "a", header=overwrite
+        )
 
 
 class GenerateDataParser(CalculateParser):
@@ -407,7 +411,7 @@ class GenerateDataParser(CalculateParser):
             "-d",
             "--directory",
             help="Specify directory for storing data.",
-            metavar="<directory>"
+            metavar="<directory>",
         )
 
     def _add_coarsening_degree(self, parser):
