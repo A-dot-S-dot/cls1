@@ -3,7 +3,7 @@
 
 cff-version: 1.2.0
 title: >-
-  clf1: A  collection of finite element, finite volume
+  cls1: A  collection of finite element, finite volume
   and machine learning solvers for one-dimensional
   conservation law problems
 message: >-
