@@ -3,6 +3,7 @@ from .central import *
 from .coarse import *
 from .energy_stable import *
 from .lax_friedrichs import *
+from .lax_wendroff import *
 from .low_order import *
 from .mcl import *
 from .reduced_llf import *
@@ -25,6 +26,7 @@ NETWORK_TYPES = {
 }
 SOLVER_PARSER = {
     "llf": LaxFriedrichsParser(),
+    "lw": LaxWendroffParser(),
     "low-order": LowOrderParser(),
     "central": CentralFluxParser(),
     "es": EnergyStableParser(),

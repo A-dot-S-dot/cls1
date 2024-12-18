@@ -12,12 +12,11 @@ class FluxGetter(ABC):
     @abstractmethod
     def __call__(
         self, benchmark: core.Benchmark, space: FiniteVolumeSpace
-    ) -> NumericalFlux:
-        ...
+    ) -> NumericalFlux: ...
 
 
 class Solver(core.Solver):
-    flux_getter: FluxGetter
+    flux_getter: Optional[FluxGetter] = None
     _get_boundary_conditions = core.get_boundary_conditions
 
     def __init__(self, benchmark: core.Benchmark, **solver_args):
@@ -37,16 +36,23 @@ class Solver(core.Solver):
         solution = get_finite_volume_solution(benchmark, mesh_size, save_history)
         step_length = solution.space.mesh.step_length
 
-        numerical_flux = self.flux_getter(benchmark, solution.space)
-        boundary_conditions = self._get_boundary_conditions(
-            *benchmark.boundary_conditions,
-            radius=numerical_flux.input_dimension // 2,
-            inflow_left=benchmark.inflow_left,
-            inflow_right=benchmark.inflow_right,
-        )
-        right_hand_side = NumericalFluxDependentRightHandSide(
-            numerical_flux, step_length, boundary_conditions
-        )
+        if self.flux_getter is not None:
+            numerical_flux = (
+                self.flux_getter(benchmark, solution.space)
+                if self.flux_getter is not None
+                else None
+            )
+            boundary_conditions = self._get_boundary_conditions(
+                *benchmark.boundary_conditions,
+                radius=numerical_flux.input_dimension // 2,
+                inflow_left=benchmark.inflow_left,
+                inflow_right=benchmark.inflow_right,
+            )
+            right_hand_side = NumericalFluxDependentRightHandSide(
+                numerical_flux, step_length, boundary_conditions
+            )
+        else:
+            right_hand_side = None
 
         time_stepping = core.get_mesh_dependent_time_stepping(
             benchmark,
